@@ -1,3 +1,5 @@
+import { AIRPORTS, greatCirclePoint, initialBearing } from "./geo";
+
 export type RiskLevel = "low" | "medium" | "high";
 
 export type FlightStatus = "scheduled" | "boarding" | "departed" | "arrived";
@@ -526,12 +528,40 @@ const RAW_FLIGHTS: Array<
   },
 ];
 
-export const MOCK_FLIGHTS: Flight[] = RAW_FLIGHTS.map((f) => ({
-  ...f,
-  shap: f.shap ?? [],
-}));
+export type FlightTrack = Flight & {
+  origin: string;
+  destination: string;
+  progress: number;
+  currentLat: number;
+  currentLng: number;
+  bearing: number;
+  altitudeFt: number;
+  groundSpeedKt: number;
+};
 
-export function getFlightById(id: string): Flight | undefined {
+const PROGRESS_SEED = [0.22, 0.45, 0.73, 0.31, 0.58, 0.12, 0.84, 0.65, 0.38, 0.52, 0.27, 0.7, 0.48, 0.18, 0.91, 0.6];
+
+export const MOCK_FLIGHTS: FlightTrack[] = RAW_FLIGHTS.map((f, idx) => {
+  const o = AIRPORTS[f.origin];
+  const d = AIRPORTS[f.destination];
+  const progress = PROGRESS_SEED[idx % PROGRESS_SEED.length];
+  const current = o && d ? greatCirclePoint(o, d, progress) : { lat: 0, lng: 0 };
+  const bearing = o && d ? initialBearing(current, d) : 0;
+  const altitudeFt = 24000 + Math.round(Math.sin(progress * Math.PI) * 12000);
+  const groundSpeedKt = 410 + Math.round(Math.sin(progress * Math.PI) * 60);
+  return {
+    ...f,
+    shap: f.shap ?? [],
+    progress,
+    currentLat: current.lat,
+    currentLng: current.lng,
+    bearing,
+    altitudeFt,
+    groundSpeedKt,
+  };
+});
+
+export function getFlightById(id: string): FlightTrack | undefined {
   return MOCK_FLIGHTS.find((f) => f.id === id);
 }
 
@@ -567,6 +597,38 @@ export const MOCK_HOURLY_DELAY = [
   { hour: "18:00", avgDelay: 16, flights: 26 },
   { hour: "19:00", avgDelay: 14, flights: 22 },
   { hour: "20:00", avgDelay: 10, flights: 17 },
+];
+
+export type WeatherStation = {
+  code: string;
+  name: string;
+  lat: number;
+  lng: number;
+  temperatureF: number;
+  windKt: number;
+  windDeg: number;
+  visibilitySm: number;
+  condition: "clear" | "cloudy" | "rain" | "storm" | "fog";
+  impact: RiskLevel;
+};
+
+export const MOCK_WEATHER_STATIONS: WeatherStation[] = [
+  { code: "ATL", name: "Atlanta", lat: 33.6367, lng: -84.4281, temperatureF: 71, windKt: 14, windDeg: 220, visibilitySm: 6, condition: "cloudy", impact: "medium" },
+  { code: "CLT", name: "Charlotte", lat: 35.214, lng: -80.9431, temperatureF: 68, windKt: 11, windDeg: 200, visibilitySm: 8, condition: "clear", impact: "low" },
+  { code: "MCO", name: "Orlando", lat: 28.4312, lng: -81.3081, temperatureF: 79, windKt: 9, windDeg: 140, visibilitySm: 7, condition: "rain", impact: "medium" },
+  { code: "MIA", name: "Miami", lat: 25.7959, lng: -80.287, temperatureF: 82, windKt: 12, windDeg: 120, visibilitySm: 6, condition: "storm", impact: "high" },
+  { code: "DFW", name: "Dallas", lat: 32.8968, lng: -97.038, temperatureF: 76, windKt: 18, windDeg: 180, visibilitySm: 5, condition: "storm", impact: "high" },
+  { code: "IAH", name: "Houston", lat: 29.9902, lng: -95.3368, temperatureF: 80, windKt: 15, windDeg: 160, visibilitySm: 5, condition: "storm", impact: "high" },
+  { code: "ORD", name: "Chicago", lat: 41.9742, lng: -87.9073, temperatureF: 54, windKt: 17, windDeg: 290, visibilitySm: 8, condition: "cloudy", impact: "medium" },
+  { code: "DTW", name: "Detroit", lat: 42.2124, lng: -83.3534, temperatureF: 51, windKt: 12, windDeg: 270, visibilitySm: 9, condition: "cloudy", impact: "low" },
+  { code: "BOS", name: "Boston", lat: 42.3656, lng: -71.0096, temperatureF: 49, windKt: 19, windDeg: 310, visibilitySm: 10, condition: "clear", impact: "low" },
+  { code: "JFK", name: "New York", lat: 40.6413, lng: -73.7781, temperatureF: 56, windKt: 16, windDeg: 300, visibilitySm: 3, condition: "fog", impact: "high" },
+  { code: "DEN", name: "Denver", lat: 39.8561, lng: -104.6737, temperatureF: 60, windKt: 13, windDeg: 230, visibilitySm: 10, condition: "clear", impact: "low" },
+  { code: "PHX", name: "Phoenix", lat: 33.4343, lng: -112.0116, temperatureF: 89, windKt: 8, windDeg: 210, visibilitySm: 10, condition: "clear", impact: "low" },
+  { code: "LAS", name: "Las Vegas", lat: 36.084, lng: -115.1537, temperatureF: 85, windKt: 11, windDeg: 220, visibilitySm: 10, condition: "clear", impact: "low" },
+  { code: "LAX", name: "Los Angeles", lat: 33.9425, lng: -118.4081, temperatureF: 72, windKt: 10, windDeg: 250, visibilitySm: 9, condition: "cloudy", impact: "low" },
+  { code: "SFO", name: "San Francisco", lat: 37.6213, lng: -122.379, temperatureF: 63, windKt: 14, windDeg: 270, visibilitySm: 4, condition: "fog", impact: "medium" },
+  { code: "SEA", name: "Seattle", lat: 47.4502, lng: -122.3088, temperatureF: 55, windKt: 12, windDeg: 230, visibilitySm: 8, condition: "rain", impact: "medium" },
 ];
 
 export const MOCK_ROUTES = [
