@@ -1,48 +1,30 @@
+"use client";
+
 import Link from "next/link";
-import { ArrowLeft, EyeOff, Radar } from "lucide-react";
+import { ArrowLeft, EyeOff, Radar, RefreshCw } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { WeatherCard } from "@/components/weather-card";
 import { HourlyDelayChart } from "@/components/hourly-delay-chart";
 import { WeatherMap } from "@/components/maps/weather-map-dynamic";
 import { WeatherErrorCard } from "@/components/weather-error-card";
-import {
-  ATL_REGIONAL_STATIONS,
-  fetchWeatherStations,
-} from "@/lib/weather-api";
+import { RawPayloadPanel } from "@/components/raw-payload-panel";
+import { useWeatherStations } from "@/hooks/use-weather-stations";
 import type { WeatherStation } from "@/lib/mock-data";
 
-export const metadata = {
-  title: "Laboratorio · Meteo — OnTimeAI",
-  description: "Vista experimental fuera del alcance del MVP.",
-  robots: { index: false, follow: false },
-};
+export default function TesisWeatherPage() {
+  const { status, data, error, reload } = useWeatherStations();
 
-export const revalidate = 300;
-
-export default async function TesisWeatherPage() {
-  let stations: WeatherStation[] | null = null;
-  let atlRaw: string | null = null;
-  let fetchedAt: string | null = null;
-  let errorMessage: string | null = null;
-
-  try {
-    const result = await fetchWeatherStations(ATL_REGIONAL_STATIONS);
-    stations = result.stations;
-    atlRaw = result.atlRaw;
-    fetchedAt = result.fetchedAt;
-  } catch (e) {
-    errorMessage = e instanceof Error ? e.message : String(e);
-  }
-
-  const atlStation = stations?.find((s) => s.code === "ATL");
+  const atlStation = data?.stations.find((s) => s.code === "ATL");
 
   return (
     <AppShell title="Laboratorio · Meteo">
       <div className="space-y-4">
-        <div>
+        <div className="flex items-center justify-between gap-2">
           <Link
             href="/tesis"
             className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
@@ -50,6 +32,20 @@ export default async function TesisWeatherPage() {
             <ArrowLeft className="size-3" />
             Volver al laboratorio
           </Link>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={reload}
+            disabled={status === "loading"}
+            className="gap-1"
+          >
+            <RefreshCw
+              className={
+                "size-3.5 " + (status === "loading" ? "animate-spin" : "")
+              }
+            />
+            Reintentar
+          </Button>
         </div>
 
         <header className="space-y-2">
@@ -61,7 +57,7 @@ export default async function TesisWeatherPage() {
             <Badge variant="outline" className="text-risk-medium">
               Fuera del MVP
             </Badge>
-            {fetchedAt ? (
+            {status === "success" ? (
               <Badge variant="outline" className="gap-1.5 text-risk-low">
                 <Radar className="size-3" />
                 Datos en vivo · AWC/NOAA
@@ -72,32 +68,36 @@ export default async function TesisWeatherPage() {
             Mapa meteorológico operativo
           </h1>
           <p className="max-w-3xl text-sm text-muted-foreground">
-            METAR en vivo desde Aviation Weather Center (NOAA) para las
-            estaciones principales de la red operativa ATL. Los halos reflejan
-            el impacto proyectado sobre la puntualidad según la categoría de
-            vuelo (VFR/MVFR/IFR/LIFR).
+            METAR en vivo desde Aviation Weather Center (NOAA) vía el proxy{" "}
+            <code className="rounded bg-muted px-1 py-0.5 font-mono text-[11px]">
+              /api/weather
+            </code>
+            . Abrí DevTools → Network para ver la request.
           </p>
-          {fetchedAt ? (
+          {data?.fetchedAt ? (
             <p className="font-mono text-[11px] text-muted-foreground">
               Última actualización:{" "}
-              {new Date(fetchedAt).toLocaleString("es-AR", {
+              {new Date(data.fetchedAt).toLocaleString("es-AR", {
                 dateStyle: "short",
                 timeStyle: "medium",
-              })}
+              })}{" "}
+              · proxy: {data.elapsedMs}ms
             </p>
           ) : null}
         </header>
 
-        {errorMessage ? (
-          <WeatherErrorCard message={errorMessage} />
-        ) : stations && stations.length > 0 ? (
+        {status === "loading" || status === "idle" ? (
+          <LoadingState />
+        ) : status === "error" ? (
+          <WeatherErrorCard message={error ?? "Error desconocido"} />
+        ) : data && data.stations.length > 0 ? (
           <>
             <Card className="p-0 overflow-hidden">
-              <WeatherMap stations={stations} height={600} />
+              <WeatherMap stations={data.stations} height={600} />
             </Card>
 
             <div className="grid gap-4 lg:grid-cols-2">
-              {atlStation && atlRaw ? (
+              {atlStation && data.atlRaw ? (
                 <WeatherCard
                   title="KATL · METAR en vivo"
                   data={{
@@ -105,18 +105,37 @@ export default async function TesisWeatherPage() {
                     windKt: atlStation.windKt,
                     visibilitySm: atlStation.visibilitySm,
                     condition: conditionLabel(atlStation.condition),
-                    metar: atlRaw,
+                    metar: data.atlRaw,
                   }}
                 />
               ) : null}
               <HourlyDelayChart />
             </div>
+
+            <RawPayloadPanel
+              title="Payload crudo de AWC"
+              description="Respuesta JSON completa del endpoint de METAR. La URL externa es la original de AWC (abrila en una pestaña para ver el response directo de NOAA)."
+              url={data.requestUrl}
+              payload={data.rawPayload}
+            />
           </>
         ) : (
-          <WeatherErrorCard message="La respuesta de AWC no contiene estaciones válidas." />
+          <WeatherErrorCard message="La respuesta del proxy no contiene estaciones válidas." />
         )}
       </div>
     </AppShell>
+  );
+}
+
+function LoadingState() {
+  return (
+    <div className="space-y-4">
+      <Skeleton className="h-[600px] w-full rounded-lg" />
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Skeleton className="h-52 w-full rounded-lg" />
+        <Skeleton className="h-52 w-full rounded-lg" />
+      </div>
+    </div>
   );
 }
 

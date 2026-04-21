@@ -4,6 +4,7 @@ import { Check, Building2, UserRound } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -27,29 +28,31 @@ export function ProfileSwitcher() {
         <span className="hidden sm:inline">{current.label}</span>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-72">
-        <DropdownMenuLabel>Perfil de usuario</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        {PROFILES.map((p) => {
-          const PIcon = p.id === "airline" ? Building2 : UserRound;
-          return (
-            <DropdownMenuItem
-              key={p.id}
-              onSelect={() => setProfile(p.id)}
-              className="flex items-start gap-3 py-2"
-            >
-              <PIcon className="size-4 mt-0.5 shrink-0" />
-              <div className="flex-1">
-                <div className="text-sm font-medium">{p.label}</div>
-                <div className="text-xs text-muted-foreground">
-                  {p.description}
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>Perfil de usuario</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          {PROFILES.map((p) => {
+            const PIcon = p.id === "airline" ? Building2 : UserRound;
+            return (
+              <DropdownMenuItem
+                key={p.id}
+                onSelect={() => setProfile(p.id)}
+                className="flex items-start gap-3 py-2"
+              >
+                <PIcon className="size-4 mt-0.5 shrink-0" />
+                <div className="flex-1">
+                  <div className="text-sm font-medium">{p.label}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {p.description}
+                  </div>
                 </div>
-              </div>
-              {profile === p.id ? (
-                <Check className="size-4 opacity-70 mt-0.5" />
-              ) : null}
-            </DropdownMenuItem>
-          );
-        })}
+                {profile === p.id ? (
+                  <Check className="size-4 opacity-70 mt-0.5" />
+                ) : null}
+              </DropdownMenuItem>
+            );
+          })}
+        </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>
   );

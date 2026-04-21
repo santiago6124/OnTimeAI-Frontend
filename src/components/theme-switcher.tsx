@@ -6,6 +6,7 @@ import { Check, Monitor, Moon, Palette, Sun } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -46,40 +47,44 @@ export function ThemeSwitcher() {
         )}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel>Modo</DropdownMenuLabel>
-        <ModeItem
-          icon={<Sun className="size-4" />}
-          label="Claro"
-          active={theme === "light"}
-          onSelect={() => setTheme("light")}
-        />
-        <ModeItem
-          icon={<Moon className="size-4" />}
-          label="Oscuro"
-          active={theme === "dark"}
-          onSelect={() => setTheme("dark")}
-        />
-        <ModeItem
-          icon={<Monitor className="size-4" />}
-          label="Sistema"
-          active={theme === "system"}
-          onSelect={() => setTheme("system")}
-        />
-        <DropdownMenuSeparator />
-        <DropdownMenuLabel className="flex items-center gap-2">
-          <Palette className="size-4" />
-          Paleta de colores
-        </DropdownMenuLabel>
-        {PALETTES.map((p) => (
-          <PaletteItem
-            key={p.id}
-            id={p.id}
-            label={p.label}
-            swatch={p.swatch}
-            active={palette === p.id}
-            onSelect={() => setPalette(p.id)}
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>Modo</DropdownMenuLabel>
+          <ModeItem
+            icon={<Sun className="size-4" />}
+            label="Claro"
+            active={theme === "light"}
+            onSelect={() => setTheme("light")}
           />
-        ))}
+          <ModeItem
+            icon={<Moon className="size-4" />}
+            label="Oscuro"
+            active={theme === "dark"}
+            onSelect={() => setTheme("dark")}
+          />
+          <ModeItem
+            icon={<Monitor className="size-4" />}
+            label="Sistema"
+            active={theme === "system"}
+            onSelect={() => setTheme("system")}
+          />
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuGroup>
+          <DropdownMenuLabel className="flex items-center gap-2">
+            <Palette className="size-4" />
+            Paleta de colores
+          </DropdownMenuLabel>
+          {PALETTES.map((p) => (
+            <PaletteItem
+              key={p.id}
+              id={p.id}
+              label={p.label}
+              swatch={p.swatch}
+              active={palette === p.id}
+              onSelect={() => setPalette(p.id)}
+            />
+          ))}
+        </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>
   );

@@ -60,6 +60,9 @@ export async function fetchMetars(
   url.searchParams.set("format", "json");
   url.searchParams.set("taf", "false");
 
+  const started = Date.now();
+  console.log(`\n[AWC] → GET ${url.toString()}`);
+
   let res: Response;
   try {
     res = await fetch(url, {
@@ -67,6 +70,7 @@ export async function fetchMetars(
       next: { revalidate },
     });
   } catch (e) {
+    console.error(`[AWC] ✖ network error after ${Date.now() - started}ms`, e);
     throw new WeatherApiError(
       `No se pudo contactar Aviation Weather Center (${
         e instanceof Error ? e.message : "network error"
@@ -74,6 +78,13 @@ export async function fetchMetars(
       e,
     );
   }
+
+  const ms = Date.now() - started;
+  console.log(
+    `[AWC] ← ${res.status} ${res.statusText} in ${ms}ms (cache: ${
+      res.headers.get("x-vercel-cache") ?? res.headers.get("cf-cache-status") ?? "n/a"
+    })`,
+  );
 
   if (!res.ok) {
     throw new WeatherApiError(
@@ -93,6 +104,15 @@ export async function fetchMetars(
       "Respuesta inesperada de AWC: se esperaba un array",
     );
   }
+
+  console.log(
+    `[AWC] ✓ ${data.length} estaciones recibidas · ejemplo KATL:`,
+    JSON.stringify(
+      (data as AwcMetar[]).find((m) => m.icaoId === "KATL") ?? data[0],
+      null,
+      2,
+    ),
+  );
 
   if (data.length === 0) {
     throw new WeatherApiError(
@@ -187,7 +207,14 @@ export function metarToStation(m: AwcMetar): WeatherStation {
 
 export async function fetchWeatherStations(
   ids: string[] = ATL_REGIONAL_STATIONS,
-): Promise<{ stations: WeatherStation[]; atlRaw: string | null; fetchedAt: string }> {
+): Promise<{
+  stations: WeatherStation[];
+  atlRaw: string | null;
+  fetchedAt: string;
+  requestUrl: string;
+  rawPayload: AwcMetar[];
+}> {
+  const requestUrl = `${AWC_URL}?ids=${ids.join(",")}&format=json&taf=false`;
   const metars = await fetchMetars(ids);
   const stations = metars.map(metarToStation);
   const atl = metars.find((m) => m.icaoId === "KATL");
@@ -195,5 +222,7 @@ export async function fetchWeatherStations(
     stations,
     atlRaw: atl?.rawOb ?? null,
     fetchedAt: new Date().toISOString(),
+    requestUrl,
+    rawPayload: metars,
   };
 }
