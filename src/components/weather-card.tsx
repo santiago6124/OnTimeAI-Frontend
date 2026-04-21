@@ -2,14 +2,27 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Cloud, Eye, Thermometer, Wind } from "lucide-react";
 import { MOCK_METRICS } from "@/lib/mock-data";
 
-export function WeatherCard() {
-  const w = MOCK_METRICS.weather;
+export type WeatherCardData = {
+  temperatureF: number;
+  windKt: number;
+  visibilitySm: number;
+  condition: string;
+  metar: string;
+};
+
+export function WeatherCard({
+  data = MOCK_METRICS.weather,
+  title = "Condiciones meteorológicas ATL",
+}: {
+  data?: WeatherCardData;
+  title?: string;
+}) {
   return (
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-sm font-medium">
           <Cloud className="size-4 text-muted-foreground" />
-          Condiciones meteorológicas ATL
+          {title}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -17,27 +30,27 @@ export function WeatherCard() {
           <WeatherStat
             icon={<Thermometer className="size-4" />}
             label="Temp"
-            value={`${w.temperatureF}°F`}
+            value={`${data.temperatureF}°F`}
           />
           <WeatherStat
             icon={<Wind className="size-4" />}
             label="Viento"
-            value={`${w.windKt} kt`}
+            value={`${data.windKt} kt`}
           />
           <WeatherStat
             icon={<Eye className="size-4" />}
             label="Visibilidad"
-            value={`${w.visibilitySm} SM`}
+            value={`${data.visibilitySm} SM`}
           />
         </div>
         <div className="space-y-1">
           <div className="text-xs text-muted-foreground">Condición actual</div>
-          <div className="text-sm">{w.condition}</div>
+          <div className="text-sm">{data.condition}</div>
         </div>
         <div className="space-y-1">
           <div className="text-xs text-muted-foreground">METAR</div>
           <code className="block rounded bg-muted px-2 py-1 font-mono text-[11px] text-muted-foreground">
-            {w.metar}
+            {data.metar}
           </code>
         </div>
       </CardContent>
