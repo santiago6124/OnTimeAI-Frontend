@@ -1,3 +1,6 @@
+// UGS-132: tabla interactiva — click en fila selecciona ruta para el gráfico
+"use client";
+
 import {
   Table,
   TableBody,
@@ -10,7 +13,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MOCK_ROUTES } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 
-export function RoutesTable() {
+interface RoutesTableProps {
+  selectedRoute?: string;
+  onRouteSelect?: (route: string) => void;
+}
+
+export function RoutesTable({ selectedRoute, onRouteSelect }: RoutesTableProps) {
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -30,7 +38,14 @@ export function RoutesTable() {
           </TableHeader>
           <TableBody>
             {MOCK_ROUTES.map((r) => (
-              <TableRow key={r.route}>
+              <TableRow
+                key={r.route}
+                onClick={() => onRouteSelect?.(r.route)}
+                className={cn(
+                  onRouteSelect && "cursor-pointer",
+                  selectedRoute === r.route && "bg-muted/50",
+                )}
+              >
                 <TableCell className="font-mono text-sm">{r.route}</TableCell>
                 <TableCell className="text-right font-mono text-sm">
                   {r.flights}
