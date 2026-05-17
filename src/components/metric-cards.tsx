@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowDownRight, ArrowUpRight, Clock, Plane, TriangleAlert, TrendingUp } from "lucide-react";
-import { MOCK_METRICS } from "@/lib/mock-data";
+import { api, fmtProba } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 type MetricProps = {
@@ -61,38 +61,51 @@ function MetricCard({
   );
 }
 
-export function MetricCards() {
-  const m = MOCK_METRICS;
+export async function MetricCards() {
+  let m;
+  try {
+    m = await api.summary();
+  } catch {
+    m = null;
+  }
+
+  const total   = m?.total_flights ?? 0;
+  const onTime  = total > 0 ? 1 - (m?.avg_delay_probability ?? 0) : 0;
+  const posRate = fmtProba(m?.avg_delay_probability ?? 0);
+  const high    = m?.high_risk ?? 0;
+  const med     = m?.medium_risk ?? 0;
+  const low     = m?.low_risk ?? 0;
+
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       <MetricCard
         label="Vuelos del día"
-        value={String(m.totalFlights)}
-        delta="+3 vs ayer"
-        trend="up"
+        value={String(total)}
+        delta={m ? `modelo ${m.model_version}` : "sin datos"}
+        trend="neutral"
         icon={Plane}
       />
       <MetricCard
-        label="Puntualidad"
-        value={`${Math.round(m.onTimeRate * 100)}%`}
-        delta="-4 pts vs promedio"
-        trend="down"
+        label="Prob. retraso promedio"
+        value={posRate}
+        delta={`${high} alto · ${med} medio · ${low} bajo`}
+        trend={onTime > 0.85 ? "down" : "up"}
         icon={TrendingUp}
       />
       <MetricCard
-        label="Retraso promedio"
-        value={`${m.avgDelayMinutes.toFixed(1)} min`}
-        delta="+2.1 min"
-        trend="up"
+        label="Puntualidad estimada"
+        value={`${Math.round(onTime * 100)}%`}
+        delta={onTime >= 0.85 ? "dentro de rango" : "por debajo del objetivo"}
+        trend={onTime >= 0.85 ? "down" : "up"}
         icon={Clock}
-        tone="warning"
+        tone={onTime < 0.80 ? "warning" : "default"}
       />
       <MetricCard
         label="Vuelos riesgo alto"
-        value={String(m.highRiskCount)}
-        delta={`${m.mediumRiskCount} medios · ${m.lowRiskCount} bajos`}
+        value={String(high)}
+        delta={`${med} medios · ${low} bajos`}
         icon={TriangleAlert}
-        tone="danger"
+        tone={high > 10 ? "danger" : "warning"}
       />
     </div>
   );
