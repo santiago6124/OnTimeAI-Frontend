@@ -9,6 +9,7 @@ import {
   CloudSun,
   FileText,
   Settings,
+  ClipboardCheck,
 } from "lucide-react";
 
 import {
@@ -31,6 +32,7 @@ const AIRLINE_NAV = [
   { href: "/routes", label: "Historial por ruta", icon: Route },
   { href: "/weather", label: "Meteorología", icon: CloudSun },
   { href: "/reports", label: "Reportes", icon: FileText },
+  { href: "/tesis/casos-de-prueba", label: "Casos de prueba", icon: ClipboardCheck },
 ];
 
 const PASSENGER_NAV = [

@@ -5,6 +5,7 @@ import {
   EyeOff,
   FlaskConical,
   Plane,
+  ClipboardCheck,
 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
@@ -18,6 +19,14 @@ import {
 import { Badge } from "@/components/ui/badge";
 
 const EXPERIMENTS = [
+  {
+    href: "/tesis/casos-de-prueba",
+    icon: ClipboardCheck,
+    title: "Casos de prueba formales",
+    description:
+      "Tres casos de prueba ejecutados en vivo: detección de vuelo alto riesgo (CP-01), precisión del modelo AUC/Brier (CP-02) y tiempo de respuesta del sistema (CP-03).",
+    status: "Activo — datos reales de KATL",
+  },
   {
     href: "/tesis/flights",
     icon: Plane,
