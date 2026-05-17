@@ -53,6 +53,33 @@ export type ModelInfo = {
   threshold: number;
 };
 
+export type CP01Result = {
+  fa_flight_id: string;
+  flight_number: string;
+  airline_code: string;
+  origin: string;
+  destination: string;
+  scheduled_out_utc: string;
+  predicted_proba: number;
+  predicted_risk: RiskLevel;
+  actual_delay_min: number;
+  shap: ShapFactor[];
+  passed: boolean;
+};
+
+export type CP02Result = {
+  n_actuals: number;
+  auc: number | null;
+  brier: number | null;
+  actual_delay_rate: number | null;
+  passed: boolean;
+};
+
+export type TestCasesResponse = {
+  cp01: CP01Result | null;
+  cp02: CP02Result;
+};
+
 async function get<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
     next: { revalidate: 60 },
@@ -62,12 +89,15 @@ async function get<T>(path: string, options?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+export const BASE_URL = BASE;
+
 export const api = {
   flights:       () => get<Flight[]>("/flights"),
   flight:        (id: string) => get<Flight>(`/flights/${encodeURIComponent(id)}`),
   summary:       () => get<MetricsSummary>("/metrics/summary"),
   hourly:        () => get<HourlyBucket[]>("/metrics/hourly"),
   model:         () => get<ModelInfo>("/metrics/model"),
+  testCases:     () => get<TestCasesResponse>("/test-cases"),
 };
 
 // Helpers
