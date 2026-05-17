@@ -3,7 +3,7 @@ import { MetricCards } from "@/components/metric-cards";
 import { FlightsTable } from "@/components/flights-table";
 import { WeatherCard } from "@/components/weather-card";
 import { HourlyDelayChart } from "@/components/hourly-delay-chart";
-import { RoutesTable } from "@/components/routes-table";
+import { ModelBadge } from "@/components/model-badge";
 
 export default function DashboardPage() {
   return (
@@ -14,8 +14,7 @@ export default function DashboardPage() {
             Vuelos del día — ATL
           </h1>
           <p className="text-sm text-muted-foreground">
-            Predicción batch de retrasos para Hartsfield-Jackson Atlanta
-            International Airport.
+            Predicción en tiempo real de retrasos · Hartsfield-Jackson Atlanta
           </p>
         </header>
 
@@ -25,12 +24,13 @@ export default function DashboardPage() {
           <div className="lg:col-span-2">
             <HourlyDelayChart />
           </div>
-          <WeatherCard />
+          <div className="flex flex-col gap-4">
+            <ModelBadge />
+            <WeatherCard />
+          </div>
         </div>
 
         <FlightsTable />
-
-        <RoutesTable />
       </div>
     </AppShell>
   );
