@@ -1,13 +1,23 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { ProfileSwitcher } from "@/components/profile-switcher";
 import { Badge } from "@/components/ui/badge";
-import { Radio } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Radio, LogOut } from "lucide-react";
+import { clearToken } from "@/lib/auth";
 
 export function AppHeader({ title }: { title?: string }) {
+  const router = useRouter();
+
+  function handleLogout() {
+    clearToken();
+    router.replace("/login");
+  }
+
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b bg-background/80 px-4 backdrop-blur">
       <SidebarTrigger className="-ml-1" />
@@ -26,6 +36,15 @@ export function AppHeader({ title }: { title?: string }) {
       <div className="ml-auto flex items-center gap-2">
         <ProfileSwitcher />
         <ThemeSwitcher />
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleLogout}
+          title="Cerrar sesión"
+          className="text-muted-foreground hover:text-foreground"
+        >
+          <LogOut className="size-4" />
+        </Button>
       </div>
     </header>
   );
