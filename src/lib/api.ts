@@ -82,16 +82,28 @@ export type TestCasesResponse = {
   cp02: CP02Result;
 };
 
-function authHeaders(): HeadersInit {
-  const token = getToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
+async function getAuthHeaders(): Promise<HeadersInit> {
+  if (typeof window !== "undefined") {
+    const token = getToken();
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  }
+  // Server Component: read token from cookie via next/headers
+  try {
+    const { cookies } = await import("next/headers");
+    const store = await cookies();
+    const token = store.get("auth-token")?.value;
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  } catch {
+    return {};
+  }
 }
 
 async function get<T>(path: string, options?: RequestInit): Promise<T> {
+  const authHdrs = await getAuthHeaders();
   const res = await fetch(`${BASE}${path}`, {
-    next: { revalidate: 60 },
+    cache: "no-store",
     ...options,
-    headers: { ...authHeaders(), ...(options?.headers ?? {}) },
+    headers: { ...authHdrs, ...(options?.headers ?? {}) },
   });
   if (res.status === 401) {
     if (typeof window !== "undefined") window.location.href = "/login";
