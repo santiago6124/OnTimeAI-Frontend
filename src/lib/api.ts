@@ -1,3 +1,5 @@
+import { getToken } from "@/lib/auth";
+
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 export type RiskLevel = "low" | "medium" | "high";
@@ -80,13 +82,33 @@ export type TestCasesResponse = {
   cp02: CP02Result;
 };
 
+function authHeaders(): HeadersInit {
+  const token = getToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 async function get<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
     next: { revalidate: 60 },
     ...options,
+    headers: { ...authHeaders(), ...(options?.headers ?? {}) },
   });
+  if (res.status === 401) {
+    if (typeof window !== "undefined") window.location.href = "/login";
+    throw new Error("Unauthorized");
+  }
   if (!res.ok) throw new Error(`API ${path} → ${res.status}`);
   return res.json() as Promise<T>;
+}
+
+export async function apiLogin(username: string, password: string) {
+  const res = await fetch(`${BASE}/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password }),
+  });
+  if (!res.ok) throw new Error("Credenciales incorrectas");
+  return res.json() as Promise<{ access_token: string; token_type: string }>;
 }
 
 export const BASE_URL = BASE;
