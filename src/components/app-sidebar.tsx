@@ -10,6 +10,7 @@ import {
   FileText,
   Settings,
   ClipboardCheck,
+  FlaskConical,
 } from "lucide-react";
 
 import {
@@ -33,6 +34,7 @@ const AIRLINE_NAV = [
   { href: "/weather", label: "Meteorología", icon: CloudSun },
   { href: "/reports", label: "Reportes", icon: FileText },
   { href: "/tesis/casos-de-prueba", label: "Casos de prueba", icon: ClipboardCheck },
+  { href: "/tesis/pruebas", label: "Sandbox API", icon: FlaskConical },
 ];
 
 const PASSENGER_NAV = [
