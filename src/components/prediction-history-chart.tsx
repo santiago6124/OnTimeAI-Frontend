@@ -26,7 +26,16 @@ function riskColor(proba: number) {
   return "var(--color-risk-low)";
 }
 
-export function PredictionHistoryChart({ history }: { history: PredictionPoint[] }) {
+export function PredictionHistoryChart({
+  history,
+  arrDelayMin,
+}: {
+  history: PredictionPoint[];
+  arrDelayMin?: number | null;
+}) {
+  const hasActual = arrDelayMin !== null && arrDelayMin !== undefined;
+  const actuallyDelayed = hasActual && arrDelayMin! > 15;
+
   if (history.length < 2) {
     return (
       <Card>
@@ -57,7 +66,20 @@ export function PredictionHistoryChart({ history }: { history: PredictionPoint[]
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium">Evolución de predicciones</CardTitle>
+        <CardTitle className="text-sm font-medium flex items-center gap-2">
+          Evolución de predicciones
+          {hasActual && (
+            <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${
+              actuallyDelayed
+                ? "bg-risk-high/10 text-risk-high"
+                : "bg-risk-low/10 text-risk-low"
+            }`}>
+              {actuallyDelayed
+                ? `Resultado: demorado (+${Math.round(arrDelayMin!)} min)`
+                : "Resultado: a tiempo"}
+            </span>
+          )}
+        </CardTitle>
         <CardDescription>
           {history.length} ciclos registrados · actualización cada 30 min
         </CardDescription>

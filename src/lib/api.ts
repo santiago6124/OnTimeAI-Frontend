@@ -25,6 +25,8 @@ export type Flight = {
   predicted_delay: number;
   predicted_at_utc: string;
   has_actual: boolean;
+  arr_delay_min: number | null;
+  departure_delay_min: number | null;
   shap?: ShapFactor[];
 };
 
