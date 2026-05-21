@@ -140,9 +140,11 @@ export function riskLabel(risk: RiskLevel) {
 }
 
 export function fmtTime(utc: string) {
-  if (!utc) return "--:--";
+  if (!utc) return "--";
   const d = new Date(utc);
-  return d.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" });
+  const date = d.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", timeZone: "UTC" });
+  const time = d.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" });
+  return `${date} ${time}`;
 }
 
 export function fmtProba(p: number) {
