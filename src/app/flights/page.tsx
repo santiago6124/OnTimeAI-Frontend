@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { AppShell } from "@/components/app-shell";
 import { FlightsTable } from "@/components/flights-table";
 
@@ -13,7 +14,9 @@ export default function FlightsPage() {
             Filtrá por vuelo, aerolínea, destino o nivel de riesgo.
           </p>
         </header>
-        <FlightsTable />
+        <Suspense fallback={<div className="h-96 animate-pulse rounded-lg bg-muted" />}>
+          <FlightsTable />
+        </Suspense>
       </div>
     </AppShell>
   );
