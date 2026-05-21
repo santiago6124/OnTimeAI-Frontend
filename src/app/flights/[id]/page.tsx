@@ -117,9 +117,14 @@ export default async function FlightDetailPage(
               <Separator />
               <KV label="Aeronave" value={flight.aircraft_type || "—"} mono />
               <KV label="Última predicción" value={fmtTime(flight.predicted_at_utc)} mono />
+              <Separator />
               <KV
-                label="Actual disponible"
-                value={flight.has_actual ? "Sí" : "Pendiente"}
+                label="Resultado real"
+                value={
+                  flight.has_actual && flight.arr_delay_min !== null
+                    ? <ActualOutcome arrDelay={flight.arr_delay_min} predicted={!!flight.predicted_delay} />
+                    : <span className="text-muted-foreground text-sm">Pendiente</span>
+                }
               />
             </CardContent>
           </Card>
@@ -129,7 +134,7 @@ export default async function FlightDetailPage(
           </div>
         </div>
 
-        <PredictionHistoryChart history={history} />
+        <PredictionHistoryChart history={history} arrDelayMin={flight.arr_delay_min} />
 
         <WeatherCard />
       </div>
@@ -165,5 +170,20 @@ function KV({
         {value}
       </span>
     </div>
+  );
+}
+
+function ActualOutcome({ arrDelay, predicted }: { arrDelay: number; predicted: boolean }) {
+  const actuallyDelayed = arrDelay > 15;
+  const correct = actuallyDelayed === predicted;
+  return (
+    <span className="flex flex-col items-end gap-0.5">
+      <span className={`text-sm font-medium ${actuallyDelayed ? "text-risk-high" : "text-risk-low"}`}>
+        {actuallyDelayed ? `Demorado (+${Math.round(arrDelay)} min)` : "A tiempo"}
+      </span>
+      <span className={`text-[11px] ${correct ? "text-risk-low" : "text-risk-high"}`}>
+        {correct ? "✓ Predicción correcta" : "✗ Predicción incorrecta"}
+      </span>
+    </span>
   );
 }
