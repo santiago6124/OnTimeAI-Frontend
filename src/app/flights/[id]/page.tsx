@@ -17,6 +17,7 @@ import { RiskBadge } from "@/components/risk-badge";
 import { ShapPanel } from "@/components/shap-panel";
 import { WeatherCard } from "@/components/weather-card";
 import { api, fmtTime, fmtProba, riskLabel } from "@/lib/api";
+import { PredictionHistoryChart } from "@/components/prediction-history-chart";
 
 export default async function FlightDetailPage(
   props: PageProps<"/flights/[id]">,
@@ -28,6 +29,8 @@ export default async function FlightDetailPage(
   } catch {
     notFound();
   }
+
+  const history = await api.flightHistory(decodeURIComponent(id)).catch(() => []);
 
   const shap = (flight.shap ?? []).map((s) => ({
     feature:      s.feature,
@@ -125,6 +128,8 @@ export default async function FlightDetailPage(
             <ShapPanel factors={shap} />
           </div>
         </div>
+
+        <PredictionHistoryChart history={history} />
 
         <WeatherCard />
       </div>
