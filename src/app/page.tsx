@@ -27,7 +27,9 @@ export default function DashboardPage() {
           </div>
           <div className="flex flex-col gap-4">
             <ModelBadge />
-            <WeatherCard />
+            <Suspense fallback={<div className="h-48 animate-pulse rounded-lg bg-muted" />}>
+              <WeatherCard />
+            </Suspense>
           </div>
         </div>
 

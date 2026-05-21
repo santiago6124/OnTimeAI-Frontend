@@ -7,7 +7,6 @@ import {
   Plane,
   Route,
   CloudSun,
-  FileText,
   Settings,
   ClipboardCheck,
   FlaskConical,
@@ -32,7 +31,6 @@ const AIRLINE_NAV = [
   { href: "/flights", label: "Vuelos ATL", icon: Plane },
   { href: "/routes", label: "Historial por ruta", icon: Route },
   { href: "/weather", label: "Meteorología", icon: CloudSun },
-  { href: "/reports", label: "Reportes", icon: FileText },
   { href: "/tesis/casos-de-prueba", label: "Casos de prueba", icon: ClipboardCheck },
   { href: "/tesis/pruebas", label: "Sandbox API", icon: FlaskConical },
 ];

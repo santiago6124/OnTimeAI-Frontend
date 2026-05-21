@@ -57,6 +57,40 @@ export type ModelInfo = {
   threshold: number;
 };
 
+export type WeatherData = {
+  airport_code: string;
+  valid_utc: string;
+  temperature_c: number | null;
+  dewpoint_c: number | null;
+  humidity_pct: number | null;
+  wind_direction: number | null;
+  wind_knots: number | null;
+  gust_knots: number | null;
+  altimeter_inhg: number | null;
+  precip_mm: number | null;
+  visibility_miles: number | null;
+  wx_codes: string | null;
+  precip_flag: boolean;
+  low_visibility: boolean;
+  strong_wind: boolean;
+};
+
+export type RouteMetric = {
+  origin: string;
+  dest: string;
+  route: string;
+  total_flights: number;
+  on_time_rate: number;
+  avg_delay_min: number;
+};
+
+export type RouteHistoryPoint = {
+  date: string;
+  total: number;
+  on_time_rate: number;
+  avg_delay_min: number;
+};
+
 export type PredictionPoint = {
   predicted_at_utc: string;
   delay_probability: number;
@@ -137,6 +171,9 @@ export const api = {
   flights:       () => get<Flight[]>("/flights"),
   flight:        (id: string) => get<Flight>(`/flights/${encodeURIComponent(id)}`),
   flightHistory: (id: string) => get<PredictionPoint[]>(`/flight-history/${encodeURIComponent(id)}`),
+  weather:       (code: string) => get<WeatherData>(`/weather/${code}`),
+  routes:        () => get<RouteMetric[]>("/metrics/routes"),
+  routeHistory:  (origin: string, dest: string) => get<RouteHistoryPoint[]>(`/metrics/routes/${origin}/${dest}/history`),
   summary:       () => get<MetricsSummary>("/metrics/summary"),
   hourly:        () => get<HourlyBucket[]>("/metrics/hourly"),
   model:         () => get<ModelInfo>("/metrics/model"),

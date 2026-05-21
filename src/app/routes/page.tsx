@@ -1,16 +1,25 @@
-// UGS-38: página de historial de puntualidad por ruta
-// UGS-132: incluye gráfico de tendencia semanal
-// UGS-133: gráfico conectado a GET /api/routes/{origin}/{destination}/history
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { RoutesTable } from "@/components/routes-table";
 import { RouteHistoryChart } from "@/components/route-history-chart";
-import { MOCK_ROUTES } from "@/lib/mock-data";
+import { api, type RouteMetric } from "@/lib/api";
 
 export default function RoutesPage() {
-  const [selectedRoute, setSelectedRoute] = useState(MOCK_ROUTES[0].route);
+  const [routes, setRoutes] = useState<RouteMetric[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<{ origin: string; dest: string } | null>(null);
+
+  useEffect(() => {
+    api.routes()
+      .then((data) => {
+        setRoutes(data);
+        if (data.length > 0) setSelected({ origin: data[0].origin, dest: data[0].dest });
+      })
+      .catch(() => setRoutes([]))
+      .finally(() => setLoading(false));
+  }, []);
 
   return (
     <AppShell title="Historial por ruta">
@@ -20,15 +29,16 @@ export default function RoutesPage() {
             Puntualidad histórica por ruta
           </h1>
           <p className="text-sm text-muted-foreground">
-            Seleccioná una ruta para ver su tendencia semanal de las últimas 12
-            semanas.
+            Basado en vuelos completados con actuals confirmados. Seleccioná una ruta para ver su tendencia.
           </p>
         </header>
         <RoutesTable
-          selectedRoute={selectedRoute}
-          onRouteSelect={setSelectedRoute}
+          routes={routes}
+          loading={loading}
+          selectedRoute={selected ? `${selected.origin} → ${selected.dest}` : undefined}
+          onRouteSelect={(origin, dest) => setSelected({ origin, dest })}
         />
-        <RouteHistoryChart route={selectedRoute} />
+        {selected && <RouteHistoryChart origin={selected.origin} dest={selected.dest} />}
       </div>
     </AppShell>
   );
