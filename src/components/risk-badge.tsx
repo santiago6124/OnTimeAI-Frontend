@@ -21,7 +21,7 @@ const RISK_STYLES: Record<
   },
   high: {
     label: "Alto",
-    dot: "bg-risk-high animate-pulse",
+    dot: "bg-risk-high motion-safe:animate-pulse",
     bg: "bg-risk-high/10",
     text: "text-risk-high",
     ring: "ring-risk-high/30",

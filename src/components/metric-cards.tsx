@@ -35,7 +35,7 @@ function MetricCard({
           />
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-1">
+      <CardContent className="space-y-1.5">
         <div className="font-mono text-2xl font-semibold tracking-tight">
           {value}
         </div>
@@ -49,15 +49,45 @@ function MetricCard({
             )}
           >
             {trend === "up" ? (
-              <ArrowUpRight className="size-3" />
+              <ArrowUpRight className="size-3 shrink-0" />
             ) : trend === "down" ? (
-              <ArrowDownRight className="size-3" />
+              <ArrowDownRight className="size-3 shrink-0" />
             ) : null}
             {delta}
           </div>
         ) : null}
+        {/* Accent bar based on tone */}
+        <div
+          className={cn(
+            "absolute bottom-0 left-0 h-0.5 w-full",
+            tone === "danger" && "bg-risk-high/40",
+            tone === "warning" && "bg-risk-medium/40",
+            tone === "default" && "bg-primary/20",
+          )}
+        />
       </CardContent>
     </Card>
+  );
+}
+
+export function MetricCardsSkeleton() {
+  return (
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <Card key={i} className="relative overflow-hidden">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <div className="h-3 w-28 animate-pulse rounded bg-muted" />
+              <div className="size-4 animate-pulse rounded bg-muted" />
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-1.5">
+            <div className="h-8 w-20 animate-pulse rounded bg-muted" />
+            <div className="h-3 w-36 animate-pulse rounded bg-muted" />
+          </CardContent>
+        </Card>
+      ))}
+    </div>
   );
 }
 
@@ -69,19 +99,45 @@ export async function MetricCards() {
     m = null;
   }
 
-  const total   = m?.total_flights ?? 0;
-  const onTime  = total > 0 ? 1 - (m?.avg_delay_probability ?? 0) : 0;
-  const posRate = fmtProba(m?.avg_delay_probability ?? 0);
-  const high    = m?.high_risk ?? 0;
-  const med     = m?.medium_risk ?? 0;
-  const low     = m?.low_risk ?? 0;
+  if (!m) {
+    return (
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {[
+          { label: "Vuelos del día", icon: Plane },
+          { label: "Prob. retraso promedio", icon: TrendingUp },
+          { label: "Puntualidad estimada", icon: Clock },
+          { label: "Vuelos riesgo alto", icon: TriangleAlert },
+        ].map(({ label, icon: Icon }) => (
+          <Card key={label} className="relative overflow-hidden">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center justify-between text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                <span>{label}</span>
+                <Icon className="size-4" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-1.5">
+              <div className="font-mono text-2xl font-semibold tracking-tight text-muted-foreground">—</div>
+              <div className="text-xs text-muted-foreground">Sin datos disponibles</div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
+  const total  = m.total_flights ?? 0;
+  const onTime = total > 0 ? 1 - (m.avg_delay_probability ?? 0) : 0;
+  const posRate = fmtProba(m.avg_delay_probability ?? 0);
+  const high   = m.high_risk ?? 0;
+  const med    = m.medium_risk ?? 0;
+  const low    = m.low_risk ?? 0;
 
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       <MetricCard
         label="Vuelos del día"
         value={String(total)}
-        delta={m ? `modelo ${m.model_version}` : "sin datos"}
+        delta={`modelo ${m.model_version}`}
         trend="neutral"
         icon={Plane}
       />

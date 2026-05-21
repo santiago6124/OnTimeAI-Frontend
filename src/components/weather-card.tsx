@@ -1,15 +1,22 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Cloud, Eye, Thermometer, Wind } from "lucide-react";
 import { api, type WeatherData } from "@/lib/api";
+import { cn } from "@/lib/utils";
 
 function toF(c: number | null): string {
-  if (c === null) return "--";
+  if (c === null) return "—";
   return `${Math.round(c * 9 / 5 + 32)}°F`;
+}
+
+function validWx(wx: string | null | undefined): string | null {
+  if (!wx || wx === "M" || wx.trim() === "") return null;
+  return wx.trim();
 }
 
 function buildCondition(d: WeatherData): string {
   const parts: string[] = [];
-  if (d.wx_codes) parts.push(d.wx_codes);
+  const wx = validWx(d.wx_codes);
+  if (wx) parts.push(wx);
   if (d.precip_flag) parts.push("Precipitación");
   if (d.low_visibility) parts.push("Baja visibilidad");
   if (d.strong_wind) parts.push("Vientos fuertes");
@@ -24,12 +31,18 @@ function buildMetar(d: WeatherData): string {
   const spd = Math.round(d.wind_knots ?? 0).toString().padStart(2, "0");
   const gust = d.gust_knots ? `G${Math.round(d.gust_knots).toString().padStart(2, "0")}` : "";
   const vis = d.visibility_miles != null ? `${d.visibility_miles}SM` : "";
-  const wx = d.wx_codes ?? "";
+  const wx = validWx(d.wx_codes) ?? "";
   const t = Math.round(d.temperature_c ?? 0);
   const td = Math.round(d.dewpoint_c ?? 0);
   const tStr = `${t < 0 ? "M" : ""}${Math.abs(t).toString().padStart(2, "0")}/${td < 0 ? "M" : ""}${Math.abs(td).toString().padStart(2, "0")}`;
   const alti = d.altimeter_inhg != null ? `A${Math.round(d.altimeter_inhg * 100)}` : "";
   return `KATL ${day}${hhmm}Z ${dir}${spd}${gust}KT ${vis} ${wx} ${tStr} ${alti}`.replace(/\s{2,}/g, " ").trim();
+}
+
+function conditionSeverity(d: WeatherData): "normal" | "caution" | "severe" {
+  if (d.low_visibility || d.strong_wind) return "severe";
+  if (d.precip_flag || validWx(d.wx_codes)) return "caution";
+  return "normal";
 }
 
 export async function WeatherCard({ title = "Condiciones meteorológicas ATL" }: { title?: string }) {
@@ -55,23 +68,72 @@ export async function WeatherCard({ title = "Condiciones meteorológicas ATL" }:
           </p>
         ) : (
           <>
+            {/* Condition banner */}
+            {conditionSeverity(data) !== "normal" && (
+              <div
+                className={cn(
+                  "flex items-center gap-2 rounded-md px-3 py-2 text-xs font-medium",
+                  conditionSeverity(data) === "severe"
+                    ? "bg-risk-high/10 text-risk-high"
+                    : "bg-risk-medium/10 text-risk-medium",
+                )}
+              >
+                <span className={cn(
+                  "size-1.5 rounded-full",
+                  conditionSeverity(data) === "severe" ? "bg-risk-high" : "bg-risk-medium",
+                )} />
+                {buildCondition(data)}
+              </div>
+            )}
+
+            {/* Stats grid */}
             <div className="grid grid-cols-3 gap-2">
-              <WeatherStat icon={<Thermometer className="size-4" />} label="Temp" value={toF(data.temperature_c)} />
-              <WeatherStat icon={<Wind className="size-4" />} label="Viento" value={`${Math.round(data.wind_knots ?? 0)} kt`} />
-              <WeatherStat icon={<Eye className="size-4" />} label="Visibilidad" value={data.visibility_miles != null ? `${data.visibility_miles} SM` : "--"} />
+              <WeatherStat
+                icon={<Thermometer className="size-3.5" />}
+                label="Temp"
+                value={toF(data.temperature_c)}
+              />
+              <WeatherStat
+                icon={<Wind className="size-3.5" />}
+                label="Viento"
+                value={`${Math.round(data.wind_knots ?? 0)} kt`}
+                alert={data.strong_wind}
+              />
+              <WeatherStat
+                icon={<Eye className="size-3.5" />}
+                label="Visib."
+                value={data.visibility_miles != null ? `${data.visibility_miles} SM` : "—"}
+                alert={data.low_visibility}
+              />
             </div>
+
+            {conditionSeverity(data) === "normal" && (
+              <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                <span className="size-1.5 rounded-full bg-risk-low" />
+                Despejado
+              </div>
+            )}
+
+            {/* METAR */}
             <div className="space-y-1">
-              <div className="text-xs text-muted-foreground">Condición actual</div>
-              <div className="text-sm">{buildCondition(data)}</div>
-            </div>
-            <div className="space-y-1">
-              <div className="text-xs text-muted-foreground">METAR</div>
-              <code className="block rounded bg-muted px-2 py-1 font-mono text-[11px] text-muted-foreground">
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">METAR</div>
+              <code className="block rounded bg-muted px-2 py-1.5 font-mono text-[11px] leading-relaxed text-muted-foreground">
                 {buildMetar(data)}
               </code>
             </div>
+
             <div className="text-[11px] text-muted-foreground">
-              Actualizado: {new Date(data.valid_utc.endsWith("Z") ? data.valid_utc : data.valid_utc + "Z").toLocaleString("es-AR", { timeZone: "UTC", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })} UTC
+              Actualizado:{" "}
+              {new Date(
+                data.valid_utc.endsWith("Z") ? data.valid_utc : data.valid_utc + "Z",
+              ).toLocaleString("es-AR", {
+                timeZone: "UTC",
+                day: "2-digit",
+                month: "2-digit",
+                hour: "2-digit",
+                minute: "2-digit",
+              })}{" "}
+              UTC
             </div>
           </>
         )}
@@ -80,14 +142,35 @@ export async function WeatherCard({ title = "Condiciones meteorológicas ATL" }:
   );
 }
 
-function WeatherStat({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+function WeatherStat({
+  icon,
+  label,
+  value,
+  alert = false,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  alert?: boolean;
+}) {
   return (
-    <div className="rounded-md border bg-muted/30 p-2">
-      <div className="flex items-center gap-1 text-[10px] uppercase tracking-wide text-muted-foreground">
+    <div className={cn(
+      "rounded-md border p-2 transition-colors",
+      alert ? "border-risk-high/30 bg-risk-high/5" : "bg-muted/30",
+    )}>
+      <div className={cn(
+        "flex items-center gap-1 text-[10px] uppercase tracking-wide",
+        alert ? "text-risk-high" : "text-muted-foreground",
+      )}>
         {icon}
         {label}
       </div>
-      <div className="mt-1 font-mono text-sm">{value}</div>
+      <div className={cn(
+        "mt-1 font-mono text-sm font-medium",
+        alert && "text-risk-high",
+      )}>
+        {value}
+      </div>
     </div>
   );
 }

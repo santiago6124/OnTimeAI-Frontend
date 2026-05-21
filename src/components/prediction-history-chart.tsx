@@ -124,15 +124,17 @@ export function PredictionHistoryChart({
               y={35}
               stroke="var(--color-risk-high)"
               strokeDasharray="4 2"
-              strokeWidth={1}
-              strokeOpacity={0.6}
+              strokeWidth={1.5}
+              strokeOpacity={0.9}
+              label={{ value: "Alto 35%", position: "insideTopRight", fontSize: 10, fill: "var(--color-risk-high)", dy: -6 }}
             />
             <ReferenceLine
               y={15}
               stroke="var(--color-risk-medium)"
               strokeDasharray="4 2"
-              strokeWidth={1}
-              strokeOpacity={0.6}
+              strokeWidth={1.5}
+              strokeOpacity={0.9}
+              label={{ value: "Medio 15%", position: "insideTopRight", fontSize: 10, fill: "var(--color-risk-medium)", dy: -6 }}
             />
             <Area
               type="monotone"
@@ -146,7 +148,9 @@ export function PredictionHistoryChart({
           </AreaChart>
         </ResponsiveContainer>
         <p className="mt-1 text-[11px] text-muted-foreground">
-          Líneas de referencia: 15% (riesgo medio) · 35% (riesgo alto)
+          Actualización cada 30 min · Umbrales:{" "}
+          <span className="text-risk-medium">15% medio</span>{" · "}
+          <span className="text-risk-high">35% alto</span>
         </p>
       </CardContent>
     </Card>
