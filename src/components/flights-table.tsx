@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { ArrowRight, Loader2, Search, X } from "lucide-react";
 
 import {
@@ -30,6 +30,7 @@ const CHIPS: { value: RiskFilter; label: string }[] = [
 
 export function FlightsTable() {
   const router      = useRouter();
+  const pathname    = usePathname();
   const searchParams = useSearchParams();
 
   const [flights, setFlights] = React.useState<Flight[]>([]);
@@ -52,7 +53,7 @@ export function FlightsTable() {
     if (risk !== "all") params.set("risk", risk);
     if (q.trim())       params.set("q",    q.trim());
     const qs = params.toString();
-    router.replace(`/flights${qs ? `?${qs}` : ""}`, { scroll: false });
+    router.replace(`${pathname}${qs ? `?${qs}` : ""}`, { scroll: false });
   }, [risk, q, router]);
 
   const counts = React.useMemo(
@@ -137,8 +138,8 @@ export function FlightsTable() {
               <TableHead className="w-[110px]">Vuelo</TableHead>
               <TableHead className="w-[80px]">Aero.</TableHead>
               <TableHead>Ruta</TableHead>
-              <TableHead className="w-[90px]">Salida UTC</TableHead>
-              <TableHead className="w-[90px]">Llegada UTC</TableHead>
+              <TableHead className="w-[120px]">Salida UTC</TableHead>
+              <TableHead className="w-[120px]">Llegada UTC</TableHead>
               <TableHead className="w-[120px]">Riesgo</TableHead>
               <TableHead className="w-[110px] text-right">Prob. retraso</TableHead>
               <TableHead className="w-[60px]" />
