@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ArrowRight, Loader2, Search } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { ArrowRight, Loader2, Search, X } from "lucide-react";
 
 import {
   Table,
@@ -13,13 +14,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { buttonVariants } from "@/components/ui/button";
 import { RiskBadge } from "@/components/risk-badge";
 import { api, fmtTime, fmtProba, type Flight, type RiskLevel } from "@/lib/api";
@@ -27,11 +21,23 @@ import { cn } from "@/lib/utils";
 
 type RiskFilter = "all" | RiskLevel;
 
+const CHIPS: { value: RiskFilter; label: string }[] = [
+  { value: "all",    label: "Todos"  },
+  { value: "high",   label: "Alto"   },
+  { value: "medium", label: "Medio"  },
+  { value: "low",    label: "Bajo"   },
+];
+
 export function FlightsTable() {
+  const router      = useRouter();
+  const searchParams = useSearchParams();
+
   const [flights, setFlights] = React.useState<Flight[]>([]);
-  const [loading, setLoading]  = React.useState(true);
-  const [q,       setQ]        = React.useState("");
-  const [risk,    setRisk]     = React.useState<RiskFilter>("all");
+  const [loading, setLoading] = React.useState(true);
+  const [q,    setQ]    = React.useState(() => searchParams.get("q")    ?? "");
+  const [risk, setRisk] = React.useState<RiskFilter>(
+    () => (searchParams.get("risk") as RiskFilter) ?? "all",
+  );
 
   React.useEffect(() => {
     api.flights()
@@ -39,6 +45,25 @@ export function FlightsTable() {
       .catch(() => setFlights([]))
       .finally(() => setLoading(false));
   }, []);
+
+  // Sync filters → URL (replace so back button skips intermediate filter states)
+  React.useEffect(() => {
+    const params = new URLSearchParams();
+    if (risk !== "all") params.set("risk", risk);
+    if (q.trim())       params.set("q",    q.trim());
+    const qs = params.toString();
+    router.replace(`/flights${qs ? `?${qs}` : ""}`, { scroll: false });
+  }, [risk, q, router]);
+
+  const counts = React.useMemo(
+    () => ({
+      all:    flights.length,
+      high:   flights.filter((f) => f.risk === "high").length,
+      medium: flights.filter((f) => f.risk === "medium").length,
+      low:    flights.filter((f) => f.risk === "low").length,
+    }),
+    [flights],
+  );
 
   const filtered = React.useMemo(() => {
     const term = q.trim().toLowerCase();
@@ -56,27 +81,53 @@ export function FlightsTable() {
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-        <div className="relative flex-1">
+      <div className="flex flex-col gap-2">
+        <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Buscar por vuelo, aerolínea o destino..."
-            className="pl-9"
+            className="pl-9 pr-9"
           />
+          {q && (
+            <button
+              onClick={() => setQ("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              aria-label="Limpiar búsqueda"
+            >
+              <X className="size-4" />
+            </button>
+          )}
         </div>
-        <Select value={risk} onValueChange={(v) => setRisk(v as RiskFilter)}>
-          <SelectTrigger className="w-full sm:w-[180px]">
-            <SelectValue placeholder="Filtrar por riesgo" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos los riesgos</SelectItem>
-            <SelectItem value="high">Solo alto</SelectItem>
-            <SelectItem value="medium">Solo medio</SelectItem>
-            <SelectItem value="low">Solo bajo</SelectItem>
-          </SelectContent>
-        </Select>
+
+        {/* UGS-112: chips con contadores */}
+        <div className="flex flex-wrap gap-2">
+          {CHIPS.map(({ value, label }) => (
+            <button
+              key={value}
+              onClick={() => setRisk(value)}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+                risk === value
+                  ? "border-transparent bg-primary text-primary-foreground"
+                  : "border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground",
+              )}
+            >
+              {label}
+              <span
+                className={cn(
+                  "rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums",
+                  risk === value
+                    ? "bg-white/20 text-inherit"
+                    : "bg-muted text-foreground",
+                )}
+              >
+                {loading ? "…" : counts[value]}
+              </span>
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="rounded-lg border bg-card">
