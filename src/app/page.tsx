@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { AppShell } from "@/components/app-shell";
 import { MetricCards } from "@/components/metric-cards";
 import { FlightsTable } from "@/components/flights-table";
@@ -30,7 +31,9 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <FlightsTable />
+        <Suspense fallback={<div className="h-96 animate-pulse rounded-lg bg-muted" />}>
+          <FlightsTable />
+        </Suspense>
       </div>
     </AppShell>
   );

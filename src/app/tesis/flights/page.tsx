@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { Suspense } from "react";
 import Link from "next/link";
 import { ArrowLeft, EyeOff } from "lucide-react";
 
@@ -55,7 +56,9 @@ export default function TesisFlightsPage() {
           />
         </Card>
 
-        <FlightsTable />
+        <Suspense fallback={<div className="h-96 animate-pulse rounded-lg bg-muted" />}>
+          <FlightsTable />
+        </Suspense>
       </div>
     </AppShell>
   );
