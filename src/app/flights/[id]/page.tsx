@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ArrowRight, Plane } from "lucide-react";
+import { ArrowRight, Plane } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
+import { BackButton } from "@/components/back-button";
 import { buttonVariants } from "@/components/ui/button";
 import {
   Card,
@@ -39,13 +40,7 @@ export default async function FlightDetailPage(
     <AppShell title={`Vuelo ${flight.flight_number}`}>
       <div className="space-y-4">
         <div>
-          <Link
-            href="/"
-            className={buttonVariants({ variant: "ghost", size: "sm" }) + " gap-1 -ml-2"}
-          >
-            <ArrowLeft className="size-4" />
-            Volver al dashboard
-          </Link>
+          <BackButton />
         </div>
 
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
