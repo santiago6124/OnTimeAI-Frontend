@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight, Plane } from "lucide-react";
@@ -136,7 +137,9 @@ export default async function FlightDetailPage(
 
         <PredictionHistoryChart history={history} arrDelayMin={flight.arr_delay_min} />
 
-        <WeatherCard />
+        <Suspense fallback={<div className="h-48 animate-pulse rounded-lg bg-muted" />}>
+          <WeatherCard />
+        </Suspense>
       </div>
     </AppShell>
   );

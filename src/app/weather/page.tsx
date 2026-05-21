@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { AppShell } from "@/components/app-shell";
 import { WeatherCard } from "@/components/weather-card";
 import { HourlyDelayChart } from "@/components/hourly-delay-chart";
@@ -11,11 +12,13 @@ export default function WeatherPage() {
             Condiciones meteorológicas — KATL
           </h1>
           <p className="text-sm text-muted-foreground">
-            Datos actuales de NOAA y correlación con retrasos históricos.
+            Datos actuales de IEM/METAR y correlación con retrasos del día.
           </p>
         </header>
         <div className="grid gap-4 lg:grid-cols-2">
-          <WeatherCard />
+          <Suspense fallback={<div className="h-48 animate-pulse rounded-lg bg-muted" />}>
+            <WeatherCard />
+          </Suspense>
           <HourlyDelayChart />
         </div>
       </div>

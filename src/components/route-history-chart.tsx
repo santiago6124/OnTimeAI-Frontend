@@ -1,68 +1,36 @@
-// UGS-132: componente de gráfico de tendencia histórica de puntualidad por ruta
-// UGS-133: consume GET /api/routes/{origin}/{destination}/history
 "use client";
 
 import { useEffect, useState } from "react";
 import {
-  CartesianGrid,
-  Line,
-  LineChart,
-  ReferenceLine,
-  XAxis,
-  YAxis,
+  CartesianGrid, Line, LineChart, ReferenceLine, XAxis, YAxis,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  type ChartConfig,
+  ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig,
 } from "@/components/ui/chart";
-import type { RouteHistoryPoint } from "@/lib/mock-data";
+import { api, type RouteHistoryPoint } from "@/lib/api";
 
 const chartConfig = {
-  onTimeRate: {
-    label: "Puntualidad",
-    color: "var(--chart-2)",
-  },
+  on_time_rate: { label: "Puntualidad", color: "var(--chart-2)" },
 } satisfies ChartConfig;
 
-interface RouteHistoryChartProps {
-  route: string;
-}
-
-export function RouteHistoryChart({ route }: RouteHistoryChartProps) {
+export function RouteHistoryChart({ origin, dest }: { origin: string; dest: string }) {
   const [data, setData] = useState<RouteHistoryPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
   useEffect(() => {
+    if (!origin || !dest) return;
     setLoading(true);
     setError(false);
+    api.routeHistory(origin, dest)
+      .then((d) => { setData(d); setLoading(false); })
+      .catch(() => { setError(true); setLoading(false); });
+  }, [origin, dest]);
 
-    const [origin, destination] = route.split(" → ");
-    if (!origin || !destination) return;
-
-    fetch(`/api/routes/${origin}/${destination}/history`)
-      .then((r) => {
-        if (!r.ok) throw new Error("fetch error");
-        return r.json();
-      })
-      .then((json: { data: RouteHistoryPoint[] }) => {
-        setData(json.data);
-        setLoading(false);
-      })
-      .catch(() => {
-        setError(true);
-        setLoading(false);
-      });
-  }, [route]);
-
-  const avg =
-    data.length > 0
-      ? data.reduce((s, p) => s + p.onTimeRate, 0) / data.length
-      : null;
+  const avg = data.length > 0 ? data.reduce((s, p) => s + p.on_time_rate, 0) / data.length : null;
+  const route = `${origin} → ${dest}`;
 
   return (
     <Card>
@@ -72,15 +40,11 @@ export function RouteHistoryChart({ route }: RouteHistoryChartProps) {
             Tendencia de puntualidad — {route}
           </CardTitle>
           {avg !== null && (
-            <span
-              className={
-                avg >= 0.75
-                  ? "text-xs font-mono text-risk-low"
-                  : avg >= 0.6
-                    ? "text-xs font-mono text-risk-medium"
-                    : "text-xs font-mono text-risk-high"
-              }
-            >
+            <span className={
+              avg >= 0.75 ? "text-xs font-mono text-risk-low"
+              : avg >= 0.6 ? "text-xs font-mono text-risk-medium"
+              : "text-xs font-mono text-risk-high"
+            }>
               Prom. {Math.round(avg * 100)}%
             </span>
           )}
@@ -89,62 +53,29 @@ export function RouteHistoryChart({ route }: RouteHistoryChartProps) {
       <CardContent>
         {loading ? (
           <Skeleton className="h-[220px] w-full" />
-        ) : error ? (
+        ) : error || data.length === 0 ? (
           <p className="flex h-[220px] items-center justify-center text-xs text-muted-foreground">
-            No se pudo cargar el historial.
+            {error ? "No se pudo cargar el historial." : "Sin datos históricos para esta ruta aún."}
           </p>
         ) : (
           <ChartContainer config={chartConfig} className="h-[220px] w-full">
             <LineChart data={data}>
               <CartesianGrid vertical={false} strokeDasharray="3 3" />
-              <XAxis
-                dataKey="week"
-                tickLine={false}
-                axisLine={false}
-                tickMargin={8}
-                fontSize={11}
-              />
+              <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} fontSize={11} />
               <YAxis
-                tickLine={false}
-                axisLine={false}
-                tickMargin={8}
-                fontSize={11}
-                width={36}
-                domain={[0.3, 1]}
+                tickLine={false} axisLine={false} tickMargin={8} fontSize={11}
+                width={36} domain={[0.3, 1]}
                 tickFormatter={(v: number) => `${Math.round(v * 100)}%`}
               />
-              {/* línea de referencia objetivo 75% */}
               <ReferenceLine
-                y={0.75}
-                stroke="var(--color-onTimeRate)"
-                strokeDasharray="4 4"
-                strokeOpacity={0.5}
-                label={{
-                  value: "75%",
-                  position: "insideTopRight",
-                  fontSize: 10,
-                  fill: "var(--muted-foreground)",
-                }}
+                y={0.75} stroke="var(--color-on_time_rate)"
+                strokeDasharray="4 4" strokeOpacity={0.5}
+                label={{ value: "75%", position: "insideTopRight", fontSize: 10, fill: "var(--muted-foreground)" }}
               />
               <ChartTooltip
-                content={
-                  <ChartTooltipContent
-                    formatter={(value) =>
-                      typeof value === "number"
-                        ? `${Math.round(value * 100)}%`
-                        : String(value)
-                    }
-                  />
-                }
+                content={<ChartTooltipContent formatter={(v) => typeof v === "number" ? `${Math.round(v * 100)}%` : String(v)} />}
               />
-              <Line
-                type="monotone"
-                dataKey="onTimeRate"
-                stroke="var(--color-onTimeRate)"
-                strokeWidth={2}
-                dot={{ r: 3 }}
-                activeDot={{ r: 5 }}
-              />
+              <Line type="monotone" dataKey="on_time_rate" stroke="var(--color-on_time_rate)" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
             </LineChart>
           </ChartContainer>
         )}
