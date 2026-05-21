@@ -30,6 +30,8 @@ export function RouteHistoryChart({ origin, dest }: { origin: string; dest: stri
   }, [origin, dest]);
 
   const avg = data.length > 0 ? data.reduce((s, p) => s + p.on_time_rate, 0) / data.length : null;
+  const minRate = data.length > 0 ? Math.min(...data.map((p) => p.on_time_rate)) : 0;
+  const domainMin = Math.max(0, Math.floor(minRate * 10 - 1) / 10);
   const route = `${origin} → ${dest}`;
 
   return (
@@ -64,7 +66,7 @@ export function RouteHistoryChart({ origin, dest }: { origin: string; dest: stri
               <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} fontSize={11} />
               <YAxis
                 tickLine={false} axisLine={false} tickMargin={8} fontSize={11}
-                width={36} domain={[0.3, 1]}
+                width={36} domain={[domainMin, 1]}
                 tickFormatter={(v: number) => `${Math.round(v * 100)}%`}
               />
               <ReferenceLine

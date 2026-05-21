@@ -18,15 +18,35 @@ const config = {
   },
   high_risk: {
     label: "Riesgo alto",
-    color: "var(--chart-2)",
+    color: "var(--color-risk-high)",
   },
 } satisfies ChartConfig;
 
+function ChartSkeleton() {
+  return (
+    <div className="h-[220px] w-full">
+      <div className="flex h-full items-end gap-1 px-4 pb-6">
+        {Array.from({ length: 18 }).map((_, i) => (
+          <div
+            key={i}
+            className="flex-1 animate-pulse rounded-t bg-muted"
+            style={{ height: `${20 + Math.sin(i * 0.8) * 30 + Math.random() * 20}%` }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function HourlyDelayChart() {
   const [data, setData] = React.useState<HourlyBucket[]>([]);
+  const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
-    api.hourly().then(setData).catch(() => setData([]));
+    api.hourly()
+      .then(setData)
+      .catch(() => setData([]))
+      .finally(() => setLoading(false));
   }, []);
 
   const chartData = data.map((b) => ({
@@ -39,37 +59,75 @@ export function HourlyDelayChart() {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium">
-          Probabilidad de retraso por hora — ATL
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-sm font-medium">
+            Probabilidad de retraso por hora — ATL
+          </CardTitle>
+          {!loading && data.length > 0 && (
+            <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <span className="inline-block size-2 rounded-full bg-[var(--chart-1)]" />
+                Prob. promedio
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="inline-block size-2 rounded-full bg-risk-high" />
+                Riesgo alto
+              </span>
+            </div>
+          )}
+        </div>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={config} className="h-[220px] w-full">
-          <BarChart data={chartData}>
-            <CartesianGrid vertical={false} strokeDasharray="3 3" />
-            <XAxis
-              dataKey="hour"
-              tickLine={false}
-              axisLine={false}
-              tickMargin={8}
-              fontSize={11}
-            />
-            <YAxis
-              tickLine={false}
-              axisLine={false}
-              tickMargin={8}
-              fontSize={11}
-              width={36}
-              tickFormatter={(v) => `${v}%`}
-            />
-            <ChartTooltip content={<ChartTooltipContent />} />
-            <Bar
-              dataKey="avg_proba"
-              fill="var(--color-avg_proba)"
-              radius={[4, 4, 0, 0]}
-            />
-          </BarChart>
-        </ChartContainer>
+        {loading ? (
+          <ChartSkeleton />
+        ) : data.length === 0 ? (
+          <div className="flex h-[220px] items-center justify-center text-sm text-muted-foreground">
+            Sin datos de predicciones para el día de hoy.
+          </div>
+        ) : (
+          <ChartContainer config={config} className="h-[220px] w-full">
+            <BarChart data={chartData} barGap={2}>
+              <CartesianGrid vertical={false} strokeDasharray="3 3" />
+              <XAxis
+                dataKey="hour"
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                fontSize={11}
+              />
+              <YAxis
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                fontSize={11}
+                width={36}
+                tickFormatter={(v) => `${v}%`}
+              />
+              <ChartTooltip
+                content={
+                  <ChartTooltipContent
+                    formatter={(value, name) => {
+                      if (name === "avg_proba") return [`${value}%`, "Prob. promedio"];
+                      if (name === "high_risk") return [String(value), "Vuelos riesgo alto"];
+                      return [String(value), String(name)];
+                    }}
+                  />
+                }
+              />
+              <Bar
+                dataKey="avg_proba"
+                fill="var(--color-avg_proba)"
+                radius={[3, 3, 0, 0]}
+              />
+              <Bar
+                dataKey="high_risk"
+                fill="var(--color-high_risk)"
+                radius={[3, 3, 0, 0]}
+                opacity={0.75}
+              />
+            </BarChart>
+          </ChartContainer>
+        )}
       </CardContent>
     </Card>
   );

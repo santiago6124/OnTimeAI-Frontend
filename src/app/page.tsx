@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { AppShell } from "@/components/app-shell";
-import { MetricCards } from "@/components/metric-cards";
+import { MetricCards, MetricCardsSkeleton } from "@/components/metric-cards";
 import { FlightsTable } from "@/components/flights-table";
 import { WeatherCard } from "@/components/weather-card";
 import { HourlyDelayChart } from "@/components/hourly-delay-chart";
@@ -19,7 +19,9 @@ export default function DashboardPage() {
           </p>
         </header>
 
-        <MetricCards />
+        <Suspense fallback={<MetricCardsSkeleton />}>
+          <MetricCards />
+        </Suspense>
 
         <div className="grid gap-4 lg:grid-cols-3">
           <div className="lg:col-span-2">

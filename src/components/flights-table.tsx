@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { ArrowRight, Loader2, Search, X } from "lucide-react";
+import { ArrowRight, Search, X } from "lucide-react";
 
 import {
   Table,
@@ -28,6 +28,31 @@ const CHIPS: { value: RiskFilter; label: string }[] = [
   { value: "low",    label: "Bajo"   },
 ];
 
+function TableSkeleton() {
+  return (
+    <>
+      {Array.from({ length: 8 }).map((_, i) => (
+        <TableRow key={i} className="hover:bg-transparent">
+          <TableCell><div className="h-4 w-20 animate-pulse rounded bg-muted" /></TableCell>
+          <TableCell className="hidden sm:table-cell">
+            <div className="size-7 animate-pulse rounded bg-muted" />
+          </TableCell>
+          <TableCell><div className="h-4 w-32 animate-pulse rounded bg-muted" /></TableCell>
+          <TableCell className="hidden md:table-cell">
+            <div className="h-4 w-24 animate-pulse rounded bg-muted" />
+          </TableCell>
+          <TableCell className="hidden md:table-cell">
+            <div className="h-4 w-24 animate-pulse rounded bg-muted" />
+          </TableCell>
+          <TableCell><div className="h-5 w-20 animate-pulse rounded-full bg-muted" /></TableCell>
+          <TableCell><div className="ml-auto h-4 w-14 animate-pulse rounded bg-muted" /></TableCell>
+          <TableCell><div className="ml-auto size-7 animate-pulse rounded bg-muted" /></TableCell>
+        </TableRow>
+      ))}
+    </>
+  );
+}
+
 export function FlightsTable() {
   const router      = useRouter();
   const pathname    = usePathname();
@@ -47,7 +72,6 @@ export function FlightsTable() {
       .finally(() => setLoading(false));
   }, []);
 
-  // Sync filters → URL (replace so back button skips intermediate filter states)
   React.useEffect(() => {
     const params = new URLSearchParams();
     if (risk !== "all") params.set("risk", risk);
@@ -102,7 +126,6 @@ export function FlightsTable() {
           )}
         </div>
 
-        {/* UGS-112: chips con contadores */}
         <div className="flex flex-wrap gap-2">
           {CHIPS.map(({ value, label }) => (
             <button
@@ -124,7 +147,7 @@ export function FlightsTable() {
                     : "bg-muted text-foreground",
                 )}
               >
-                {loading ? "…" : counts[value]}
+                {loading ? "—" : counts[value]}
               </span>
             </button>
           ))}
@@ -132,49 +155,44 @@ export function FlightsTable() {
       </div>
 
       <div className="rounded-lg border bg-card">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/30 hover:bg-muted/30">
-              <TableHead className="w-[110px]">Vuelo</TableHead>
-              <TableHead className="w-[80px]">Aero.</TableHead>
-              <TableHead>Ruta</TableHead>
-              <TableHead className="w-[120px]">Salida UTC</TableHead>
-              <TableHead className="w-[120px]">Llegada UTC</TableHead>
-              <TableHead className="w-[120px]">Riesgo</TableHead>
-              <TableHead className="w-[110px] text-right">Prob. retraso</TableHead>
-              <TableHead className="w-[60px]" />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={8}>
-                  <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
-                    <Loader2 className="size-4 animate-spin" />
-                    Cargando predicciones...
-                  </div>
-                </TableCell>
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/30 hover:bg-muted/30">
+                <TableHead className="w-[110px]">Vuelo</TableHead>
+                <TableHead className="hidden w-[80px] sm:table-cell">Aero.</TableHead>
+                <TableHead>Ruta</TableHead>
+                <TableHead className="hidden w-[120px] md:table-cell">Salida UTC</TableHead>
+                <TableHead className="hidden w-[120px] md:table-cell">Llegada UTC</TableHead>
+                <TableHead className="w-[120px]">Riesgo</TableHead>
+                <TableHead className="w-[110px] text-right">Prob.</TableHead>
+                <TableHead className="w-[60px]" />
               </TableRow>
-            ) : filtered.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={8}>
-                  <div className="flex flex-col items-center gap-1 py-10 text-sm text-muted-foreground">
-                    <span>No se encontraron vuelos.</span>
-                    <span className="text-xs">
-                      Probá con otra búsqueda o limpiá los filtros.
-                    </span>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : (
-              filtered.map((f) => <FlightRow key={f.fa_flight_id} flight={f} />)
-            )}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                <TableSkeleton />
+              ) : filtered.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8}>
+                    <div className="flex flex-col items-center gap-1 py-12 text-sm text-muted-foreground">
+                      <span>No se encontraron vuelos.</span>
+                      <span className="text-xs">
+                        Probá con otra búsqueda o limpiá los filtros.
+                      </span>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filtered.map((f) => <FlightRow key={f.fa_flight_id} flight={f} />)
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
       <div className="text-xs text-muted-foreground">
-        {loading ? "Cargando..." : `Mostrando ${filtered.length} de ${flights.length} vuelos`}
+        {loading ? "Cargando vuelos..." : `${filtered.length} de ${flights.length} vuelos`}
       </div>
     </div>
   );
@@ -184,27 +202,27 @@ function FlightRow({ flight: f }: { flight: Flight }) {
   const proba = f.delay_probability;
   return (
     <TableRow className="group">
-      <TableCell className="font-mono text-sm">{f.flight_number}</TableCell>
-      <TableCell>
+      <TableCell className="font-mono text-sm font-medium">{f.flight_number}</TableCell>
+      <TableCell className="hidden sm:table-cell">
         <span className="inline-flex size-7 items-center justify-center rounded bg-muted text-[11px] font-semibold">
           {f.airline_code}
         </span>
       </TableCell>
       <TableCell>
-        <div className="flex items-center gap-2 text-sm">
+        <div className="flex items-center gap-1.5 text-sm">
           <span className="font-mono text-xs text-muted-foreground">{f.origin}</span>
-          <ArrowRight className="size-3 text-muted-foreground" />
-          <span className="font-mono">{f.destination}</span>
+          <ArrowRight className="size-3 shrink-0 text-muted-foreground" />
+          <span className="font-mono text-xs font-medium">{f.destination}</span>
         </div>
       </TableCell>
-      <TableCell className="font-mono text-sm">{fmtTime(f.scheduled_out_utc)}</TableCell>
-      <TableCell className="font-mono text-sm">{fmtTime(f.scheduled_in_utc)}</TableCell>
+      <TableCell className="hidden font-mono text-sm md:table-cell">{fmtTime(f.scheduled_out_utc)}</TableCell>
+      <TableCell className="hidden font-mono text-sm md:table-cell">{fmtTime(f.scheduled_in_utc)}</TableCell>
       <TableCell>
         <RiskBadge risk={f.risk} />
       </TableCell>
       <TableCell
         className={cn(
-          "text-right font-mono text-sm",
+          "text-right font-mono text-sm font-medium",
           proba >= 0.35 && "text-risk-high",
           proba >= 0.15 && proba < 0.35 && "text-risk-medium",
           proba < 0.15 && "text-risk-low",
@@ -215,7 +233,10 @@ function FlightRow({ flight: f }: { flight: Flight }) {
       <TableCell className="text-right">
         <Link
           href={`/flights/${encodeURIComponent(f.fa_flight_id)}`}
-          className={buttonVariants({ variant: "ghost", size: "icon-sm" })}
+          className={cn(
+            buttonVariants({ variant: "ghost", size: "icon-sm" }),
+            "opacity-0 transition-opacity group-hover:opacity-100",
+          )}
           aria-label={`Ver detalle de ${f.flight_number}`}
         >
           <ArrowRight className="size-4" />
