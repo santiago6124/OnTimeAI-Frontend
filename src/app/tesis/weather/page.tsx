@@ -1,15 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, EyeOff, Radar, RefreshCw } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { WeatherCard } from "@/components/weather-card";
 import { HourlyDelayChart } from "@/components/hourly-delay-chart";
+import { ArrowLeft, Cloud, Eye, EyeOff, Radar, RefreshCw, Thermometer, Wind } from "lucide-react";
 import { WeatherMap } from "@/components/maps/weather-map-dynamic";
 import { WeatherErrorCard } from "@/components/weather-error-card";
 import { RawPayloadPanel } from "@/components/raw-payload-panel";
@@ -98,16 +97,38 @@ export default function TesisWeatherPage() {
 
             <div className="grid gap-4 lg:grid-cols-2">
               {atlStation && data.atlRaw ? (
-                <WeatherCard
-                  title="KATL · METAR en vivo"
-                  data={{
-                    temperatureF: atlStation.temperatureF,
-                    windKt: atlStation.windKt,
-                    visibilitySm: atlStation.visibilitySm,
-                    condition: conditionLabel(atlStation.condition),
-                    metar: data.atlRaw,
-                  }}
-                />
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="flex items-center gap-2 text-sm font-medium">
+                      <Cloud className="size-4 text-muted-foreground" />
+                      KATL · METAR en vivo (AWC/NOAA)
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="rounded-md border bg-muted/30 p-2">
+                        <div className="flex items-center gap-1 text-[10px] uppercase tracking-wide text-muted-foreground"><Thermometer className="size-4" />Temp</div>
+                        <div className="mt-1 font-mono text-sm">{atlStation.temperatureF}°F</div>
+                      </div>
+                      <div className="rounded-md border bg-muted/30 p-2">
+                        <div className="flex items-center gap-1 text-[10px] uppercase tracking-wide text-muted-foreground"><Wind className="size-4" />Viento</div>
+                        <div className="mt-1 font-mono text-sm">{atlStation.windKt} kt</div>
+                      </div>
+                      <div className="rounded-md border bg-muted/30 p-2">
+                        <div className="flex items-center gap-1 text-[10px] uppercase tracking-wide text-muted-foreground"><Eye className="size-4" />Visibilidad</div>
+                        <div className="mt-1 font-mono text-sm">{atlStation.visibilitySm} SM</div>
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-xs text-muted-foreground">Condición</div>
+                      <div className="text-sm">{conditionLabel(atlStation.condition)}</div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-xs text-muted-foreground">METAR</div>
+                      <code className="block rounded bg-muted px-2 py-1 font-mono text-[11px] text-muted-foreground">{data.atlRaw}</code>
+                    </div>
+                  </CardContent>
+                </Card>
               ) : null}
               <HourlyDelayChart />
             </div>
