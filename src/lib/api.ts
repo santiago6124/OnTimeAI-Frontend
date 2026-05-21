@@ -55,6 +55,12 @@ export type ModelInfo = {
   threshold: number;
 };
 
+export type PredictionPoint = {
+  predicted_at_utc: string;
+  delay_probability: number;
+  predicted_delay: number;
+};
+
 export type CP01Result = {
   fa_flight_id: string;
   flight_number: string;
@@ -128,6 +134,7 @@ export const BASE_URL = BASE;
 export const api = {
   flights:       () => get<Flight[]>("/flights"),
   flight:        (id: string) => get<Flight>(`/flights/${encodeURIComponent(id)}`),
+  flightHistory: (id: string) => get<PredictionPoint[]>(`/flight-history/${encodeURIComponent(id)}`),
   summary:       () => get<MetricsSummary>("/metrics/summary"),
   hourly:        () => get<HourlyBucket[]>("/metrics/hourly"),
   model:         () => get<ModelInfo>("/metrics/model"),
