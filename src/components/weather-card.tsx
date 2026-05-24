@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Cloud, Eye, Thermometer, Wind } from "lucide-react";
-import { api, type WeatherData } from "@/lib/api";
+import { AlertTriangle, Cloud, Eye, Thermometer, Wind } from "lucide-react";
+import { api, ApiError, type WeatherData } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 function toF(c: number | null): string {
@@ -47,10 +47,11 @@ function conditionSeverity(d: WeatherData): "normal" | "caution" | "severe" {
 
 export async function WeatherCard({ title = "Condiciones meteorológicas ATL" }: { title?: string }) {
   let data: WeatherData | null = null;
+  let errorKind: "unavailable" | "server" | null = null;
   try {
     data = await api.weather("ATL");
-  } catch {
-    // no weather data available
+  } catch (e) {
+    errorKind = e instanceof ApiError && e.status === 404 ? "unavailable" : "server";
   }
 
   return (
@@ -62,11 +63,16 @@ export async function WeatherCard({ title = "Condiciones meteorológicas ATL" }:
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        {!data ? (
+        {errorKind === "server" ? (
+          <div className="flex items-center gap-2 py-4 text-sm text-risk-high">
+            <AlertTriangle className="size-4 shrink-0" />
+            No se pudo conectar con el servidor meteorológico.
+          </div>
+        ) : errorKind === "unavailable" ? (
           <p className="py-4 text-center text-sm text-muted-foreground">
-            Sin datos meteorológicos disponibles.
+            Sin datos meteorológicos disponibles aún.
           </p>
-        ) : (
+        ) : data ? (
           <>
             {/* Condition banner */}
             {conditionSeverity(data) !== "normal" && (
@@ -136,7 +142,7 @@ export async function WeatherCard({ title = "Condiciones meteorológicas ATL" }:
               UTC
             </div>
           </>
-        )}
+        ) : null}
       </CardContent>
     </Card>
   );

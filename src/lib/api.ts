@@ -140,6 +140,13 @@ async function getAuthHeaders(): Promise<HeadersInit> {
   }
 }
 
+export class ApiError extends Error {
+  constructor(public readonly status: number, message: string) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
 async function get<T>(path: string, options?: RequestInit): Promise<T> {
   const authHdrs = await getAuthHeaders();
   const res = await fetch(`${BASE}${path}`, {
@@ -149,9 +156,9 @@ async function get<T>(path: string, options?: RequestInit): Promise<T> {
   });
   if (res.status === 401) {
     if (typeof window !== "undefined") window.location.href = "/login";
-    throw new Error("Unauthorized");
+    throw new ApiError(401, "Unauthorized");
   }
-  if (!res.ok) throw new Error(`API ${path} → ${res.status}`);
+  if (!res.ok) throw new ApiError(res.status, `API ${path} → ${res.status}`);
   return res.json() as Promise<T>;
 }
 
