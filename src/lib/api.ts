@@ -19,6 +19,9 @@ export type Flight = {
   destination: string;
   scheduled_out_utc: string;
   scheduled_in_utc: string;
+  estimated_out_utc: string;
+  estimated_in_utc: string;
+  actual_out_utc: string | null;
   aircraft_type: string;
   risk: RiskLevel;
   delay_probability: number;
@@ -175,7 +178,13 @@ export async function apiLogin(username: string, password: string) {
 export const BASE_URL = BASE;
 
 export const api = {
-  flights:       () => get<Flight[]>("/flights"),
+  flights: (status?: string, departuresWithinMin?: number) => {
+    const params = new URLSearchParams();
+    if (status) params.set("status", status);
+    if (departuresWithinMin !== undefined) params.set("departures_within_min", String(departuresWithinMin));
+    const qs = params.toString();
+    return get<Flight[]>(`/flights${qs ? `?${qs}` : ""}`);
+  },
   flight:        (id: string) => get<Flight>(`/flights/${encodeURIComponent(id)}`),
   flightHistory: (id: string) => get<PredictionPoint[]>(`/flight-history/${encodeURIComponent(id)}`),
   weather:       (code: string) => get<WeatherData>(`/weather/${code}`),
