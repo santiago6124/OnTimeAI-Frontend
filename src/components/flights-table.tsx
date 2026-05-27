@@ -44,6 +44,7 @@ function TableSkeleton() {
           <TableCell className="hidden md:table-cell">
             <div className="h-4 w-24 animate-pulse rounded bg-muted" />
           </TableCell>
+          <TableCell><div className="h-4 w-20 animate-pulse rounded bg-muted" /></TableCell>
           <TableCell><div className="h-5 w-20 animate-pulse rounded-full bg-muted" /></TableCell>
           <TableCell><div className="ml-auto h-4 w-14 animate-pulse rounded bg-muted" /></TableCell>
           <TableCell><div className="ml-auto size-7 animate-pulse rounded bg-muted" /></TableCell>
@@ -53,6 +54,12 @@ function TableSkeleton() {
   );
 }
 
+const STATUS_TABS = [
+  { value: "all",      label: "Todos los vuelos" },
+  { value: "upcoming", label: "Próximas Salidas (45m)" },
+  { value: "departed", label: "Ya Despegaron" },
+];
+
 export function FlightsTable() {
   const router      = useRouter();
   const pathname    = usePathname();
@@ -60,6 +67,9 @@ export function FlightsTable() {
 
   const [flights, setFlights] = React.useState<Flight[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const [statusTab, setStatusTab] = React.useState<"all" | "upcoming" | "departed">(
+    () => (searchParams.get("status") as any) ?? "all",
+  );
   const [q,    setQ]    = React.useState(() => searchParams.get("q")    ?? "");
   const [risk, setRisk] = React.useState<RiskFilter>(
     () => (searchParams.get("risk") as RiskFilter) ?? "all",
@@ -74,26 +84,59 @@ export function FlightsTable() {
 
   React.useEffect(() => {
     const params = new URLSearchParams();
-    if (risk !== "all") params.set("risk", risk);
-    if (q.trim())       params.set("q",    q.trim());
+    if (statusTab !== "all") params.set("status", statusTab);
+    if (risk !== "all")      params.set("risk", risk);
+    if (q.trim())            params.set("q",    q.trim());
     const qs = params.toString();
     router.replace(`${pathname}${qs ? `?${qs}` : ""}`, { scroll: false });
-  }, [risk, q, router]);
+  }, [statusTab, risk, q, router]);
 
-  const counts = React.useMemo(
-    () => ({
-      all:    flights.length,
-      high:   flights.filter((f) => f.risk === "high").length,
-      medium: flights.filter((f) => f.risk === "medium").length,
-      low:    flights.filter((f) => f.risk === "low").length,
-    }),
-    [flights],
-  );
+  const counts = React.useMemo(() => {
+    const now = new Date();
+    const statusFiltered = flights.filter((f) => {
+      const isDeparted = f.actual_out_utc !== null || f.departure_delay_min !== null;
+      if (statusTab === "departed") return isDeparted;
+      if (statusTab === "upcoming") {
+        if (isDeparted) return false;
+        const estOutStr = f.estimated_out_utc || f.scheduled_out_utc;
+        if (!estOutStr) return false;
+        const estOut = new Date(estOutStr);
+        const diffMinutes = (estOut.getTime() - now.getTime()) / (1000 * 60);
+        return diffMinutes >= -15 && diffMinutes <= 45;
+      }
+      return true;
+    });
+
+    return {
+      all:    statusFiltered.length,
+      high:   statusFiltered.filter((f) => f.risk === "high").length,
+      medium: statusFiltered.filter((f) => f.risk === "medium").length,
+      low:    statusFiltered.filter((f) => f.risk === "low").length,
+    };
+  }, [flights, statusTab]);
 
   const filtered = React.useMemo(() => {
     const term = q.trim().toLowerCase();
+    const now = new Date();
+
     return flights.filter((f) => {
+      // 1. Status Tab filter
+      const isDeparted = f.actual_out_utc !== null || f.departure_delay_min !== null;
+      if (statusTab === "departed") {
+        if (!isDeparted) return false;
+      } else if (statusTab === "upcoming") {
+        if (isDeparted) return false;
+        const estOutStr = f.estimated_out_utc || f.scheduled_out_utc;
+        if (!estOutStr) return false;
+        const estOut = new Date(estOutStr);
+        const diffMinutes = (estOut.getTime() - now.getTime()) / (1000 * 60);
+        if (diffMinutes < -15 || diffMinutes > 45) return false;
+      }
+
+      // 2. Risk filter
       if (risk !== "all" && f.risk !== risk) return false;
+
+      // 3. Search query
       if (!term) return true;
       return (
         f.flight_number.toLowerCase().includes(term) ||
@@ -102,10 +145,28 @@ export function FlightsTable() {
         f.origin.toLowerCase().includes(term)
       );
     });
-  }, [flights, q, risk]);
+  }, [flights, q, risk, statusTab]);
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
+      {/* Status Segmented Tabs */}
+      <div className="flex border-b border-border pb-px">
+        {STATUS_TABS.map(({ value, label }) => (
+          <button
+            key={value}
+            onClick={() => setStatusTab(value as any)}
+            className={cn(
+              "border-b-2 px-4 py-2 text-sm font-medium transition-colors -mb-[2px]",
+              statusTab === value
+                ? "border-primary text-foreground"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            )}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
       <div className="flex flex-col gap-2">
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -162,8 +223,9 @@ export function FlightsTable() {
                 <TableHead className="w-[110px]">Vuelo</TableHead>
                 <TableHead className="hidden w-[80px] sm:table-cell">Aero.</TableHead>
                 <TableHead>Ruta</TableHead>
-                <TableHead className="hidden w-[120px] md:table-cell">Salida UTC</TableHead>
-                <TableHead className="hidden w-[120px] md:table-cell">Llegada UTC</TableHead>
+                <TableHead className="hidden w-[150px] md:table-cell">Salida UTC</TableHead>
+                <TableHead className="hidden w-[150px] md:table-cell">Llegada UTC</TableHead>
+                <TableHead className="w-[120px]">Estado</TableHead>
                 <TableHead className="w-[120px]">Riesgo</TableHead>
                 <TableHead className="w-[110px] text-right">Prob.</TableHead>
                 <TableHead className="w-[60px]" />
@@ -174,7 +236,7 @@ export function FlightsTable() {
                 <TableSkeleton />
               ) : filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8}>
+                  <TableCell colSpan={9}>
                     <div className="flex flex-col items-center gap-1 py-12 text-sm text-muted-foreground">
                       <span>No se encontraron vuelos.</span>
                       <span className="text-xs">
@@ -200,6 +262,8 @@ export function FlightsTable() {
 
 function FlightRow({ flight: f }: { flight: Flight }) {
   const proba = f.delay_probability;
+  const isDeparted = f.actual_out_utc !== null || f.departure_delay_min !== null;
+
   return (
     <TableRow className="group">
       <TableCell className="font-mono text-sm font-medium">{f.flight_number}</TableCell>
@@ -215,8 +279,48 @@ function FlightRow({ flight: f }: { flight: Flight }) {
           <span className="font-mono text-xs font-medium">{f.destination}</span>
         </div>
       </TableCell>
-      <TableCell className="hidden font-mono text-sm md:table-cell">{fmtTime(f.scheduled_out_utc)}</TableCell>
-      <TableCell className="hidden font-mono text-sm md:table-cell">{fmtTime(f.scheduled_in_utc)}</TableCell>
+      <TableCell className="hidden font-mono text-sm md:table-cell">
+        <div className="flex flex-col gap-0.5">
+          <span>{fmtTime(f.scheduled_out_utc)}</span>
+          {f.actual_out_utc ? (
+            <span className="text-[10px] text-muted-foreground leading-none">
+              Real: {fmtTime(f.actual_out_utc)}
+            </span>
+          ) : f.estimated_out_utc && f.estimated_out_utc !== f.scheduled_out_utc ? (
+            <span className="text-[10px] text-risk-medium leading-none">
+              Est: {fmtTime(f.estimated_out_utc)}
+            </span>
+          ) : null}
+        </div>
+      </TableCell>
+      <TableCell className="hidden font-mono text-sm md:table-cell">
+        <div className="flex flex-col gap-0.5">
+          <span>{fmtTime(f.scheduled_in_utc)}</span>
+          {f.estimated_in_utc && f.estimated_in_utc !== f.scheduled_in_utc ? (
+            <span className="text-[10px] text-muted-foreground leading-none">
+              Est: {fmtTime(f.estimated_in_utc)}
+            </span>
+          ) : null}
+        </div>
+      </TableCell>
+      <TableCell>
+        {isDeparted ? (
+          <span className={cn(
+            "inline-flex items-center rounded px-2 py-0.5 text-[11px] font-medium border",
+            f.departure_delay_min && f.departure_delay_min > 15
+              ? "bg-risk-high/10 text-risk-high border-risk-high/20"
+              : "bg-risk-low/10 text-risk-low border-risk-low/20"
+          )}>
+            {f.departure_delay_min && f.departure_delay_min > 15
+              ? `Salió +${Math.round(f.departure_delay_min)}m`
+              : "Salió en hora"}
+          </span>
+        ) : (
+          <span className="inline-flex items-center rounded bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground border border-transparent">
+            Programado
+          </span>
+        )}
+      </TableCell>
       <TableCell>
         <RiskBadge risk={f.risk} />
       </TableCell>
