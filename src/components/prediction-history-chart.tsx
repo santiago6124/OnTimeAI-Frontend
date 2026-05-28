@@ -8,13 +8,17 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import type { PredictionPoint } from "@/lib/api";
 
+function asUTC(utc: string): Date {
+  return new Date(/[Z+]/.test(utc) ? utc : utc + "Z");
+}
+
 function fmtAxisTime(utc: string) {
-  const d = new Date(utc);
+  const d = asUTC(utc);
   return d.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" });
 }
 
 function fmtTooltipTime(utc: string) {
-  const d = new Date(utc);
+  const d = asUTC(utc);
   const date = d.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", timeZone: "UTC" });
   const time = d.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" });
   return `${date} ${time} UTC`;

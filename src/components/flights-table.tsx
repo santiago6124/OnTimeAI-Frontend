@@ -16,7 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { buttonVariants } from "@/components/ui/button";
 import { RiskBadge } from "@/components/risk-badge";
-import { api, fmtTime, fmtProba, type Flight, type RiskLevel } from "@/lib/api";
+import { api, fmtTime, fmtProba, toUTCDate, type Flight, type RiskLevel } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 type RiskFilter = "all" | RiskLevel;
@@ -101,7 +101,7 @@ export function FlightsTable() {
         if (isDeparted) return false;
         const estStr = f.estimated_out_utc || f.scheduled_out_utc;
         if (!estStr) return false;
-        const diff = (new Date(estStr).getTime() - now.getTime()) / 60000;
+        const diff = (toUTCDate(estStr).getTime() - now.getTime()) / 60000;
         return diff >= -15 && diff <= 45;
       }
       return true;
@@ -126,7 +126,7 @@ export function FlightsTable() {
         if (isDeparted) return false;
         const estStr = f.estimated_out_utc || f.scheduled_out_utc;
         if (!estStr) return false;
-        const diff = (new Date(estStr).getTime() - now.getTime()) / 60000;
+        const diff = (toUTCDate(estStr).getTime() - now.getTime()) / 60000;
         if (diff < -15 || diff > 45) return false;
       }
       // 2. Risk filter
