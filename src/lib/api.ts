@@ -202,9 +202,18 @@ export function riskLabel(risk: RiskLevel) {
   return { low: "Bajo", medium: "Medio", high: "Alto" }[risk];
 }
 
+/**
+ * Parsea un string ISO como UTC aunque no tenga el sufijo Z.
+ * "2026-05-28T00:00:00" sin Z → JS lo interpreta como hora local → error de 3h en Argentina.
+ * Con Z forzado → siempre UTC.
+ */
+export function toUTCDate(utc: string): Date {
+  return new Date(/[Z+]/.test(utc) ? utc : utc + "Z");
+}
+
 export function fmtTime(utc: string) {
   if (!utc) return "--";
-  const d = new Date(utc);
+  const d = toUTCDate(utc);
   const date = d.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", timeZone: "UTC" });
   const time = d.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" });
   return `${date} ${time}`;
