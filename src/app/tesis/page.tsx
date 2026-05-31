@@ -6,6 +6,7 @@ import {
   FlaskConical,
   Plane,
   ClipboardCheck,
+  ShieldCheck,
 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
@@ -25,6 +26,14 @@ const EXPERIMENTS = [
     title: "Casos de prueba formales",
     description:
       "Tres casos de prueba ejecutados en vivo: detección de vuelo alto riesgo (CP-01), precisión del modelo AUC/Brier (CP-02) y tiempo de respuesta del sistema (CP-03).",
+    status: "Activo — datos reales de KATL",
+  },
+  {
+    href: "/tesis/verificacion",
+    icon: ShieldCheck,
+    title: "Verificación de predicciones",
+    description:
+      "Tabla de vuelos del día con links directos a FlightAware y FlightRadar24 para contrastar cada predicción del modelo contra el estado real del vuelo en tiempo real.",
     status: "Activo — datos reales de KATL",
   },
   {
