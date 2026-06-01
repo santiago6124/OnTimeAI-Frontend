@@ -59,19 +59,19 @@ export function ThemeSwitcher() {
             icon={<Sun className="size-4" />}
             label="Claro"
             active={theme === "light"}
-            onSelect={() => handleSetTheme("light")}
+            onClick={() => handleSetTheme("light")}
           />
           <ModeItem
             icon={<Moon className="size-4" />}
             label="Oscuro"
             active={theme === "dark"}
-            onSelect={() => handleSetTheme("dark")}
+            onClick={() => handleSetTheme("dark")}
           />
           <ModeItem
             icon={<Monitor className="size-4" />}
             label="Sistema"
             active={theme === "system"}
-            onSelect={() => handleSetTheme("system")}
+            onClick={() => handleSetTheme("system")}
           />
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
@@ -87,7 +87,7 @@ export function ThemeSwitcher() {
               label={p.label}
               swatch={p.swatch}
               active={palette === p.id}
-              onSelect={() => setPalette(p.id)}
+              onClick={() => setPalette(p.id)}
             />
           ))}
         </DropdownMenuGroup>
@@ -100,15 +100,15 @@ function ModeItem({
   icon,
   label,
   active,
-  onSelect,
+  onClick,
 }: {
   icon: React.ReactNode;
   label: string;
   active: boolean;
-  onSelect: () => void;
+  onClick: () => void;
 }) {
   return (
-    <DropdownMenuItem onSelect={onSelect} className="gap-2">
+    <DropdownMenuItem onClick={onClick} className="gap-2">
       {icon}
       <span className="flex-1">{label}</span>
       {active ? <Check className="size-4 opacity-70" /> : null}
@@ -121,16 +121,16 @@ function PaletteItem({
   label,
   swatch,
   active,
-  onSelect,
+  onClick,
 }: {
   id: PaletteId;
   label: string;
   swatch: string;
   active: boolean;
-  onSelect: () => void;
+  onClick: () => void;
 }) {
   return (
-    <DropdownMenuItem onSelect={onSelect} className="gap-2">
+    <DropdownMenuItem onClick={onClick} className="gap-2">
       <span
         className="size-4 rounded-full ring-1 ring-border"
         style={{ backgroundColor: swatch }}
