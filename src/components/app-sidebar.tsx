@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -49,8 +50,8 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader>
         <div className="flex items-center gap-2 px-2 py-2">
-          <div className="flex size-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
-            <Plane className="size-4" />
+          <div className="flex size-8 items-center justify-center rounded-md overflow-hidden">
+            <Image src="/logo.png" alt="OnTimeAI" width={32} height={32} className="size-8 object-cover" />
           </div>
           <div className="group-data-[collapsible=icon]:hidden">
             <div className="text-sm font-semibold tracking-tight">
