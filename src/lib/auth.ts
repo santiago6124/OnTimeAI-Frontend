@@ -44,6 +44,20 @@ export function getRole(): Role {
   return decodeJwtRole(token);
 }
 
+export function getUsername(): string | null {
+  try {
+    const token = getToken();
+    if (!token) return null;
+    const part = token.split(".")[1];
+    if (!part) return null;
+    const json = atob(part.replace(/-/g, "+").replace(/_/g, "/"));
+    const payload = JSON.parse(json) as { sub?: string };
+    return payload.sub ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /** true for admin and superadmin */
 export function isAdmin(): boolean {
   const r = getRole();
