@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/select";
 import { Plus, Pencil, Trash2, ShieldOff, ShieldCheck } from "lucide-react";
 import { fmtTime, toUTCDate } from "@/lib/api";
+import { getUsername } from "@/lib/auth";
 
 const ROLE_LABELS: Record<string, string> = {
   superadmin: "Superadmin",
@@ -49,6 +50,7 @@ function fmtDate(utc: string) {
 }
 
 export default function UsersPage() {
+  const me = React.useMemo(() => getUsername(), []);
   const [users, setUsers] = React.useState<ManagedUser[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState("");
@@ -201,6 +203,7 @@ export default function UsersPage() {
                         variant="ghost"
                         size="icon-sm"
                         title={u.active ? "Desactivar" : "Activar"}
+                        disabled={u.username === me}
                         onClick={() => handleToggleActive(u)}
                       >
                         {u.active
@@ -211,6 +214,7 @@ export default function UsersPage() {
                         variant="ghost"
                         size="icon-sm"
                         title="Editar"
+                        disabled={u.username === me}
                         onClick={() => { setEditUser(u); setEditRole(u.role); setEditPassword(""); }}
                       >
                         <Pencil className="size-4 text-muted-foreground" />
@@ -219,6 +223,7 @@ export default function UsersPage() {
                         variant="ghost"
                         size="icon-sm"
                         title="Eliminar"
+                        disabled={u.username === me}
                         onClick={() => setDeleteUser(u)}
                       >
                         <Trash2 className="size-4 text-destructive" />
@@ -253,7 +258,7 @@ export default function UsersPage() {
             </div>
             <div className="space-y-1.5">
               <Label>Rol</Label>
-              <Select value={newRole} onValueChange={setNewRole}>
+              <Select value={newRole} onValueChange={(v) => v && setNewRole(v)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="user">Usuario</SelectItem>
@@ -279,7 +284,7 @@ export default function UsersPage() {
           <form onSubmit={handleEdit} className="space-y-4 pt-2">
             <div className="space-y-1.5">
               <Label>Rol</Label>
-              <Select value={editRole} onValueChange={setEditRole}>
+              <Select value={editRole} onValueChange={(v) => v && setEditRole(v)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="user">Usuario</SelectItem>
