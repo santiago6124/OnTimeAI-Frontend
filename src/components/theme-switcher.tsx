@@ -18,6 +18,7 @@ import {
   usePalette,
   type PaletteId,
 } from "@/components/providers/palette-provider";
+import { api } from "@/lib/api";
 
 export function ThemeSwitcher() {
   const { theme, setTheme, resolvedTheme } = useTheme();
@@ -25,6 +26,11 @@ export function ThemeSwitcher() {
   const [mounted, setMounted] = React.useState(false);
 
   React.useEffect(() => setMounted(true), []);
+
+  const handleSetTheme = React.useCallback((t: string) => {
+    setTheme(t);
+    api.updatePreferences({ theme: t }).catch(() => {});
+  }, [setTheme]);
 
   const current = mounted ? (resolvedTheme ?? theme) : "dark";
 
@@ -53,19 +59,19 @@ export function ThemeSwitcher() {
             icon={<Sun className="size-4" />}
             label="Claro"
             active={theme === "light"}
-            onSelect={() => setTheme("light")}
+            onSelect={() => handleSetTheme("light")}
           />
           <ModeItem
             icon={<Moon className="size-4" />}
             label="Oscuro"
             active={theme === "dark"}
-            onSelect={() => setTheme("dark")}
+            onSelect={() => handleSetTheme("dark")}
           />
           <ModeItem
             icon={<Monitor className="size-4" />}
             label="Sistema"
             active={theme === "system"}
-            onSelect={() => setTheme("system")}
+            onSelect={() => handleSetTheme("system")}
           />
         </DropdownMenuGroup>
         <DropdownMenuSeparator />

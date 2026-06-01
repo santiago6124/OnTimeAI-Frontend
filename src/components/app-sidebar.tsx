@@ -10,7 +10,9 @@ import {
   Settings,
   ClipboardCheck,
   FlaskConical,
+  Users,
 } from "lucide-react";
+import { getRole } from "@/lib/auth";
 
 import {
   Sidebar,
@@ -44,6 +46,7 @@ const PASSENGER_NAV = [
 export function AppSidebar() {
   const pathname = usePathname();
   const { profile } = useProfile();
+  const role = getRole();
   const nav = profile === "airline" ? AIRLINE_NAV : PASSENGER_NAV;
 
   return (
@@ -97,6 +100,20 @@ export function AppSidebar() {
 
       <SidebarFooter>
         <SidebarMenu>
+          {role === "superadmin" && (
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                tooltip="Usuarios"
+                isActive={pathname.startsWith("/admin")}
+                render={
+                  <Link href="/admin/users">
+                    <Users />
+                    <span>Usuarios</span>
+                  </Link>
+                }
+              />
+            </SidebarMenuItem>
+          )}
           <SidebarMenuItem>
             <SidebarMenuButton
               tooltip="Ajustes"

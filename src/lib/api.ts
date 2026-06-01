@@ -100,6 +100,19 @@ export type PredictionPoint = {
   predicted_delay: number;
 };
 
+export type ManagedUser = {
+  id: number;
+  username: string;
+  role: "superadmin" | "admin" | "user";
+  active: 0 | 1;
+  created_at: string;
+};
+
+export type UserPreferences = {
+  theme: string;
+  palette: string;
+};
+
 export type CP01Result = {
   fa_flight_id: string;
   flight_number: string;
@@ -195,6 +208,18 @@ export const api = {
   hourly:        () => get<HourlyBucket[]>("/metrics/hourly"),
   model:         () => get<ModelInfo>("/metrics/model"),
   testCases:     () => get<TestCasesResponse>("/test-cases"),
+  // User management (superadmin)
+  listUsers:     () => get<ManagedUser[]>("/admin/users"),
+  createUser:    (username: string, password: string, role: string) =>
+    get<{ ok: boolean }>("/admin/users", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username, password, role }) }),
+  updateUser:    (username: string, patch: { password?: string; role?: string; active?: boolean }) =>
+    get<{ ok: boolean }>(`/admin/users/${encodeURIComponent(username)}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(patch) }),
+  deleteUser:    (username: string) =>
+    get<void>(`/admin/users/${encodeURIComponent(username)}`, { method: "DELETE" }),
+  // User preferences
+  getPreferences:    () => get<UserPreferences>("/users/me/preferences"),
+  updatePreferences: (prefs: Partial<UserPreferences>) =>
+    get<{ ok: boolean }>("/users/me/preferences", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(prefs) }),
 };
 
 // Helpers

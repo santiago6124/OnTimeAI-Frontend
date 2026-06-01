@@ -7,6 +7,6 @@ export default async function TesisLayout({
   children: React.ReactNode;
 }) {
   const role = await getServerRole();
-  if (role !== "admin") redirect("/");
+  if (role !== "admin" && role !== "superadmin") redirect("/");
   return <>{children}</>;
 }

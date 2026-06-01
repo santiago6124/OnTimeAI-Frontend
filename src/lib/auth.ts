@@ -22,26 +22,36 @@ export function isAuthenticated(): boolean {
   return !!getToken();
 }
 
-function decodeJwtRole(token: string): "admin" | "user" {
+export type Role = "superadmin" | "admin" | "user";
+
+function decodeJwtRole(token: string): Role {
   try {
     const part = token.split(".")[1];
     if (!part) return "user";
     const json = atob(part.replace(/-/g, "+").replace(/_/g, "/"));
     const payload = JSON.parse(json) as { role?: string };
-    return payload.role === "admin" ? "admin" : "user";
+    const r = payload.role;
+    if (r === "superadmin" || r === "admin") return r;
+    return "user";
   } catch {
     return "user";
   }
 }
 
-export function getRole(): "admin" | "user" {
+export function getRole(): Role {
   const token = getToken();
   if (!token) return "user";
   return decodeJwtRole(token);
 }
 
+/** true for admin and superadmin */
+export function isAdmin(): boolean {
+  const r = getRole();
+  return r === "admin" || r === "superadmin";
+}
+
 // Call only from Server Components (uses next/headers)
-export async function getServerRole(): Promise<"admin" | "user"> {
+export async function getServerRole(): Promise<Role> {
   try {
     const { cookies } = await import("next/headers");
     const store = await cookies();

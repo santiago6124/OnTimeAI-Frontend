@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { ThemeSwitcher } from "@/components/theme-switcher";
-import { ProfileSwitcher } from "@/components/profile-switcher";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Radio, LogOut } from "lucide-react";
@@ -34,7 +33,6 @@ export function AppHeader({ title }: { title?: string }) {
       </div>
 
       <div className="ml-auto flex items-center gap-2">
-        <ProfileSwitcher />
         <ThemeSwitcher />
         <Button
           variant="ghost"

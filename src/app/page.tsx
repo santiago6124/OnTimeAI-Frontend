@@ -30,7 +30,7 @@ export default async function DashboardPage() {
             <HourlyDelayChart />
           </div>
           <div className="flex flex-col gap-4">
-            {role === "admin" && <ModelBadge />}
+            {(role === "admin" || role === "superadmin") && <ModelBadge />}
             <Suspense fallback={<div className="h-48 animate-pulse rounded-lg bg-muted" />}>
               <WeatherCard />
             </Suspense>
