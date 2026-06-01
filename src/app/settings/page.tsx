@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
 import { useTheme } from "next-themes";
+import { api } from "@/lib/api";
 import {
   PALETTES,
   usePalette,
@@ -13,6 +14,11 @@ import { cn } from "@/lib/utils";
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
+
+  function handleSetTheme(t: string) {
+    setTheme(t);
+    api.updatePreferences({ theme: t }).catch(() => {});
+  }
   const { palette, setPalette } = usePalette();
 
   return (
@@ -38,7 +44,7 @@ export default function SettingsPage() {
               <Button
                 key={mode}
                 variant={theme === mode ? "default" : "outline"}
-                onClick={() => setTheme(mode)}
+                onClick={() => handleSetTheme(mode)}
                 className="capitalize"
               >
                 {mode === "system" ? "Sistema" : mode === "dark" ? "Oscuro" : "Claro"}
