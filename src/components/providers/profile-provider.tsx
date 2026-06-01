@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { getRole } from "@/lib/auth";
 
 export type ProfileId = "airline" | "passenger";
 
@@ -38,11 +39,12 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     React.useState<ProfileId>(DEFAULT_PROFILE);
 
   React.useEffect(() => {
-    const stored = window.localStorage.getItem(
-      STORAGE_KEY,
-    ) as ProfileId | null;
-    if (stored === "airline" || stored === "passenger") {
-      setProfileState(stored);
+    const role = getRole();
+    if (role === "admin") {
+      const stored = window.localStorage.getItem(STORAGE_KEY) as ProfileId | null;
+      if (stored === "airline" || stored === "passenger") setProfileState(stored);
+    } else {
+      setProfileState("passenger");
     }
   }, []);
 

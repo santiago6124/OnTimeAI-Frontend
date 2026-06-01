@@ -5,8 +5,10 @@ import { FlightsTable } from "@/components/flights-table";
 import { WeatherCard } from "@/components/weather-card";
 import { HourlyDelayChart } from "@/components/hourly-delay-chart";
 import { ModelBadge } from "@/components/model-badge";
+import { getServerRole } from "@/lib/auth";
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const role = await getServerRole();
   return (
     <AppShell title="Dashboard operacional">
       <div className="space-y-4">
@@ -28,7 +30,7 @@ export default function DashboardPage() {
             <HourlyDelayChart />
           </div>
           <div className="flex flex-col gap-4">
-            <ModelBadge />
+            {role === "admin" && <ModelBadge />}
             <Suspense fallback={<div className="h-48 animate-pulse rounded-lg bg-muted" />}>
               <WeatherCard />
             </Suspense>

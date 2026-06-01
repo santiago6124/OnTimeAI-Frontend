@@ -21,3 +21,34 @@ export function clearToken(): void {
 export function isAuthenticated(): boolean {
   return !!getToken();
 }
+
+function decodeJwtRole(token: string): "admin" | "user" {
+  try {
+    const part = token.split(".")[1];
+    if (!part) return "user";
+    const json = atob(part.replace(/-/g, "+").replace(/_/g, "/"));
+    const payload = JSON.parse(json) as { role?: string };
+    return payload.role === "admin" ? "admin" : "user";
+  } catch {
+    return "user";
+  }
+}
+
+export function getRole(): "admin" | "user" {
+  const token = getToken();
+  if (!token) return "user";
+  return decodeJwtRole(token);
+}
+
+// Call only from Server Components (uses next/headers)
+export async function getServerRole(): Promise<"admin" | "user"> {
+  try {
+    const { cookies } = await import("next/headers");
+    const store = await cookies();
+    const token = store.get("auth-token")?.value;
+    if (!token) return "user";
+    return decodeJwtRole(token);
+  } catch {
+    return "user";
+  }
+}
