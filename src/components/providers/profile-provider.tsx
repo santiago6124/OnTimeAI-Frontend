@@ -40,7 +40,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
 
   React.useEffect(() => {
     const role = getRole();
-    if (role === "admin") {
+    if (role === "admin" || role === "superadmin") {
       const stored = window.localStorage.getItem(STORAGE_KEY) as ProfileId | null;
       if (stored === "airline" || stored === "passenger") setProfileState(stored);
     } else {

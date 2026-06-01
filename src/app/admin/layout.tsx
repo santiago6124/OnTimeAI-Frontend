@@ -1,12 +1,12 @@
 import { redirect } from "next/navigation";
 import { getServerRole } from "@/lib/auth";
 
-export default async function TesisLayout({
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const role = await getServerRole();
-  if (role !== "admin" && role !== "superadmin") redirect("/");
+  if (role !== "superadmin") redirect("/");
   return <>{children}</>;
 }

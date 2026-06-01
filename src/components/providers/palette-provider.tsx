@@ -1,6 +1,9 @@
 "use client";
 
 import * as React from "react";
+import { useTheme } from "next-themes";
+import { api } from "@/lib/api";
+import { isAuthenticated } from "@/lib/auth";
 
 export const PALETTES = [
   { id: "operations", label: "Operations", swatch: "#3b82f6" },
@@ -27,21 +30,35 @@ const PaletteContext = React.createContext<PaletteContextValue | undefined>(
 
 export function PaletteProvider({ children }: { children: React.ReactNode }) {
   const [palette, setPaletteState] = React.useState<PaletteId>(DEFAULT_PALETTE);
+  const { setTheme } = useTheme();
 
   React.useEffect(() => {
-    const stored = window.localStorage.getItem(STORAGE_KEY) as PaletteId | null;
-    if (stored && PALETTES.some((p) => p.id === stored)) {
-      setPaletteState(stored);
-      document.documentElement.dataset.palette = stored;
-    } else {
-      document.documentElement.dataset.palette = DEFAULT_PALETTE;
+    function applyLocalFallback() {
+      const stored = window.localStorage.getItem(STORAGE_KEY) as PaletteId | null;
+      const p = stored && PALETTES.some((x) => x.id === stored) ? stored : DEFAULT_PALETTE;
+      setPaletteState(p as PaletteId);
+      document.documentElement.dataset.palette = p;
     }
+
+    if (!isAuthenticated()) { applyLocalFallback(); return; }
+
+    api.getPreferences()
+      .then((prefs) => {
+        const p = PALETTES.some((x) => x.id === prefs.palette) ? prefs.palette as PaletteId : DEFAULT_PALETTE;
+        setPaletteState(p);
+        document.documentElement.dataset.palette = p;
+        window.localStorage.setItem(STORAGE_KEY, p);
+        if (prefs.theme) setTheme(prefs.theme);
+      })
+      .catch(applyLocalFallback);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const setPalette = React.useCallback((next: PaletteId) => {
     setPaletteState(next);
     window.localStorage.setItem(STORAGE_KEY, next);
     document.documentElement.dataset.palette = next;
+    api.updatePreferences({ palette: next }).catch(() => {});
   }, []);
 
   const value = React.useMemo(
