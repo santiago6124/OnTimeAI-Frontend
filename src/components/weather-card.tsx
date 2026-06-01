@@ -8,6 +8,23 @@ function toF(c: number | null): string {
   return `${Math.round(c * 9 / 5 + 32)}°F`;
 }
 
+const WX_LABELS: Record<string, string> = {
+  BR: "Niebla ligera", FG: "Niebla", HZ: "Neblina", FU: "Humo",
+  RA: "Lluvia", DZ: "Llovizna", SN: "Nieve", SG: "Nieve granulada",
+  IC: "Cristales de hielo", PL: "Aguanieve", GR: "Granizo", GS: "Granizo fino",
+  TS: "Tormenta eléctrica", SH: "Chubascos", FZ: "Engelante",
+  SA: "Arena", DU: "Polvo", PO: "Torbellino", SQ: "Turbonada",
+  FC: "Nube embudo", SS: "Tormenta de arena", DS: "Tormenta de polvo", VA: "Ceniza volcánica",
+};
+
+function translateWx(wx: string): string {
+  const upper = wx.toUpperCase().trim();
+  for (const [code, label] of Object.entries(WX_LABELS)) {
+    if (upper.includes(code)) return label;
+  }
+  return upper;
+}
+
 function validWx(wx: string | null | undefined): string | null {
   if (!wx || wx === "M" || wx.trim() === "") return null;
   return wx.trim();
@@ -16,7 +33,7 @@ function validWx(wx: string | null | undefined): string | null {
 function buildCondition(d: WeatherData): string {
   const parts: string[] = [];
   const wx = validWx(d.wx_codes);
-  if (wx) parts.push(wx);
+  if (wx) parts.push(translateWx(wx));
   if (d.precip_flag) parts.push("Precipitación");
   if (d.low_visibility) parts.push("Baja visibilidad");
   if (d.strong_wind) parts.push("Vientos fuertes");
