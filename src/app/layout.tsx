@@ -21,6 +21,10 @@ export const metadata: Metadata = {
   title: "OnTimeAI — Predicción de retrasos aéreos",
   description:
     "Dashboard predictivo de retrasos de vuelos en ATL basado en Machine Learning.",
+  icons: {
+    icon: [{ url: "/icon.png", sizes: "512x512", type: "image/png" }],
+    apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
+  },
 };
 
 export default function RootLayout({
