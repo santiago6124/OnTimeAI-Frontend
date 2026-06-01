@@ -8,8 +8,6 @@ import {
   Route,
   CloudSun,
   Settings,
-  ClipboardCheck,
-  FlaskConical,
   Users,
 } from "lucide-react";
 import { getRole } from "@/lib/auth";
@@ -33,8 +31,6 @@ const AIRLINE_NAV = [
   { href: "/flights", label: "Vuelos ATL", icon: Plane },
   { href: "/routes", label: "Historial por ruta", icon: Route },
   { href: "/weather", label: "Meteorología", icon: CloudSun },
-  { href: "/tesis/casos-de-prueba", label: "Casos de prueba", icon: ClipboardCheck },
-  { href: "/tesis/pruebas", label: "Sandbox API", icon: FlaskConical },
 ];
 
 const PASSENGER_NAV = [
