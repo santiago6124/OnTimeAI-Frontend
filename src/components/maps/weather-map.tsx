@@ -229,7 +229,7 @@ function SimulatedBadge() {
   return (
     <div className="pointer-events-none absolute left-3 top-3 z-[400] rounded-md border border-white/10 bg-[#0b1220]/80 px-2 py-1 text-[10px] font-medium uppercase tracking-wider text-white/70 backdrop-blur">
       <span className="mr-1 inline-block size-1.5 animate-pulse rounded-full bg-[#38bdf8] align-middle" />
-      Mock NOAA · batch
+      AWC / NOAA · En vivo
     </div>
   );
 }
