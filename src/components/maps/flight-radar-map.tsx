@@ -16,17 +16,17 @@ import {
   useMap,
 } from "react-leaflet";
 
-import { MOCK_FLIGHTS, type FlightTrack } from "@/lib/mock-data";
-import { AIRPORTS, greatCirclePath } from "@/lib/geo";
+import { AIRPORTS, greatCirclePath, type LatLng } from "@/lib/geo";
 import { cn } from "@/lib/utils";
+import type { MapTrack } from "@/hooks/use-real-flight-tracks";
 
-const RISK_COLOR: Record<FlightTrack["risk"], string> = {
+const RISK_COLOR: Record<MapTrack["risk"], string> = {
   low: "#4ade80",
   medium: "#facc15",
   high: "#f87171",
 };
 
-function planeIcon(bearing: number, risk: FlightTrack["risk"], selected = false) {
+function planeIcon(bearing: number, risk: MapTrack["risk"], selected = false) {
   const color = RISK_COLOR[risk];
   const scale = selected ? 1.25 : 1;
   const ring = selected
@@ -65,27 +65,20 @@ function airportIcon(code: string, variant: "origin" | "destination") {
   });
 }
 
-function FitToFlights({ flights }: { flights: FlightTrack[] }) {
+function FitToFlights({ flights }: { flights: MapTrack[] }) {
   const map = useMap();
   React.useEffect(() => {
     if (flights.length === 0) return;
-    const points: Array<[number, number]> = [];
-    for (const f of flights) {
-      const o = AIRPORTS[f.origin];
-      const d = AIRPORTS[f.destination];
-      if (o) points.push([o.lat, o.lng]);
-      if (d) points.push([d.lat, d.lng]);
-      points.push([f.currentLat, f.currentLng]);
-    }
-    if (points.length > 0) {
-      map.fitBounds(points, { padding: [32, 32] });
-    }
-  }, [flights, map]);
+    const points: Array<[number, number]> = flights.map((f) => [f.currentLat, f.currentLng]);
+    points.push([AIRPORTS.ATL.lat, AIRPORTS.ATL.lng]);
+    map.fitBounds(points, { padding: [48, 48] });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   return null;
 }
 
 export type FlightRadarMapProps = {
-  flights?: FlightTrack[];
+  flights?: MapTrack[];
   selectedId?: string;
   onSelect?: (id: string) => void;
   className?: string;
@@ -94,7 +87,7 @@ export type FlightRadarMapProps = {
 };
 
 export function FlightRadarMap({
-  flights = MOCK_FLIGHTS,
+  flights = [],
   selectedId,
   onSelect,
   className,
@@ -104,11 +97,11 @@ export function FlightRadarMap({
   const originCoords = AIRPORTS.ATL;
   const destinations = React.useMemo(() => {
     const seen = new Set<string>();
-    const list: typeof AIRPORTS[string][] = [];
+    const list: Array<{ code: string } & LatLng> = [];
     for (const f of flights) {
-      if (!seen.has(f.destination) && AIRPORTS[f.destination]) {
+      if (!seen.has(f.destination)) {
         seen.add(f.destination);
-        list.push(AIRPORTS[f.destination]);
+        list.push({ code: f.destination, lat: f.destLat, lng: f.destLng });
       }
     }
     return list;
@@ -137,37 +130,20 @@ export function FlightRadarMap({
 
         <FitToFlights flights={flights} />
 
-        {showRoutes &&
-          flights.map((f) => {
-            const o = AIRPORTS[f.origin];
-            const d = AIRPORTS[f.destination];
-            if (!o || !d) return null;
-            const path = greatCirclePath(o, d, 48);
-            const flown = path.slice(0, Math.max(2, Math.round(path.length * f.progress)));
-            const remaining = path.slice(flown.length - 1);
-            const color = RISK_COLOR[f.risk];
-            return (
-              <React.Fragment key={f.id}>
-                <Polyline
-                  positions={remaining}
-                  pathOptions={{
-                    color,
-                    weight: 1,
-                    opacity: 0.35,
-                    dashArray: "3 5",
-                  }}
-                />
-                <Polyline
-                  positions={flown}
-                  pathOptions={{
-                    color,
-                    weight: 1.6,
-                    opacity: 0.85,
-                  }}
-                />
-              </React.Fragment>
-            );
-          })}
+        {showRoutes && flights.map((f) => {
+          const o = { lat: f.originLat, lng: f.originLng };
+          const d = { lat: f.destLat, lng: f.destLng };
+          const path = greatCirclePath(o, d, 48);
+          const flown = path.slice(0, Math.max(2, Math.round(path.length * f.progress)));
+          const remaining = path.slice(flown.length - 1);
+          const color = RISK_COLOR[f.risk];
+          return (
+            <React.Fragment key={f.id}>
+              <Polyline positions={remaining} pathOptions={{ color, weight: 1, opacity: 0.35, dashArray: "3 5" }} />
+              <Polyline positions={flown} pathOptions={{ color, weight: 1.6, opacity: 0.85 }} />
+            </React.Fragment>
+          );
+        })}
 
         <Marker
           position={[originCoords.lat, originCoords.lng]}
@@ -191,9 +167,7 @@ export function FlightRadarMap({
               key={f.id}
               position={[f.currentLat, f.currentLng]}
               icon={planeIcon(f.bearing, f.risk, selected)}
-              eventHandlers={{
-                click: () => onSelect?.(f.id),
-              }}
+              eventHandlers={{ click: () => onSelect?.(f.id) }}
             >
               <Tooltip direction="top" offset={[0, -10]} opacity={1}>
                 <FlightTooltip flight={f} />
@@ -202,17 +176,15 @@ export function FlightRadarMap({
           );
         })}
 
-        {selectedId ? (
+        {selectedId && flights.find((f) => f.id === selectedId) ? (
           <CircleMarker
             center={[
-              flights.find((f) => f.id === selectedId)?.currentLat ?? 0,
-              flights.find((f) => f.id === selectedId)?.currentLng ?? 0,
+              flights.find((f) => f.id === selectedId)!.currentLat,
+              flights.find((f) => f.id === selectedId)!.currentLng,
             ]}
             radius={18}
             pathOptions={{
-              color: RISK_COLOR[
-                flights.find((f) => f.id === selectedId)?.risk ?? "low"
-              ],
+              color: RISK_COLOR[flights.find((f) => f.id === selectedId)!.risk],
               weight: 1,
               opacity: 0.6,
               fillOpacity: 0.05,
@@ -222,97 +194,57 @@ export function FlightRadarMap({
       </MapContainer>
 
       <MapLegend />
-      <SimulatedBadge />
-      {onSelect ? (
+      <LiveBadge count={flights.length} />
+      {onSelect && (
         <SelectedCard
           flight={flights.find((f) => f.id === selectedId) ?? null}
           onClose={() => onSelect?.("")}
         />
-      ) : null}
+      )}
     </div>
   );
 }
 
-function FlightTooltip({ flight }: { flight: FlightTrack }) {
+function FlightTooltip({ flight }: { flight: MapTrack }) {
   return (
     <div className="font-sans text-xs text-white">
-      <div className="font-mono text-[11px] font-semibold">
-        {flight.flightNumber}
-      </div>
-      <div className="text-[10px] opacity-80">
-        {flight.origin} → {flight.destination}
-      </div>
-      <div className="mt-1 flex items-center gap-2 text-[10px]">
-        <span>FL{Math.round(flight.altitudeFt / 100)}</span>
-        <span>·</span>
-        <span>{flight.groundSpeedKt} kt</span>
-        <span>·</span>
-        <span
-          style={{
-            color: RISK_COLOR[flight.risk],
-          }}
-        >
-          {Math.round(flight.delayProbability * 100)}%
-        </span>
+      <div className="font-mono text-[11px] font-semibold">{flight.flightNumber}</div>
+      <div className="text-[10px] opacity-80">{flight.origin} → {flight.destination}</div>
+      <div className="mt-1 text-[10px]" style={{ color: RISK_COLOR[flight.risk] }}>
+        {Math.round(flight.delayProbability * 100)}% riesgo · {
+          flight.risk === "high" ? "alto" : flight.risk === "medium" ? "medio" : "bajo"
+        }
       </div>
     </div>
   );
 }
 
-function SelectedCard({
-  flight,
-  onClose,
-}: {
-  flight: FlightTrack | null;
-  onClose: () => void;
-}) {
+function SelectedCard({ flight, onClose }: { flight: MapTrack | null; onClose: () => void }) {
   if (!flight) return null;
   return (
-    <div className="pointer-events-auto absolute bottom-3 left-3 z-[400] w-72 rounded-lg border border-white/10 bg-[#0b1220]/95 p-3 text-sm text-white shadow-lg backdrop-blur">
+    <div className="pointer-events-auto absolute bottom-3 left-3 z-[400] w-64 rounded-lg border border-white/10 bg-[#0b1220]/95 p-3 text-sm text-white shadow-lg backdrop-blur">
       <div className="flex items-start justify-between gap-2">
         <div>
-          <div className="font-mono text-sm font-semibold">
-            {flight.flightNumber}
-          </div>
+          <div className="font-mono text-sm font-semibold">{flight.flightNumber}</div>
           <div className="text-[11px] text-white/60">{flight.airline}</div>
         </div>
-        <button
-          onClick={onClose}
-          className="rounded text-[11px] text-white/60 hover:text-white"
-          aria-label="Cerrar"
-        >
-          ✕
-        </button>
+        <button onClick={onClose} className="rounded text-[11px] text-white/60 hover:text-white" aria-label="Cerrar">✕</button>
       </div>
       <div className="mt-2 grid grid-cols-2 gap-2 text-[11px]">
         <div>
           <div className="text-white/50">Ruta</div>
-          <div className="font-mono">
-            {flight.origin} → {flight.destination}
-          </div>
+          <div className="font-mono">{flight.origin} → {flight.destination}</div>
         </div>
         <div>
-          <div className="text-white/50">Salida</div>
-          <div className="font-mono">{flight.scheduledDeparture}</div>
-        </div>
-        <div>
-          <div className="text-white/50">Altitud</div>
-          <div className="font-mono">
-            FL{Math.round(flight.altitudeFt / 100)}
-          </div>
-        </div>
-        <div>
-          <div className="text-white/50">Velocidad</div>
-          <div className="font-mono">{flight.groundSpeedKt} kt</div>
+          <div className="text-white/50">Progreso</div>
+          <div className="font-mono">{Math.round(flight.progress * 100)}%</div>
         </div>
         <div className="col-span-2">
           <div className="text-white/50">Riesgo predictivo</div>
-          <div
-            className="font-mono"
-            style={{ color: RISK_COLOR[flight.risk] }}
-          >
-            {Math.round(flight.delayProbability * 100)}% · +
-            {flight.expectedDelayMinutes} min
+          <div className="font-mono" style={{ color: RISK_COLOR[flight.risk] }}>
+            {Math.round(flight.delayProbability * 100)}% · {
+              flight.risk === "high" ? "Alto" : flight.risk === "medium" ? "Medio" : "Bajo"
+            }
           </div>
         </div>
       </div>
@@ -329,24 +261,18 @@ function SelectedCard({
 function MapLegend() {
   return (
     <div className="pointer-events-none absolute right-3 top-3 z-[400] flex flex-col gap-1 rounded-md border border-white/10 bg-[#0b1220]/80 px-2 py-1.5 text-[10px] text-white/80 backdrop-blur">
-      <div className="flex items-center gap-1.5">
-        <span className="size-2 rounded-full bg-[#4ade80]" /> Riesgo bajo
-      </div>
-      <div className="flex items-center gap-1.5">
-        <span className="size-2 rounded-full bg-[#facc15]" /> Riesgo medio
-      </div>
-      <div className="flex items-center gap-1.5">
-        <span className="size-2 rounded-full bg-[#f87171]" /> Riesgo alto
-      </div>
+      <div className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-[#4ade80]" /> Riesgo bajo</div>
+      <div className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-[#facc15]" /> Riesgo medio</div>
+      <div className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-[#f87171]" /> Riesgo alto</div>
     </div>
   );
 }
 
-function SimulatedBadge() {
+function LiveBadge({ count }: { count: number }) {
   return (
     <div className="pointer-events-none absolute left-3 top-3 z-[400] rounded-md border border-white/10 bg-[#0b1220]/80 px-2 py-1 text-[10px] font-medium uppercase tracking-wider text-white/70 backdrop-blur">
-      <span className="mr-1 inline-block size-1.5 animate-pulse rounded-full bg-[#facc15] align-middle" />
-      Simulado · batch predictivo
+      <span className="mr-1 inline-block size-1.5 animate-pulse rounded-full bg-[#4ade80] align-middle" />
+      {count} vuelos · En vivo
     </div>
   );
 }
