@@ -40,7 +40,7 @@ export function PredictionHistoryChart({
   const hasActual = arrDelayMin !== null && arrDelayMin !== undefined;
   const actuallyDelayed = hasActual && arrDelayMin! > 15;
 
-  if (history.length < 2) {
+  if (history.length === 0) {
     return (
       <Card>
         <CardHeader className="pb-2">
@@ -49,9 +49,7 @@ export function PredictionHistoryChart({
         </CardHeader>
         <CardContent>
           <p className="py-8 text-center text-sm text-muted-foreground">
-            {history.length === 0
-              ? "Sin historial de predicciones aún."
-              : "Se necesitan al menos 2 ciclos para mostrar evolución."}
+            Sin historial de predicciones aún.
           </p>
         </CardContent>
       </Card>
@@ -67,27 +65,48 @@ export function PredictionHistoryChart({
   const latestProba = data[data.length - 1].proba;
   const color = riskColor(latestProba);
 
+  const header = (
+    <CardHeader className="pb-2">
+      <CardTitle className="text-sm font-medium flex items-center gap-2">
+        Evolución de predicciones
+        {hasActual && (
+          <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${
+            actuallyDelayed
+              ? "bg-risk-high/10 text-risk-high"
+              : "bg-risk-low/10 text-risk-low"
+          }`}>
+            {actuallyDelayed
+              ? `Resultado: demorado (+${Math.round(arrDelayMin!)} min)`
+              : "Resultado: a tiempo"}
+          </span>
+        )}
+      </CardTitle>
+      <CardDescription>
+        {history.length} {history.length === 1 ? "ciclo registrado" : "ciclos registrados"} · actualización cada 15 min
+      </CardDescription>
+    </CardHeader>
+  );
+
+  if (data.length === 1) {
+    return (
+      <Card>
+        {header}
+        <CardContent>
+          <div className="flex flex-col items-center justify-center gap-2 py-6">
+            <div className="font-mono text-4xl font-bold" style={{ color }}>
+              {latestProba}%
+            </div>
+            <div className="text-xs text-muted-foreground">{data[0].fullTime}</div>
+            <div className="text-[11px] text-muted-foreground">Primer ciclo — se mostrará evolución en el siguiente</div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium flex items-center gap-2">
-          Evolución de predicciones
-          {hasActual && (
-            <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${
-              actuallyDelayed
-                ? "bg-risk-high/10 text-risk-high"
-                : "bg-risk-low/10 text-risk-low"
-            }`}>
-              {actuallyDelayed
-                ? `Resultado: demorado (+${Math.round(arrDelayMin!)} min)`
-                : "Resultado: a tiempo"}
-            </span>
-          )}
-        </CardTitle>
-        <CardDescription>
-          {history.length} ciclos registrados · actualización cada 30 min
-        </CardDescription>
-      </CardHeader>
+      {header}
       <CardContent>
         <ResponsiveContainer width="100%" height={190}>
           <AreaChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
@@ -152,7 +171,7 @@ export function PredictionHistoryChart({
           </AreaChart>
         </ResponsiveContainer>
         <p className="mt-1 text-[11px] text-muted-foreground">
-          Actualización cada 30 min · Umbrales:{" "}
+          Actualización cada 15 min · Umbrales:{" "}
           <span className="text-risk-medium">15% medio</span>{" · "}
           <span className="text-risk-high">35% alto</span>
         </p>
