@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowRight, Plane } from "lucide-react";
+import { ArrowRight, ExternalLink, Plane } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
 import { BackButton } from "@/components/back-button";
@@ -63,8 +63,26 @@ export default async function FlightDetailPage(
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <RiskBadge risk={flight.risk} size="md" />
+            <Link
+              href={`https://www.flightaware.com/live/flight/${flight.fa_flight_id.split("-")[0]}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={buttonVariants({ variant: "outline", size: "sm" })}
+            >
+              <ExternalLink className="size-3.5" />
+              FlightAware
+            </Link>
+            <Link
+              href={`https://www.flightradar24.com/data/flights/${flight.flight_number.replace(/\s+/g, "").toLowerCase()}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={buttonVariants({ variant: "outline", size: "sm" })}
+            >
+              <ExternalLink className="size-3.5" />
+              FlightRadar24
+            </Link>
           </div>
         </div>
 
