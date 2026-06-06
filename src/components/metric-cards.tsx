@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowDownRight, ArrowUpRight, Clock, Plane, TriangleAlert, TrendingUp } from "lucide-react";
-import { api, fmtProba } from "@/lib/api";
+import { api, fmtProba, fmtTime } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 type MetricProps = {
@@ -131,8 +131,13 @@ export async function MetricCards() {
   const high   = m.high_risk ?? 0;
   const med    = m.medium_risk ?? 0;
   const low    = m.low_risk ?? 0;
+  const lastTick = m.last_tick_utc ? fmtTime(m.last_tick_utc) + " UTC" : "—";
 
   return (
+    <div className="space-y-3">
+    <p className="text-[11px] font-mono text-muted-foreground">
+      Última predicción: {lastTick}
+    </p>
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       <MetricCard
         label="Vuelos del día"
@@ -163,6 +168,7 @@ export async function MetricCards() {
         icon={TriangleAlert}
         tone={high > 10 ? "danger" : "warning"}
       />
+    </div>
     </div>
   );
 }

@@ -1,13 +1,39 @@
 "use client";
 
+import * as React from "react";
 import { useRouter } from "next/navigation";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Radio, LogOut } from "lucide-react";
+import { Clock, Radio, LogOut } from "lucide-react";
 import { clearToken } from "@/lib/auth";
+
+function UtcClock() {
+  const [time, setTime] = React.useState("");
+
+  React.useEffect(() => {
+    function tick() {
+      const now = new Date();
+      const hh = now.getUTCHours().toString().padStart(2, "0");
+      const mm = now.getUTCMinutes().toString().padStart(2, "0");
+      const ss = now.getUTCSeconds().toString().padStart(2, "0");
+      setTime(`${hh}:${mm}:${ss}`);
+    }
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  if (!time) return null;
+  return (
+    <Badge variant="outline" className="gap-1 font-mono text-[10px] tabular-nums">
+      <Clock className="size-3 text-muted-foreground" />
+      {time} UTC
+    </Badge>
+  );
+}
 
 export function AppHeader({ title }: { title?: string }) {
   const router = useRouter();
@@ -33,6 +59,7 @@ export function AppHeader({ title }: { title?: string }) {
       </div>
 
       <div className="ml-auto flex items-center gap-2">
+        <UtcClock />
         <ThemeSwitcher />
         <Button
           variant="ghost"
