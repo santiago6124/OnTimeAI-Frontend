@@ -28,10 +28,11 @@ const CHIPS: { value: RiskFilter; label: string }[] = [
   { value: "low",    label: "Bajo"   },
 ];
 
-const STATUS_TABS: { value: "all" | "upcoming" | "departed"; label: string }[] = [
+const STATUS_TABS: { value: "all" | "upcoming" | "airborne" | "landed"; label: string }[] = [
   { value: "all",      label: "Todos los vuelos"      },
   { value: "upcoming", label: "Próximas salidas (45m)" },
-  { value: "departed", label: "Ya despegaron"          },
+  { value: "airborne", label: "En vuelo"               },
+  { value: "landed",   label: "Aterrizados"            },
 ];
 
 function TableSkeleton() {
@@ -62,8 +63,10 @@ function TableSkeleton() {
 
 export function FlightsTable({
   onStatusTabChange,
+  onRiskChange,
 }: {
-  onStatusTabChange?: (tab: "all" | "upcoming" | "departed") => void;
+  onStatusTabChange?: (tab: "all" | "upcoming" | "airborne" | "landed") => void;
+  onRiskChange?: (risk: RiskFilter) => void;
 }) {
   const router       = useRouter();
   const pathname     = usePathname();
@@ -71,8 +74,8 @@ export function FlightsTable({
 
   const [flights,   setFlights]   = React.useState<Flight[]>([]);
   const [loading,   setLoading]   = React.useState(true);
-  const [statusTab, setStatusTab] = React.useState<"all" | "upcoming" | "departed">(
-    () => (searchParams.get("status") as "all" | "upcoming" | "departed") ?? "all",
+  const [statusTab, setStatusTab] = React.useState<"all" | "upcoming" | "airborne" | "landed">(
+    () => (searchParams.get("status") as "all" | "upcoming" | "airborne" | "landed") ?? "all",
   );
   const [q,    setQ]    = React.useState(() => searchParams.get("q")    ?? "");
   const [risk, setRisk] = React.useState<RiskFilter>(
@@ -96,20 +99,24 @@ export function FlightsTable({
     router.replace(`${pathname}${qs ? `?${qs}` : ""}`, { scroll: false });
   }, [statusTab, risk, q, router]);
 
+  function matchesTab(f: Flight, now: Date): boolean {
+    const isDeparted = f.actual_out_utc !== null || f.departure_delay_min !== null;
+    const hasLanded  = f.has_actual;
+    if (statusTab === "airborne") return isDeparted && !hasLanded;
+    if (statusTab === "landed")   return hasLanded;
+    if (statusTab === "upcoming") {
+      if (isDeparted) return false;
+      const estStr = f.estimated_out_utc || f.scheduled_out_utc;
+      if (!estStr) return false;
+      const diff = (toUTCDate(estStr).getTime() - now.getTime()) / 60000;
+      return diff >= -15 && diff <= 45;
+    }
+    return true; // "all"
+  }
+
   const counts = React.useMemo(() => {
     const now = new Date();
-    const byStatus = flights.filter((f) => {
-      const isDeparted = f.actual_out_utc !== null || f.departure_delay_min !== null;
-      if (statusTab === "departed") return isDeparted;
-      if (statusTab === "upcoming") {
-        if (isDeparted) return false;
-        const estStr = f.estimated_out_utc || f.scheduled_out_utc;
-        if (!estStr) return false;
-        const diff = (toUTCDate(estStr).getTime() - now.getTime()) / 60000;
-        return diff >= -15 && diff <= 45;
-      }
-      return true;
-    });
+    const byStatus = flights.filter((f) => matchesTab(f, now));
     return {
       all:    byStatus.length,
       high:   byStatus.filter((f) => f.risk === "high").length,
@@ -122,20 +129,8 @@ export function FlightsTable({
     const term = q.trim().toLowerCase();
     const now  = new Date();
     return flights.filter((f) => {
-      // 1. Status tab
-      const isDeparted = f.actual_out_utc !== null || f.departure_delay_min !== null;
-      if (statusTab === "departed") {
-        if (!isDeparted) return false;
-      } else if (statusTab === "upcoming") {
-        if (isDeparted) return false;
-        const estStr = f.estimated_out_utc || f.scheduled_out_utc;
-        if (!estStr) return false;
-        const diff = (toUTCDate(estStr).getTime() - now.getTime()) / 60000;
-        if (diff < -15 || diff > 45) return false;
-      }
-      // 2. Risk filter
+      if (!matchesTab(f, now)) return false;
       if (risk !== "all" && f.risk !== risk) return false;
-      // 3. Search
       if (!term) return true;
       return (
         f.flight_number.toLowerCase().includes(term) ||
@@ -153,7 +148,7 @@ export function FlightsTable({
         {STATUS_TABS.map(({ value, label }) => (
           <button
             key={value}
-            onClick={() => { setStatusTab(value); onStatusTabChange?.(value); }}
+            onClick={() => { setStatusTab(value as "all" | "upcoming" | "airborne" | "landed"); onStatusTabChange?.(value as "all" | "upcoming" | "airborne" | "landed"); }}
             className={cn(
               "-mb-px border-b-2 px-4 py-2 text-sm font-medium transition-colors",
               statusTab === value
@@ -190,7 +185,7 @@ export function FlightsTable({
           {CHIPS.map(({ value, label }) => (
             <button
               key={value}
-              onClick={() => setRisk(value)}
+              onClick={() => { setRisk(value); onRiskChange?.(value); }}
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors",
                 risk === value
