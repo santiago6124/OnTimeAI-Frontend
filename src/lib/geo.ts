@@ -90,6 +90,38 @@ export const AIRPORTS: Record<string, Airport> = {
   XNA: { code: "XNA", name: "Northwest Arkansas National", city: "Bentonville", lat: 36.2819, lng: -94.3069 },
   HNL: { code: "HNL", name: "Daniel K. Inouye Intl.", city: "Honolulu", lat: 21.3245, lng: -157.9251 },
   SJU: { code: "SJU", name: "Luis Muñoz Marín Intl.", city: "San Juan", lat: 18.4394, lng: -66.0018 },
+  // Southeast regional
+  EVV: { code: "EVV", name: "Evansville Regional", city: "Evansville", lat: 37.9933, lng: -87.5324 },
+  AGS: { code: "AGS", name: "Augusta Regional", city: "Augusta", lat: 33.3699, lng: -81.9645 },
+  DAB: { code: "DAB", name: "Daytona Beach Intl.", city: "Daytona Beach", lat: 29.1799, lng: -81.0581 },
+  AVL: { code: "AVL", name: "Asheville Regional", city: "Asheville", lat: 35.4362, lng: -82.5418 },
+  SRQ: { code: "SRQ", name: "Sarasota-Bradenton Intl.", city: "Sarasota", lat: 27.3954, lng: -82.5544 },
+  EYW: { code: "EYW", name: "Key West Intl.", city: "Key West", lat: 24.5561, lng: -81.7596 },
+  HSV: { code: "HSV", name: "Huntsville Intl.", city: "Huntsville", lat: 34.6372, lng: -86.7751 },
+  LFT: { code: "LFT", name: "Lafayette Regional", city: "Lafayette", lat: 30.2053, lng: -91.9876 },
+  AEX: { code: "AEX", name: "Alexandria Intl.", city: "Alexandria", lat: 31.3274, lng: -92.5498 },
+  ABY: { code: "ABY", name: "Southwest Georgia Regional", city: "Albany", lat: 31.5355, lng: -84.1945 },
+  JAN: { code: "JAN", name: "Jackson-Medgar Evers Intl.", city: "Jackson", lat: 32.3112, lng: -90.0759 },
+  // Northeast & Mid-Atlantic
+  ALB: { code: "ALB", name: "Albany Intl.", city: "Albany", lat: 42.7483, lng: -73.8017 },
+  ROC: { code: "ROC", name: "Greater Rochester Intl.", city: "Rochester", lat: 43.1189, lng: -77.6724 },
+  SYR: { code: "SYR", name: "Syracuse Hancock Intl.", city: "Syracuse", lat: 43.1112, lng: -76.1062 },
+  BDL: { code: "BDL", name: "Bradley Intl.", city: "Hartford", lat: 41.9389, lng: -72.6832 },
+  PWM: { code: "PWM", name: "Portland Intl. Jetport", city: "Portland", lat: 43.6462, lng: -70.3093 },
+  HPN: { code: "HPN", name: "Westchester County", city: "White Plains", lat: 41.0670, lng: -73.7076 },
+  MDT: { code: "MDT", name: "Harrisburg Intl.", city: "Harrisburg", lat: 40.1935, lng: -76.7634 },
+  ABE: { code: "ABE", name: "Lehigh Valley Intl.", city: "Allentown", lat: 40.6524, lng: -75.4408 },
+  ORF: { code: "ORF", name: "Norfolk Intl.", city: "Norfolk", lat: 36.8976, lng: -76.0183 },
+  CHO: { code: "CHO", name: "Charlottesville-Albemarle", city: "Charlottesville", lat: 38.1386, lng: -78.4529 },
+  PIT: { code: "PIT", name: "Pittsburgh Intl.", city: "Pittsburgh", lat: 40.4915, lng: -80.2329 },
+  // Midwest regional
+  FWA: { code: "FWA", name: "Fort Wayne Intl.", city: "Fort Wayne", lat: 40.9785, lng: -85.1951 },
+  GRR: { code: "GRR", name: "Gerald R. Ford Intl.", city: "Grand Rapids", lat: 42.8808, lng: -85.5228 },
+  MLI: { code: "MLI", name: "Quad City Intl.", city: "Moline", lat: 41.4485, lng: -90.5075 },
+  ICT: { code: "ICT", name: "Wichita Eisenhower National", city: "Wichita", lat: 37.6499, lng: -97.4331 },
+  LEX: { code: "LEX", name: "Blue Grass Airport", city: "Lexington", lat: 38.0365, lng: -84.6059 },
+  // Other
+  ANC: { code: "ANC", name: "Ted Stevens Anchorage Intl.", city: "Anchorage", lat: 61.1741, lng: -149.9960 },
 };
 
 const toRad = (d: number) => (d * Math.PI) / 180;
