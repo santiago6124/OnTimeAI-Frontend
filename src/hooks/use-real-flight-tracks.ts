@@ -21,6 +21,7 @@ export type MapTrack = {
   destLng: number;
   progress: number;
   isDeparted: boolean;
+  hasLanded: boolean;
   minutesToDep: number;
 };
 
@@ -53,6 +54,7 @@ function flightToTrack(f: Flight, now: number): MapTrack | null {
   const bearing = initialBearing(pos, d);
 
   const isDeparted = f.actual_out_utc !== null || f.departure_delay_min !== null;
+  const hasLanded  = f.has_actual;
   const estOutMs = toMs(f.estimated_out_utc) ?? toMs(f.scheduled_out_utc);
   const minutesToDep = estOutMs !== null ? (estOutMs - now) / 60_000 : 0;
 
@@ -73,6 +75,7 @@ function flightToTrack(f: Flight, now: number): MapTrack | null {
     destLng: d.lng,
     progress,
     isDeparted,
+    hasLanded,
     minutesToDep,
   };
 }
