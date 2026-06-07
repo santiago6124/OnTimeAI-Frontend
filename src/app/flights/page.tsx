@@ -12,16 +12,14 @@ import { useRealFlightTracks, type MapTrack } from "@/hooks/use-real-flight-trac
 import { Plane } from "lucide-react";
 import type { RiskLevel } from "@/lib/api";
 
-type StatusTab = "all" | "upcoming" | "airborne" | "landed";
+type StatusTab = "all" | "upcoming" | "departed";
 type RiskFilter = "all" | RiskLevel;
 
 function filterTracks(tracks: MapTrack[], tab: StatusTab, risk: RiskFilter) {
   let result = tracks;
 
-  if (tab === "airborne") {
-    result = result.filter((t) => t.isDeparted && !t.hasLanded);
-  } else if (tab === "landed") {
-    result = result.filter((t) => t.hasLanded);
+  if (tab === "departed") {
+    result = result.filter((t) => t.isDeparted);
   } else if (tab === "upcoming") {
     result = result.filter((t) => !t.isDeparted && t.minutesToDep >= -15 && t.minutesToDep <= 45);
   }
@@ -36,8 +34,7 @@ function filterTracks(tracks: MapTrack[], tab: StatusTab, risk: RiskFilter) {
 const TAB_LABELS: Record<StatusTab, string> = {
   all:      "todos los vuelos",
   upcoming: "próximas salidas",
-  airborne: "vuelos en el aire",
-  landed:   "vuelos aterrizados",
+  departed: "ya despegaron",
 };
 
 export default function FlightsPage() {
