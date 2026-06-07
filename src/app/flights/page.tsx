@@ -8,12 +8,30 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FlightsTable } from "@/components/flights-table";
 import { FlightRadarMap } from "@/components/maps/flight-radar-map-dynamic";
-import { useRealFlightTracks } from "@/hooks/use-real-flight-tracks";
+import { useRealFlightTracks, type MapTrack } from "@/hooks/use-real-flight-tracks";
 import { Plane } from "lucide-react";
+
+type StatusTab = "all" | "upcoming" | "departed";
+
+function filterTracksByTab(tracks: MapTrack[], tab: StatusTab) {
+  if (tab === "all") return tracks;
+  if (tab === "departed") return tracks.filter((t) => t.isDeparted);
+  // upcoming: not departed AND departing within the next 45min (same window as table)
+  return tracks.filter((t) => !t.isDeparted && t.minutesToDep >= -15 && t.minutesToDep <= 45);
+}
+
+const TAB_LABELS: Record<StatusTab, string> = {
+  all:      "todos los vuelos",
+  upcoming: "próximas salidas",
+  departed: "vuelos que ya despegaron",
+};
 
 export default function FlightsPage() {
   const [selectedId, setSelectedId] = React.useState<string | undefined>();
+  const [statusTab, setStatusTab] = React.useState<StatusTab>("all");
   const { tracks, loading } = useRealFlightTracks();
+
+  const visibleTracks = filterTracksByTab(tracks, statusTab);
 
   return (
     <AppShell title="Vuelos ATL">
@@ -22,13 +40,13 @@ export default function FlightsPage() {
           <div className="space-y-1">
             <h1 className="text-2xl font-semibold tracking-tight">Vuelos ATL</h1>
             <p className="text-sm text-muted-foreground">
-              Radar en vivo · posiciones interpoladas por ruta y tiempo
+              Radar en vivo · mostrando {TAB_LABELS[statusTab]}
             </p>
           </div>
           {!loading && (
             <Badge variant="outline" className="gap-1.5 shrink-0">
               <Plane className="size-3" />
-              {tracks.length} en ruta
+              {visibleTracks.length} en mapa
             </Badge>
           )}
         </header>
@@ -38,7 +56,7 @@ export default function FlightsPage() {
         ) : (
           <Card className="p-0 overflow-hidden">
             <FlightRadarMap
-              flights={tracks}
+              flights={visibleTracks}
               selectedId={selectedId}
               onSelect={(id) => setSelectedId(id || undefined)}
               height={560}
@@ -47,7 +65,7 @@ export default function FlightsPage() {
         )}
 
         <Suspense fallback={<div className="h-96 animate-pulse rounded-lg bg-muted" />}>
-          <FlightsTable />
+          <FlightsTable onStatusTabChange={setStatusTab} />
         </Suspense>
       </div>
     </AppShell>

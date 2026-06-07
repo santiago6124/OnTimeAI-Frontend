@@ -60,7 +60,11 @@ function TableSkeleton() {
   );
 }
 
-export function FlightsTable() {
+export function FlightsTable({
+  onStatusTabChange,
+}: {
+  onStatusTabChange?: (tab: "all" | "upcoming" | "departed") => void;
+}) {
   const router       = useRouter();
   const pathname     = usePathname();
   const searchParams = useSearchParams();
@@ -149,7 +153,7 @@ export function FlightsTable() {
         {STATUS_TABS.map(({ value, label }) => (
           <button
             key={value}
-            onClick={() => setStatusTab(value)}
+            onClick={() => { setStatusTab(value); onStatusTabChange?.(value); }}
             className={cn(
               "-mb-px border-b-2 px-4 py-2 text-sm font-medium transition-colors",
               statusTab === value
