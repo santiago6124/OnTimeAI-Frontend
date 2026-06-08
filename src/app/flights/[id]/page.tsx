@@ -112,7 +112,7 @@ export default async function FlightDetailPage(
           </CardContent>
         </Card>
 
-        <div className="grid gap-4 lg:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <Card className="lg:col-span-1">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium">

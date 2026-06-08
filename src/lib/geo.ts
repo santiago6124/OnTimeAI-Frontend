@@ -122,6 +122,63 @@ export const AIRPORTS: Record<string, Airport> = {
   LEX: { code: "LEX", name: "Blue Grass Airport", city: "Lexington", lat: 38.0365, lng: -84.6059 },
   // Other
   ANC: { code: "ANC", name: "Ted Stevens Anchorage Intl.", city: "Anchorage", lat: 61.1741, lng: -149.9960 },
+  // Southeast & Florida regional
+  ECP: { code: "ECP", name: "Northwest Florida Beaches Intl.", city: "Panama City Beach", lat: 30.3574, lng: -85.7970 },
+  VPS: { code: "VPS", name: "Destin-Fort Walton Beach", city: "Fort Walton Beach", lat: 30.4832, lng: -86.5254 },
+  GNV: { code: "GNV", name: "Gainesville Regional", city: "Gainesville", lat: 29.6900, lng: -82.2717 },
+  MLB: { code: "MLB", name: "Melbourne Intl.", city: "Melbourne", lat: 28.1028, lng: -80.6453 },
+  GPT: { code: "GPT", name: "Gulfport-Biloxi Intl.", city: "Gulfport", lat: 30.4073, lng: -89.0701 },
+  MGM: { code: "MGM", name: "Montgomery Regional", city: "Montgomery", lat: 32.3006, lng: -86.3940 },
+  CHA: { code: "CHA", name: "Chattanooga Metropolitan", city: "Chattanooga", lat: 35.0353, lng: -85.2038 },
+  BTR: { code: "BTR", name: "Baton Rouge Metropolitan", city: "Baton Rouge", lat: 30.5332, lng: -91.1496 },
+  MLU: { code: "MLU", name: "Monroe Regional", city: "Monroe", lat: 32.5109, lng: -92.0377 },
+  SGF: { code: "SGF", name: "Springfield-Branson National", city: "Springfield", lat: 37.2457, lng: -93.3886 },
+  HHH: { code: "HHH", name: "Hilton Head Airport", city: "Hilton Head", lat: 32.2244, lng: -80.6976 },
+  OAJ: { code: "OAJ", name: "Albert J. Ellis Airport", city: "Jacksonville NC", lat: 34.8292, lng: -77.6121 },
+  // Carolinas & Virginia
+  CHS: { code: "CHS", name: "Charleston Intl.", city: "Charleston", lat: 32.8986, lng: -80.0405 },
+  GSO: { code: "GSO", name: "Piedmont Triad Intl.", city: "Greensboro", lat: 36.0977, lng: -79.9373 },
+  RIC: { code: "RIC", name: "Richmond Intl.", city: "Richmond", lat: 37.5052, lng: -77.3197 },
+  ROA: { code: "ROA", name: "Roanoke-Blacksburg Regional", city: "Roanoke", lat: 37.3255, lng: -79.9754 },
+  FAY: { code: "FAY", name: "Fayetteville Regional", city: "Fayetteville", lat: 34.9912, lng: -78.8803 },
+  ILM: { code: "ILM", name: "Wilmington Intl.", city: "Wilmington", lat: 34.2706, lng: -77.9026 },
+  TRI: { code: "TRI", name: "Tri-Cities Regional", city: "Johnson City", lat: 36.4752, lng: -82.4074 },
+  TYS: { code: "TYS", name: "McGhee Tyson Airport", city: "Knoxville", lat: 35.8109, lng: -83.9940 },
+  // Mid-Atlantic & New England
+  PVD: { code: "PVD", name: "T.F. Green Intl.", city: "Providence", lat: 41.7236, lng: -71.4281 },
+  BUF: { code: "BUF", name: "Buffalo Niagara Intl.", city: "Buffalo", lat: 42.9405, lng: -78.7322 },
+  BTV: { code: "BTV", name: "Burlington Intl.", city: "Burlington", lat: 44.4719, lng: -73.1533 },
+  BGR: { code: "BGR", name: "Bangor Intl.", city: "Bangor", lat: 44.8074, lng: -68.8281 },
+  CRW: { code: "CRW", name: "Yeager Airport", city: "Charleston WV", lat: 38.3731, lng: -81.5932 },
+  SDF: { code: "SDF", name: "Louisville Muhammad Ali Intl.", city: "Louisville", lat: 38.1744, lng: -85.7360 },
+  // Midwest regional
+  SBN: { code: "SBN", name: "South Bend Intl.", city: "South Bend", lat: 41.7087, lng: -86.3173 },
+  DAY: { code: "DAY", name: "Dayton Intl.", city: "Dayton", lat: 39.9024, lng: -84.2194 },
+  MSN: { code: "MSN", name: "Dane County Regional", city: "Madison", lat: 43.1399, lng: -89.3375 },
+  GRB: { code: "GRB", name: "Green Bay Austin Straubel Intl.", city: "Green Bay", lat: 44.4851, lng: -88.1296 },
+  ATW: { code: "ATW", name: "Appleton Intl.", city: "Appleton", lat: 44.2581, lng: -88.5190 },
+  TVC: { code: "TVC", name: "Cherry Capital Airport", city: "Traverse City", lat: 44.7414, lng: -85.5822 },
+  OMA: { code: "OMA", name: "Eppley Airfield", city: "Omaha", lat: 41.3032, lng: -95.8941 },
+  DSM: { code: "DSM", name: "Des Moines Intl.", city: "Des Moines", lat: 41.5340, lng: -93.6631 },
+  CID: { code: "CID", name: "The Eastern Iowa Airport", city: "Cedar Rapids", lat: 41.8842, lng: -91.7108 },
+  BMI: { code: "BMI", name: "Central Illinois Regional", city: "Bloomington-Normal", lat: 40.4771, lng: -88.9159 },
+  FSD: { code: "FSD", name: "Sioux Falls Regional", city: "Sioux Falls", lat: 43.5820, lng: -96.7419 },
+  // Mountain & West regional
+  COS: { code: "COS", name: "Colorado Springs Airport", city: "Colorado Springs", lat: 38.8058, lng: -104.7008 },
+  BOI: { code: "BOI", name: "Boise Airport", city: "Boise", lat: 43.5644, lng: -116.2228 },
+  RNO: { code: "RNO", name: "Reno-Tahoe Intl.", city: "Reno", lat: 39.4991, lng: -119.7681 },
+  GEG: { code: "GEG", name: "Spokane Intl.", city: "Spokane", lat: 47.6199, lng: -117.5338 },
+  BZN: { code: "BZN", name: "Bozeman Yellowstone Intl.", city: "Bozeman", lat: 45.7775, lng: -111.1531 },
+  JAC: { code: "JAC", name: "Jackson Hole Airport", city: "Jackson Hole", lat: 43.6073, lng: -110.7377 },
+  ASE: { code: "ASE", name: "Aspen/Pitkin County", city: "Aspen", lat: 39.2232, lng: -106.8692 },
+  // California regional
+  BUR: { code: "BUR", name: "Hollywood Burbank Airport", city: "Burbank", lat: 34.2007, lng: -118.3585 },
+  ONT: { code: "ONT", name: "Ontario Intl.", city: "Ontario", lat: 34.0560, lng: -117.6012 },
+  SNA: { code: "SNA", name: "John Wayne Airport", city: "Santa Ana", lat: 33.6757, lng: -117.8676 },
+  SMF: { code: "SMF", name: "Sacramento Intl.", city: "Sacramento", lat: 38.6954, lng: -121.5908 },
+  SBA: { code: "SBA", name: "Santa Barbara Municipal", city: "Santa Barbara", lat: 34.4262, lng: -119.8404 },
+  // Caribbean
+  STT: { code: "STT", name: "Cyril E. King Airport", city: "St. Thomas", lat: 18.3373, lng: -64.9733 },
 };
 
 const toRad = (d: number) => (d * Math.PI) / 180;
