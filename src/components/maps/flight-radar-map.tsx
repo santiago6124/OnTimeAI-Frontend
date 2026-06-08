@@ -222,7 +222,7 @@ function FlightTooltip({ flight }: { flight: MapTrack }) {
 function SelectedCard({ flight, onClose }: { flight: MapTrack | null; onClose: () => void }) {
   if (!flight) return null;
   return (
-    <div className="pointer-events-auto absolute bottom-3 left-3 z-[400] w-64 rounded-lg border border-white/10 bg-[#0b1220]/95 p-3 text-sm text-white shadow-lg backdrop-blur">
+    <div className="pointer-events-auto absolute bottom-3 left-3 z-[400] w-[calc(100vw-24px)] rounded-lg border border-white/10 bg-[#0b1220]/95 p-3 text-sm text-white shadow-lg backdrop-blur sm:w-64">
       <div className="flex items-start justify-between gap-2">
         <div>
           <div className="font-mono text-sm font-semibold">{flight.flightNumber}</div>

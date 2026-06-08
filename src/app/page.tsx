@@ -14,10 +14,10 @@ export default async function DashboardPage() {
       <div className="space-y-4">
         <header className="flex flex-col gap-1">
           <h1 className="text-2xl font-semibold tracking-tight">
-            Vuelos del día — ATL
+            Vuelos del día
           </h1>
           <p className="text-sm text-muted-foreground">
-            Predicción en tiempo real de retrasos · Hartsfield-Jackson Atlanta
+            Predicción en tiempo real de retrasos 
           </p>
         </header>
 

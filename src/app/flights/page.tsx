@@ -65,15 +65,17 @@ export default function FlightsPage() {
         </header>
 
         {loading ? (
-          <Skeleton className="h-[560px] w-full rounded-lg" />
+          <Skeleton className="h-[260px] w-full rounded-lg sm:h-[380px] md:h-[560px]" />
         ) : (
           <Card className="p-0 overflow-hidden">
-            <FlightRadarMap
-              flights={visibleTracks}
-              selectedId={selectedId}
-              onSelect={(id) => setSelectedId(id || undefined)}
-              height={560}
-            />
+            <div className="h-[260px] sm:h-[380px] md:h-[560px]">
+              <FlightRadarMap
+                flights={visibleTracks}
+                selectedId={selectedId}
+                onSelect={(id) => setSelectedId(id || undefined)}
+                height="100%"
+              />
+            </div>
           </Card>
         )}
 

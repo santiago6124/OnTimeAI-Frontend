@@ -52,14 +52,14 @@ export function AppHeader({ title }: { title?: string }) {
         <span className="text-sm font-medium text-muted-foreground">
           {title ?? "Dashboard"}
         </span>
-        <Badge variant="outline" className="gap-1 font-mono text-[10px]">
+        <Badge variant="outline" className="hidden gap-1 font-mono text-[10px] sm:flex">
           <Radio className="size-3 text-risk-low" />
           ATL · KATL
         </Badge>
       </div>
 
-      <div className="ml-auto flex items-center gap-2">
-        <UtcClock />
+      <div className="ml-auto flex items-center gap-1 sm:gap-2">
+        <div className="hidden sm:block"><UtcClock /></div>
         <ThemeSwitcher />
         <Button
           variant="ghost"

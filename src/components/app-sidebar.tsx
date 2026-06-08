@@ -57,7 +57,6 @@ export function AppSidebar() {
             <div className="text-sm font-semibold tracking-tight">
               OnTimeAI
             </div>
-            <div className="text-xs text-muted-foreground">ATL Operations</div>
           </div>
         </div>
       </SidebarHeader>

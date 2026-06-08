@@ -48,10 +48,12 @@ export default function WeatherPage() {
         ) : data && data.stations.length > 0 ? (
           <>
             <Card className="p-0 overflow-hidden">
-              <WeatherMap stations={data.stations} height={600} />
+              <div className="h-[260px] sm:h-[380px] md:h-[500px] lg:h-[600px]">
+                <WeatherMap stations={data.stations} height="100%" />
+              </div>
             </Card>
 
-            <div className="grid gap-4 lg:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-2">
               {atlStation && data.atlRaw && (
                 <Card>
                   <CardHeader className="pb-2">
@@ -61,22 +63,22 @@ export default function WeatherPage() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    <div className="grid grid-cols-3 gap-2">
-                      <div className="rounded-md border bg-muted/30 p-2">
-                        <div className="flex items-center gap-1 text-[10px] uppercase tracking-wide text-muted-foreground">
-                          <Thermometer className="size-4" />Temp
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                      <div className="rounded-md border bg-muted/30 p-3">
+                        <div className="flex items-center gap-1 text-xs uppercase tracking-wide text-muted-foreground">
+                          <Thermometer className="size-3.5" />Temp
                         </div>
                         <div className="mt-1 font-mono text-sm">{atlStation.temperatureF}°F</div>
                       </div>
-                      <div className="rounded-md border bg-muted/30 p-2">
-                        <div className="flex items-center gap-1 text-[10px] uppercase tracking-wide text-muted-foreground">
-                          <Wind className="size-4" />Viento
+                      <div className="rounded-md border bg-muted/30 p-3">
+                        <div className="flex items-center gap-1 text-xs uppercase tracking-wide text-muted-foreground">
+                          <Wind className="size-3.5" />Viento
                         </div>
                         <div className="mt-1 font-mono text-sm">{atlStation.windKt} kt</div>
                       </div>
-                      <div className="rounded-md border bg-muted/30 p-2">
-                        <div className="flex items-center gap-1 text-[10px] uppercase tracking-wide text-muted-foreground">
-                          <Eye className="size-4" />Visibilidad
+                      <div className="col-span-2 rounded-md border bg-muted/30 p-3 sm:col-span-1">
+                        <div className="flex items-center gap-1 text-xs uppercase tracking-wide text-muted-foreground">
+                          <Eye className="size-3.5" />Visibilidad
                         </div>
                         <div className="mt-1 font-mono text-sm">{atlStation.visibilitySm} SM</div>
                       </div>
@@ -108,8 +110,8 @@ export default function WeatherPage() {
 function LoadingState() {
   return (
     <div className="space-y-4">
-      <Skeleton className="h-[600px] w-full rounded-lg" />
-      <div className="grid gap-4 lg:grid-cols-2">
+      <Skeleton className="h-[260px] w-full rounded-lg sm:h-[380px] md:h-[500px] lg:h-[600px]" />
+      <div className="grid gap-4 md:grid-cols-2">
         <Skeleton className="h-52 w-full rounded-lg" />
         <Skeleton className="h-52 w-full rounded-lg" />
       </div>

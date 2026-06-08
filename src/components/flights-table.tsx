@@ -141,13 +141,13 @@ export function FlightsTable({
   return (
     <div className="space-y-4">
       {/* Status tabs */}
-      <div className="flex border-b border-border">
+      <div className="flex overflow-x-auto border-b border-border">
         {STATUS_TABS.map(({ value, label }) => (
           <button
             key={value}
             onClick={() => { setStatusTab(value as "all" | "upcoming" | "departed"); onStatusTabChange?.(value as "all" | "upcoming" | "departed"); }}
             className={cn(
-              "-mb-px border-b-2 px-4 py-2 text-sm font-medium transition-colors",
+              "-mb-px shrink-0 border-b-2 px-3 py-2 text-xs font-medium transition-colors sm:px-4 sm:text-sm",
               statusTab === value
                 ? "border-primary text-foreground"
                 : "border-transparent text-muted-foreground hover:text-foreground",
@@ -165,7 +165,7 @@ export function FlightsTable({
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Buscar por vuelo, aerolínea o destino..."
-            className="pl-9 pr-9"
+            className="pl-9 pr-9 text-base sm:text-sm"
           />
           {q && (
             <button
