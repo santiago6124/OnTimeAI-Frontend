@@ -171,7 +171,14 @@ async function get<T>(path: string, options?: RequestInit): Promise<T> {
     headers: { ...authHdrs, ...(options?.headers ?? {}) },
   });
   if (res.status === 401) {
-    if (typeof window !== "undefined") window.location.href = "/login";
+    if (typeof window !== "undefined") {
+      // Clear stale token so providers don't retry on next mount
+      localStorage.removeItem("ontimeai-auth-token");
+      document.cookie = "auth-token=; path=/; max-age=0";
+      if (!window.location.pathname.startsWith("/login")) {
+        window.location.href = "/login";
+      }
+    }
     throw new ApiError(401, "Unauthorized");
   }
   if (!res.ok) throw new ApiError(res.status, `API ${path} → ${res.status}`);
