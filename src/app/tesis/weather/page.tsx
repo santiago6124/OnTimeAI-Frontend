@@ -108,15 +108,15 @@ export default function TesisWeatherPage() {
                     <div className="grid grid-cols-3 gap-2">
                       <div className="rounded-md border bg-muted/30 p-2">
                         <div className="flex items-center gap-1 text-[10px] uppercase tracking-wide text-muted-foreground"><Thermometer className="size-4" />Temp</div>
-                        <div className="mt-1 font-mono text-sm">{atlStation.temperatureF}°F</div>
+                        <div className="mt-1 font-mono text-sm">{atlStation.temperatureF === null ? "—" : `${atlStation.temperatureF}°F`}</div>
                       </div>
                       <div className="rounded-md border bg-muted/30 p-2">
                         <div className="flex items-center gap-1 text-[10px] uppercase tracking-wide text-muted-foreground"><Wind className="size-4" />Viento</div>
-                        <div className="mt-1 font-mono text-sm">{atlStation.windKt} kt</div>
+                        <div className="mt-1 font-mono text-sm">{atlStation.windKt === null ? "—" : `${atlStation.windKt} kt`}</div>
                       </div>
                       <div className="rounded-md border bg-muted/30 p-2">
                         <div className="flex items-center gap-1 text-[10px] uppercase tracking-wide text-muted-foreground"><Eye className="size-4" />Visibilidad</div>
-                        <div className="mt-1 font-mono text-sm">{atlStation.visibilitySm} SM</div>
+                        <div className="mt-1 font-mono text-sm">{atlStation.visibilitySm === null ? "—" : `${atlStation.visibilitySm} SM`}</div>
                       </div>
                     </div>
                     <div className="space-y-1">

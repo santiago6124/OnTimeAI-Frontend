@@ -68,19 +68,19 @@ export default function WeatherPage() {
                         <div className="flex items-center gap-1 text-xs uppercase tracking-wide text-muted-foreground">
                           <Thermometer className="size-3.5" />Temp
                         </div>
-                        <div className="mt-1 font-mono text-sm">{atlStation.temperatureF}°F</div>
+                        <div className="mt-1 font-mono text-sm">{atlStation.temperatureF === null ? "—" : `${atlStation.temperatureF}°F`}</div>
                       </div>
                       <div className="rounded-md border bg-muted/30 p-3">
                         <div className="flex items-center gap-1 text-xs uppercase tracking-wide text-muted-foreground">
                           <Wind className="size-3.5" />Viento
                         </div>
-                        <div className="mt-1 font-mono text-sm">{atlStation.windKt} kt</div>
+                        <div className="mt-1 font-mono text-sm">{atlStation.windKt === null ? "—" : `${atlStation.windKt} kt`}</div>
                       </div>
                       <div className="col-span-2 rounded-md border bg-muted/30 p-3 sm:col-span-1">
                         <div className="flex items-center gap-1 text-xs uppercase tracking-wide text-muted-foreground">
                           <Eye className="size-3.5" />Visibilidad
                         </div>
-                        <div className="mt-1 font-mono text-sm">{atlStation.visibilitySm} SM</div>
+                        <div className="mt-1 font-mono text-sm">{atlStation.visibilitySm === null ? "—" : `${atlStation.visibilitySm} SM`}</div>
                       </div>
                     </div>
                     <div className="space-y-1">

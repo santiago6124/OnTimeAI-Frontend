@@ -23,9 +23,11 @@ import { api } from "@/lib/api";
 export function ThemeSwitcher() {
   const { theme, setTheme, resolvedTheme } = useTheme();
   const { palette, setPalette } = usePalette();
-  const [mounted, setMounted] = React.useState(false);
-
-  React.useEffect(() => setMounted(true), []);
+  const mounted = React.useSyncExternalStore(
+    React.useCallback(() => () => {}, []),
+    () => true,
+    () => false,
+  );
 
   const handleSetTheme = React.useCallback((t: string) => {
     setTheme(t);

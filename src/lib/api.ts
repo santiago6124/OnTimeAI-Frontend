@@ -1,6 +1,10 @@
-import { getToken } from "@/lib/auth";
+import type { SessionUser } from "@/lib/auth-types";
 
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const SERVER_BASE =
+  process.env.BACKEND_API_URL ??
+  process.env.NEXT_PUBLIC_API_URL ??
+  "http://localhost:8000";
+const CLIENT_BASE = "/api/backend";
 
 export type RiskLevel = "low" | "medium" | "high";
 
@@ -9,6 +13,7 @@ export type ShapFactor = {
   label: string;
   contribution: number;
   direction: "positive" | "negative";
+  value?: string | null;
 };
 
 export type Flight = {
@@ -94,11 +99,55 @@ export type RouteHistoryPoint = {
   avg_delay_min: number;
 };
 
+export type OperationalContext = {
+  gdp_origin_delay_min: number | null;
+  gdp_destination_delay_min: number | null;
+  intermediate_departure_delay_min: number | null;
+  adsb_eta_delay_min: number | null;
+  adsb_holding_min: number | null;
+};
+
 export type PredictionPoint = {
   predicted_at_utc: string;
   delay_probability: number;
+  base_probability: number;
+  operational_adjustment: number;
   predicted_delay: number;
+  threshold_used: number | null;
+  threshold_strategy: string | null;
+  prediction_phase: "PRE_DEPARTURE" | "EN_ROUTE" | "POST_LANDING";
+  operational_context: OperationalContext;
+  shap: ShapFactor[];
 };
+
+type PredictionPointPayload = Partial<PredictionPoint> & Pick<PredictionPoint, "predicted_at_utc" | "delay_probability" | "predicted_delay">;
+
+function normalizePredictionPoint(point: PredictionPointPayload): PredictionPoint {
+  const baseProbability = point.base_probability ?? point.delay_probability;
+  const phase = point.prediction_phase;
+  return {
+    predicted_at_utc: point.predicted_at_utc,
+    delay_probability: point.delay_probability,
+    base_probability: baseProbability,
+    operational_adjustment:
+      point.operational_adjustment ?? point.delay_probability - baseProbability,
+    predicted_delay: point.predicted_delay,
+    threshold_used: point.threshold_used ?? null,
+    threshold_strategy: point.threshold_strategy ?? null,
+    prediction_phase:
+      phase === "EN_ROUTE" || phase === "POST_LANDING"
+        ? phase
+        : "PRE_DEPARTURE",
+    operational_context: point.operational_context ?? {
+      gdp_origin_delay_min: null,
+      gdp_destination_delay_min: null,
+      intermediate_departure_delay_min: null,
+      adsb_eta_delay_min: null,
+      adsb_holding_min: null,
+    },
+    shap: point.shap ?? [],
+  };
+}
 
 export type ManagedUser = {
   id: number;
@@ -141,11 +190,8 @@ export type TestCasesResponse = {
 };
 
 async function getAuthHeaders(): Promise<HeadersInit> {
-  if (typeof window !== "undefined") {
-    const token = getToken();
-    return token ? { Authorization: `Bearer ${token}` } : {};
-  }
-  // Server Component: read token from cookie via next/headers
+  if (typeof window !== "undefined") return {};
+
   try {
     const { cookies } = await import("next/headers");
     const store = await cookies();
@@ -165,40 +211,66 @@ export class ApiError extends Error {
 
 async function get<T>(path: string, options?: RequestInit): Promise<T> {
   const authHdrs = await getAuthHeaders();
-  const res = await fetch(`${BASE}${path}`, {
+  const base = typeof window === "undefined" ? SERVER_BASE : CLIENT_BASE;
+  const res = await fetch(`${base}${path}`, {
     cache: "no-store",
+    signal: options?.signal ?? AbortSignal.timeout(15_000),
     ...options,
     headers: { ...authHdrs, ...(options?.headers ?? {}) },
   });
   if (res.status === 401) {
     if (typeof window !== "undefined") {
-      // Clear stale token so providers don't retry on next mount
-      localStorage.removeItem("ontimeai-auth-token");
-      document.cookie = "auth-token=; path=/; max-age=0";
       if (!window.location.pathname.startsWith("/login")) {
-        window.location.href = "/login";
+        window.location.replace("/login");
       }
     }
-    throw new ApiError(401, "Unauthorized");
+    throw new ApiError(401, "La sesión venció. Volvé a ingresar.");
   }
-  if (!res.ok) throw new ApiError(res.status, `API ${path} → ${res.status}`);
+  if (!res.ok) {
+    const payload = (await res.json().catch(() => null)) as
+      | { detail?: string; error?: string }
+      | null;
+    throw new ApiError(
+      res.status,
+      payload?.detail ?? payload?.error ?? `API ${path} → ${res.status}`,
+    );
+  }
   if (res.status === 204) return undefined as unknown as T;
   return res.json() as Promise<T>;
 }
 
 export async function apiLogin(username: string, password: string) {
-  const res = await fetch(`${BASE}/auth/login`, {
+  const res = await fetch("/api/auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username, password }),
+    signal: AbortSignal.timeout(10_000),
   });
-  if (!res.ok) throw new Error("Credenciales incorrectas");
-  return res.json() as Promise<{ access_token: string; token_type: string }>;
+  const payload = (await res.json().catch(() => null)) as
+    | (Partial<SessionUser> & { detail?: string })
+    | null;
+  if (!res.ok) {
+    throw new ApiError(
+      res.status,
+      payload?.detail ?? "No se pudo iniciar sesión.",
+    );
+  }
+  return payload as SessionUser;
 }
 
-export const BASE_URL = BASE;
+export async function apiLogout() {
+  const response = await fetch("/api/auth/logout", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (!response.ok) throw new ApiError(response.status, "No se pudo cerrar la sesión");
+}
+
+export const BASE_URL = CLIENT_BASE;
 
 export const api = {
+  request:        <T>(path: string, options?: RequestInit) => get<T>(path, options),
   flights: (status?: string, departuresWithinMin?: number) => {
     const params = new URLSearchParams();
     if (status) params.set("status", status);
@@ -208,7 +280,10 @@ export const api = {
     return get<Flight[]>(`/flights${qs ? `?${qs}` : ""}`);
   },
   flight:        (id: string) => get<Flight>(`/flights/${encodeURIComponent(id)}`),
-  flightHistory: (id: string) => get<PredictionPoint[]>(`/flight-history/${encodeURIComponent(id)}`),
+  flightHistory: async (id: string) => {
+    const history = await get<PredictionPointPayload[]>(`/flight-history/${encodeURIComponent(id)}`);
+    return history.map(normalizePredictionPoint);
+  },
   weather:       (code: string) => get<WeatherData>(`/weather/${code}`),
   routes:        () => get<RouteMetric[]>("/metrics/routes"),
   routeHistory:  (origin: string, dest: string) => get<RouteHistoryPoint[]>(`/metrics/routes/${origin}/${dest}/history`),

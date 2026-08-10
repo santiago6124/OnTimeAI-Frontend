@@ -66,7 +66,7 @@ function weatherIcon(station: WeatherStation) {
       ">
         <span style="width:6px;height:6px;border-radius:50%;background:${color};box-shadow:0 0 6px ${color};"></span>
         <span style="font-weight:700;">${station.code}</span>
-        <span style="color:#cbd5e1;">${station.temperatureF}°</span>
+        <span style="color:#cbd5e1;">${station.temperatureF === null ? "—" : `${station.temperatureF}°`}</span>
       </div>
     </div>
   `;
@@ -166,13 +166,13 @@ function WeatherTooltip({ station }: { station: WeatherStation }) {
       </div>
       <div className="mt-1 grid grid-cols-2 gap-x-3 gap-y-0.5 text-[10px]">
         <span className="text-white/60">Temp</span>
-        <span className="font-mono">{station.temperatureF}°F</span>
+        <span className="font-mono">{station.temperatureF === null ? "—" : `${station.temperatureF}°F`}</span>
         <span className="text-white/60">Viento</span>
         <span className="font-mono">
-          {station.windKt} kt @ {station.windDeg}°
+          {station.windKt === null ? "—" : `${station.windKt} kt${station.windDeg === null ? "" : ` @ ${station.windDeg}°`}`}
         </span>
         <span className="text-white/60">Visibilidad</span>
-        <span className="font-mono">{station.visibilitySm} SM</span>
+        <span className="font-mono">{station.visibilitySm === null ? "—" : `${station.visibilitySm} SM`}</span>
         <span className="text-white/60">Condición</span>
         <span
           className="font-mono"

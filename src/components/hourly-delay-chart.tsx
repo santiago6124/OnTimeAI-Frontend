@@ -16,8 +16,8 @@ const config = {
     label: "Prob. retraso promedio",
     color: "var(--chart-1)",
   },
-  high_risk: {
-    label: "Riesgo alto",
+  high_risk_pct: {
+    label: "% vuelos riesgo alto",
     color: "var(--color-risk-high)",
   },
 } satisfies ChartConfig;
@@ -30,7 +30,7 @@ function ChartSkeleton() {
           <div
             key={i}
             className="flex-1 animate-pulse rounded-t bg-muted"
-            style={{ height: `${20 + Math.sin(i * 0.8) * 30 + Math.random() * 20}%` }}
+            style={{ height: `${28 + ((i * 17) % 53)}%` }}
           />
         ))}
       </div>
@@ -52,7 +52,8 @@ export function HourlyDelayChart() {
   const chartData = data.map((b) => ({
     hour:      b.hour,
     avg_proba: Math.round(b.avg_proba * 100),
-    high_risk: b.high_risk,
+    high_risk_pct: b.total > 0 ? Math.round((b.high_risk / b.total) * 100) : 0,
+    high_risk_count: b.high_risk,
     total:     b.total,
   }));
 
@@ -71,7 +72,7 @@ export function HourlyDelayChart() {
               </span>
               <span className="flex items-center gap-1">
                 <span className="inline-block size-2 rounded-full bg-risk-high" />
-                Riesgo alto
+                % vuelos riesgo alto
               </span>
             </div>
           )}
@@ -96,6 +97,7 @@ export function HourlyDelayChart() {
                 fontSize={11}
               />
               <YAxis
+                domain={[0, 100]}
                 tickLine={false}
                 axisLine={false}
                 tickMargin={8}
@@ -108,7 +110,7 @@ export function HourlyDelayChart() {
                   <ChartTooltipContent
                     formatter={(value, name) => {
                       if (name === "avg_proba") return [`${value}%`, "Prob. promedio"];
-                      if (name === "high_risk") return [String(value), "Vuelos riesgo alto"];
+                      if (name === "high_risk_pct") return [`${value}%`, "% vuelos riesgo alto"];
                       return [String(value), String(name)];
                     }}
                   />
@@ -120,8 +122,8 @@ export function HourlyDelayChart() {
                 radius={[3, 3, 0, 0]}
               />
               <Bar
-                dataKey="high_risk"
-                fill="var(--color-high_risk)"
+                dataKey="high_risk_pct"
+                fill="var(--color-high_risk_pct)"
                 radius={[3, 3, 0, 0]}
                 opacity={0.75}
               />

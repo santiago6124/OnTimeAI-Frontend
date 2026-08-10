@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { getRole } from "@/lib/auth";
+import { useSession } from "@/components/providers/session-provider";
 
 export type ProfileId = "airline" | "passenger";
 
@@ -24,6 +24,23 @@ export const PROFILES: Array<{
 
 const STORAGE_KEY = "ontimeai-profile";
 const DEFAULT_PROFILE: ProfileId = "airline";
+const listeners = new Set<() => void>();
+
+function subscribe(listener: () => void) {
+  listeners.add(listener);
+  window.addEventListener("storage", listener);
+  return () => {
+    listeners.delete(listener);
+    window.removeEventListener("storage", listener);
+  };
+}
+
+function getStoredProfile(): ProfileId {
+  const stored = window.localStorage.getItem(STORAGE_KEY);
+  return stored === "passenger" || stored === "airline"
+    ? stored
+    : DEFAULT_PROFILE;
+}
 
 type ProfileContextValue = {
   profile: ProfileId;
@@ -35,23 +52,21 @@ const ProfileContext = React.createContext<ProfileContextValue | undefined>(
 );
 
 export function ProfileProvider({ children }: { children: React.ReactNode }) {
-  const [profile, setProfileState] =
-    React.useState<ProfileId>(DEFAULT_PROFILE);
-
-  React.useEffect(() => {
-    const role = getRole();
-    if (role === "admin" || role === "superadmin") {
-      const stored = window.localStorage.getItem(STORAGE_KEY) as ProfileId | null;
-      if (stored === "airline" || stored === "passenger") setProfileState(stored);
-    } else {
-      setProfileState("passenger");
-    }
-  }, []);
+  const { user } = useSession();
+  const storedProfile = React.useSyncExternalStore(
+    subscribe,
+    getStoredProfile,
+    () => DEFAULT_PROFILE,
+  );
+  const canSelectProfile =
+    user?.role === "admin" || user?.role === "superadmin";
+  const profile = canSelectProfile ? storedProfile : "passenger";
 
   const setProfile = React.useCallback((next: ProfileId) => {
-    setProfileState(next);
+    if (!canSelectProfile) return;
     window.localStorage.setItem(STORAGE_KEY, next);
-  }, []);
+    listeners.forEach((listener) => listener());
+  }, [canSelectProfile]);
 
   const value = React.useMemo(
     () => ({ profile, setProfile }),

@@ -30,8 +30,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus, Pencil, Trash2, ShieldOff, ShieldCheck } from "lucide-react";
-import { fmtTime, toUTCDate } from "@/lib/api";
-import { getUsername } from "@/lib/auth";
+import { fmtTime } from "@/lib/api";
+import { useSession } from "@/components/providers/session-provider";
+import { toast } from "sonner";
 
 const ROLE_LABELS: Record<string, string> = {
   superadmin: "Superadmin",
@@ -50,7 +51,8 @@ function fmtDate(utc: string) {
 }
 
 export default function UsersPage() {
-  const me = React.useMemo(() => getUsername(), []);
+  const { user: sessionUser } = useSession();
+  const me = sessionUser?.username ?? null;
   const [users, setUsers] = React.useState<ManagedUser[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState("");
@@ -75,6 +77,7 @@ export default function UsersPage() {
   async function loadUsers() {
     try {
       setLoading(true);
+      setError("");
       setUsers(await api.listUsers());
     } catch {
       setError("No se pudieron cargar los usuarios.");
@@ -83,7 +86,14 @@ export default function UsersPage() {
     }
   }
 
-  React.useEffect(() => { loadUsers(); }, []);
+  React.useEffect(() => {
+    let active = true;
+    api.listUsers()
+      .then((data) => { if (active) setUsers(data); })
+      .catch(() => { if (active) setError("No se pudieron cargar los usuarios."); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, []);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -92,9 +102,10 @@ export default function UsersPage() {
       await api.createUser(newUsername.trim(), newPassword, newRole);
       setCreateOpen(false);
       setNewUsername(""); setNewPassword(""); setNewRole("user");
+      toast.success("Usuario creado");
       await loadUsers();
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : "Error al crear usuario");
+      toast.error(err instanceof Error ? err.message : "Error al crear usuario");
     } finally {
       setCreating(false);
     }
@@ -110,9 +121,10 @@ export default function UsersPage() {
       if (editPassword.trim()) patch.password = editPassword;
       if (Object.keys(patch).length) await api.updateUser(editUser.username, patch);
       setEditUser(null); setEditPassword("");
+      toast.success("Usuario actualizado");
       await loadUsers();
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : "Error al editar usuario");
+      toast.error(err instanceof Error ? err.message : "Error al editar usuario");
     } finally {
       setEditing(false);
     }
@@ -121,9 +133,10 @@ export default function UsersPage() {
   async function handleToggleActive(user: ManagedUser) {
     try {
       await api.updateUser(user.username, { active: !user.active });
+      toast.success(user.active ? "Usuario desactivado" : "Usuario activado");
       await loadUsers();
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : "Error");
+      toast.error(err instanceof Error ? err.message : "No se pudo actualizar el usuario");
     }
   }
 
@@ -133,9 +146,10 @@ export default function UsersPage() {
     try {
       await api.deleteUser(deleteUser.username);
       setDeleteUser(null);
+      toast.success("Usuario eliminado");
       await loadUsers();
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : "Error al eliminar usuario");
+      toast.error(err instanceof Error ? err.message : "Error al eliminar usuario");
     } finally {
       setDeleting(false);
     }
@@ -203,6 +217,7 @@ export default function UsersPage() {
                         variant="ghost"
                         size="icon-sm"
                         title={u.active ? "Desactivar" : "Activar"}
+                        aria-label={`${u.active ? "Desactivar" : "Activar"} a ${u.username}`}
                         disabled={u.username === me}
                         onClick={() => handleToggleActive(u)}
                       >
@@ -214,6 +229,7 @@ export default function UsersPage() {
                         variant="ghost"
                         size="icon-sm"
                         title="Editar"
+                        aria-label={`Editar a ${u.username}`}
                         disabled={u.username === me}
                         onClick={() => { setEditUser(u); setEditRole(u.role); setEditPassword(""); }}
                       >
@@ -223,6 +239,7 @@ export default function UsersPage() {
                         variant="ghost"
                         size="icon-sm"
                         title="Eliminar"
+                        aria-label={`Eliminar a ${u.username}`}
                         disabled={u.username === me}
                         onClick={() => setDeleteUser(u)}
                       >
@@ -249,12 +266,12 @@ export default function UsersPage() {
           </DialogHeader>
           <form onSubmit={handleCreate} className="space-y-4 pt-2">
             <div className="space-y-1.5">
-              <Label>Usuario</Label>
-              <Input value={newUsername} onChange={(e) => setNewUsername(e.target.value)} required autoFocus />
+              <Label htmlFor="new-username">Usuario</Label>
+              <Input id="new-username" value={newUsername} onChange={(e) => setNewUsername(e.target.value)} required autoFocus />
             </div>
             <div className="space-y-1.5">
-              <Label>Contraseña</Label>
-              <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required />
+              <Label htmlFor="new-password">Contraseña</Label>
+              <Input id="new-password" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required />
             </div>
             <div className="space-y-1.5">
               <Label>Rol</Label>
@@ -294,8 +311,8 @@ export default function UsersPage() {
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label>Nueva contraseña <span className="text-muted-foreground">(dejar vacío para no cambiar)</span></Label>
-              <Input type="password" value={editPassword} onChange={(e) => setEditPassword(e.target.value)} />
+              <Label htmlFor="edit-password">Nueva contraseña <span className="text-muted-foreground">(dejar vacío para no cambiar)</span></Label>
+              <Input id="edit-password" type="password" value={editPassword} onChange={(e) => setEditPassword(e.target.value)} />
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setEditUser(null)}>Cancelar</Button>

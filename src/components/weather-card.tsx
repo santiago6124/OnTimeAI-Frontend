@@ -45,15 +45,19 @@ function buildMetar(d: WeatherData): string {
   const day = dt.getUTCDate().toString().padStart(2, "0");
   const hhmm = `${dt.getUTCHours().toString().padStart(2, "0")}${dt.getUTCMinutes().toString().padStart(2, "0")}`;
   const dir = d.wind_direction?.toString().padStart(3, "0") ?? "VRB";
-  const spd = Math.round(d.wind_knots ?? 0).toString().padStart(2, "0");
+  const spd = d.wind_knots == null ? null : Math.round(d.wind_knots).toString().padStart(2, "0");
   const gust = d.gust_knots ? `G${Math.round(d.gust_knots).toString().padStart(2, "0")}` : "";
   const vis = d.visibility_miles != null ? `${d.visibility_miles}SM` : "";
   const wx = validWx(d.wx_codes) ?? "";
-  const t = Math.round(d.temperature_c ?? 0);
-  const td = Math.round(d.dewpoint_c ?? 0);
-  const tStr = `${t < 0 ? "M" : ""}${Math.abs(t).toString().padStart(2, "0")}/${td < 0 ? "M" : ""}${Math.abs(td).toString().padStart(2, "0")}`;
+  const formatTemp = (value: number | null) => {
+    if (value === null) return "//";
+    const rounded = Math.round(value);
+    return `${rounded < 0 ? "M" : ""}${Math.abs(rounded).toString().padStart(2, "0")}`;
+  };
+  const wind = spd === null ? "" : `${dir}${spd}${gust}KT`;
+  const tStr = `${formatTemp(d.temperature_c)}/${formatTemp(d.dewpoint_c)}`;
   const alti = d.altimeter_inhg != null ? `A${Math.round(d.altimeter_inhg * 100)}` : "";
-  return `KATL ${day}${hhmm}Z ${dir}${spd}${gust}KT ${vis} ${wx} ${tStr} ${alti}`.replace(/\s{2,}/g, " ").trim();
+  return `KATL ${day}${hhmm}Z ${wind} ${vis} ${wx} ${tStr} ${alti}`.replace(/\s{2,}/g, " ").trim();
 }
 
 function conditionSeverity(d: WeatherData): "normal" | "caution" | "severe" {
@@ -119,7 +123,7 @@ export async function WeatherCard({ title = "Condiciones meteorológicas ATL" }:
               <WeatherStat
                 icon={<Wind className="size-3.5" />}
                 label="Viento"
-                value={`${Math.round(data.wind_knots ?? 0)} kt`}
+                value={data.wind_knots === null ? "—" : `${Math.round(data.wind_knots)} kt`}
                 alert={data.strong_wind}
               />
               <WeatherStat

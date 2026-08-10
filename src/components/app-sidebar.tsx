@@ -10,7 +10,6 @@ import {
   Settings,
   Users,
 } from "lucide-react";
-import { getRole } from "@/lib/auth";
 
 import {
   Sidebar,
@@ -25,6 +24,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { useProfile } from "@/components/providers/profile-provider";
+import { useSession } from "@/components/providers/session-provider";
 
 const AIRLINE_NAV = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -42,7 +42,8 @@ const PASSENGER_NAV = [
 export function AppSidebar() {
   const pathname = usePathname();
   const { profile } = useProfile();
-  const role = getRole();
+  const { user } = useSession();
+  const role = user?.role ?? "user";
   const nav = profile === "airline" ? AIRLINE_NAV : PASSENGER_NAV;
 
   return (

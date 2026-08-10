@@ -1,8 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { api, type Flight } from "@/lib/api";
+import type { Flight } from "@/lib/api";
 import { AIRPORTS, greatCirclePoint, initialBearing } from "@/lib/geo";
+import { useFlights } from "@/hooks/use-flights";
 
 export type MapTrack = {
   id: string;
@@ -34,7 +35,7 @@ function toMs(iso: string | null | undefined): number | null {
   }
 }
 
-function flightToTrack(f: Flight, now: number): MapTrack | null {
+export function flightToTrack(f: Flight, now: number): MapTrack | null {
   const o = AIRPORTS[f.origin];
   const d = AIRPORTS[f.destination];
   if (!o || !d) return null;
@@ -44,7 +45,8 @@ function flightToTrack(f: Flight, now: number): MapTrack | null {
   if (!depMs || !arrMs || arrMs <= depMs) return null;
 
   // progress: 0 = at origin, 1 = at destination
-  let progress = (now - depMs) / (arrMs - depMs);
+  const isDeparted = f.actual_out_utc !== null || f.departure_delay_min !== null;
+  let progress = isDeparted ? (now - depMs) / (arrMs - depMs) : 0;
   // show planes up to 60min before departure (pre-dep as dot at origin) through landing
   const minProgress = -60 / ((arrMs - depMs) / 60_000);
   if (progress < minProgress || progress > 1.02) return null;
@@ -53,7 +55,6 @@ function flightToTrack(f: Flight, now: number): MapTrack | null {
   const pos = greatCirclePoint(o, d, progress);
   const bearing = initialBearing(pos, d);
 
-  const isDeparted = f.actual_out_utc !== null || f.departure_delay_min !== null;
   const estOutMs = toMs(f.estimated_out_utc) ?? toMs(f.scheduled_out_utc);
   const minutesToDep = estOutMs !== null ? (estOutMs - now) / 60_000 : 0;
 
@@ -78,33 +79,17 @@ function flightToTrack(f: Flight, now: number): MapTrack | null {
   };
 }
 
+export function flightsToTracks(flights: Flight[], now = Date.now()) {
+  return flights
+    .map((flight) => flightToTrack(flight, now))
+    .filter((track): track is MapTrack => track !== null);
+}
+
 export function useRealFlightTracks() {
-  const [tracks, setTracks] = React.useState<MapTrack[]>([]);
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
-
-  async function load() {
-    try {
-      setLoading(true);
-      const flights = await api.flights();
-      const now = Date.now();
-      const mapped = flights
-        .map((f) => flightToTrack(f, now))
-        .filter((t): t is MapTrack => t !== null);
-      setTracks(mapped);
-      setError(null);
-    } catch {
-      setError("No se pudieron cargar los vuelos.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  React.useEffect(() => {
-    load();
-    const id = setInterval(load, 60_000); // refresh every 60s
-    return () => clearInterval(id);
-  }, []);
-
-  return { tracks, loading, error };
+  const result = useFlights();
+  const tracks = React.useMemo(
+    () => flightsToTracks(result.flights),
+    [result.flights],
+  );
+  return { ...result, tracks };
 }

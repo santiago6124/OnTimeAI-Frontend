@@ -6,6 +6,8 @@ import { PaletteProvider } from "@/components/providers/palette-provider";
 import { ProfileProvider } from "@/components/providers/profile-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
+import { SessionProvider } from "@/components/providers/session-provider";
+import { getVerifiedSession } from "@/lib/server-auth";
 
 const sans = Inter({
   variable: "--font-sans",
@@ -27,9 +29,11 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const user = await getVerifiedSession();
+
   return (
     <html
       lang="es"
@@ -43,14 +47,16 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <PaletteProvider>
-            <ProfileProvider>
-              <TooltipProvider>
-                {children}
-                <Toaster richColors position="top-right" />
-              </TooltipProvider>
-            </ProfileProvider>
-          </PaletteProvider>
+          <SessionProvider user={user}>
+            <PaletteProvider>
+              <ProfileProvider>
+                <TooltipProvider>
+                  {children}
+                  <Toaster richColors position="top-right" />
+                </TooltipProvider>
+              </ProfileProvider>
+            </PaletteProvider>
+          </SessionProvider>
         </ThemeProvider>
       </body>
     </html>

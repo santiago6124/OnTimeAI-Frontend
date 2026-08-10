@@ -604,10 +604,10 @@ export type WeatherStation = {
   name: string;
   lat: number;
   lng: number;
-  temperatureF: number;
-  windKt: number;
-  windDeg: number;
-  visibilitySm: number;
+  temperatureF: number | null;
+  windKt: number | null;
+  windDeg: number | null;
+  visibilitySm: number | null;
   condition: "clear" | "cloudy" | "rain" | "storm" | "fog";
   impact: RiskLevel;
 };

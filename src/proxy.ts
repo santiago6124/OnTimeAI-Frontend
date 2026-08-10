@@ -1,12 +1,31 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { AUTH_COOKIE_NAME, AUTH_MAX_AGE_SECONDS } from "@/lib/auth-types";
+
+function hardenCookie(response: NextResponse, token: string | undefined) {
+  if (!token) return response;
+  response.cookies.set(AUTH_COOKIE_NAME, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: AUTH_MAX_AGE_SECONDS,
+    path: "/",
+    priority: "high",
+  });
+  return response;
+}
 
 export function proxy(request: NextRequest) {
-  const token = request.cookies.get("auth-token")?.value;
+  const token = request.cookies.get(AUTH_COOKIE_NAME)?.value;
   const { pathname } = request.nextUrl;
 
   if (pathname === "/login") {
-    if (token) return NextResponse.redirect(new URL("/", request.url));
+    if (token) {
+      return hardenCookie(
+        NextResponse.redirect(new URL("/", request.url)),
+        token,
+      );
+    }
     return NextResponse.next();
   }
 
@@ -16,7 +35,7 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  return NextResponse.next();
+  return hardenCookie(NextResponse.next(), token);
 }
 
 export const config = {

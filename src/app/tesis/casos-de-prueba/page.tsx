@@ -25,7 +25,7 @@ import {
   type CP01Result,
   type CP02Result,
   type ShapFactor,
-  BASE_URL,
+  api,
   fmtProba,
   fmtTime,
 } from "@/lib/api";
@@ -286,16 +286,12 @@ export default function CasosDePruebaPage() {
   useEffect(() => {
     // CP-03: time /flights independently
     const t0 = performance.now();
-    fetch(`${BASE_URL}/flights`, { cache: "no-store" })
+    api.flights()
       .then(() => setFlightsMs(performance.now() - t0))
       .catch(() => setFlightsMs(null));
 
     // CP-01 + CP-02
-    fetch(`${BASE_URL}/test-cases`, { cache: "no-store" })
-      .then((r) => {
-        if (!r.ok) throw new Error(`${r.status}`);
-        return r.json();
-      })
+    api.testCases()
       .then((d) => { setTcData(d); setLoading(false); })
       .catch((e) => { setError(String(e)); setLoading(false); });
   }, []);

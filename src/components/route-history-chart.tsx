@@ -16,18 +16,25 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export function RouteHistoryChart({ origin, dest }: { origin: string; dest: string }) {
-  const [data, setData] = useState<RouteHistoryPoint[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const routeKey = `${origin}:${dest}`;
+  const [state, setState] = useState<{
+    key: string;
+    data: RouteHistoryPoint[];
+    error: boolean;
+  }>({ key: "", data: [], error: false });
 
   useEffect(() => {
     if (!origin || !dest) return;
-    setLoading(true);
-    setError(false);
+    let active = true;
     api.routeHistory(origin, dest)
-      .then((d) => { setData(d); setLoading(false); })
-      .catch(() => { setError(true); setLoading(false); });
-  }, [origin, dest]);
+      .then((data) => { if (active) setState({ key: routeKey, data, error: false }); })
+      .catch(() => { if (active) setState({ key: routeKey, data: [], error: true }); });
+    return () => { active = false; };
+  }, [dest, origin, routeKey]);
+
+  const loading = state.key !== routeKey;
+  const data = loading ? [] : state.data;
+  const error = !loading && state.error;
 
   const avg = data.length > 0 ? data.reduce((s, p) => s + p.on_time_rate, 0) / data.length : null;
   const minRate = data.length > 0 ? Math.min(...data.map((p) => p.on_time_rate)) : 0;

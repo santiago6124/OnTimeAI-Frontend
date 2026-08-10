@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useTheme } from "next-themes";
 import { api } from "@/lib/api";
-import { isAuthenticated } from "@/lib/auth";
+import { useSession } from "@/components/providers/session-provider";
 
 export const PALETTES = [
   { id: "operations", label: "Operations", swatch: "#3b82f6" },
@@ -31,6 +31,7 @@ const PaletteContext = React.createContext<PaletteContextValue | undefined>(
 export function PaletteProvider({ children }: { children: React.ReactNode }) {
   const [palette, setPaletteState] = React.useState<PaletteId>(DEFAULT_PALETTE);
   const { setTheme } = useTheme();
+  const { user } = useSession();
 
   React.useEffect(() => {
     function applyLocalFallback() {
@@ -40,7 +41,7 @@ export function PaletteProvider({ children }: { children: React.ReactNode }) {
       document.documentElement.dataset.palette = p;
     }
 
-    if (!isAuthenticated()) { applyLocalFallback(); return; }
+    if (!user) { applyLocalFallback(); return; }
 
     api.getPreferences()
       .then((prefs) => {
@@ -51,8 +52,7 @@ export function PaletteProvider({ children }: { children: React.ReactNode }) {
         if (prefs.theme) setTheme(prefs.theme);
       })
       .catch(applyLocalFallback);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [setTheme, user]);
 
   const setPalette = React.useCallback((next: PaletteId) => {
     setPaletteState(next);

@@ -72,8 +72,7 @@ function FitToFlights({ flights }: { flights: MapTrack[] }) {
     const points: Array<[number, number]> = flights.map((f) => [f.currentLat, f.currentLng]);
     points.push([AIRPORTS.ATL.lat, AIRPORTS.ATL.lng]);
     map.fitBounds(points, { padding: [48, 48] });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [flights, map]);
   return null;
 }
 
@@ -236,7 +235,7 @@ function SelectedCard({ flight, onClose }: { flight: MapTrack | null; onClose: (
           <div className="font-mono">{flight.origin} → {flight.destination}</div>
         </div>
         <div>
-          <div className="text-white/50">Progreso</div>
+          <div className="text-white/50">Progreso estimado</div>
           <div className="font-mono">{Math.round(flight.progress * 100)}%</div>
         </div>
         <div className="col-span-2">
@@ -252,7 +251,7 @@ function SelectedCard({ flight, onClose }: { flight: MapTrack | null; onClose: (
         href={`/flights/${flight.id}`}
         className="mt-3 inline-flex w-full items-center justify-center rounded-md bg-white/10 px-2 py-1.5 text-[11px] font-medium text-white hover:bg-white/20"
       >
-        Ver detalle + SHAP
+        Ver predicción y explicación
       </Link>
     </div>
   );
@@ -272,7 +271,7 @@ function LiveBadge({ count }: { count: number }) {
   return (
     <div className="pointer-events-none absolute left-3 top-3 z-[400] rounded-md border border-white/10 bg-[#0b1220]/80 px-2 py-1 text-[10px] font-medium uppercase tracking-wider text-white/70 backdrop-blur">
       <span className="mr-1 inline-block size-1.5 animate-pulse rounded-full bg-[#4ade80] align-middle" />
-      {count} vuelos · En vivo
+      {count} vuelos · Posición estimada
     </div>
   );
 }

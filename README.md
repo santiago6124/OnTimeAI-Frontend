@@ -1,36 +1,40 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# OnTimeAI Frontend
 
-## Getting Started
+Dashboard operativo de la tesis OnTimeAI para consultar predicciones de demora de vuelos con base en ATL, evolución temporal, explicaciones SHAP, meteorología y métricas del modelo.
 
-First, run the development server:
+## Arquitectura
+
+- Next.js 16 App Router, React 19 y TypeScript.
+- El navegador se comunica únicamente con rutas same-origin de Next.js.
+- El token de sesión vive en una cookie `HttpOnly`; el BFF `/api/backend/*` agrega la autorización al llamar a FastAPI.
+- El backend se configura con `BACKEND_API_URL`. `NEXT_PUBLIC_API_URL` se mantiene sólo como compatibilidad de despliegues anteriores.
+- Las posiciones del mapa son estimaciones sobre la ruta great-circle; no son telemetría ADS-B en vivo.
+
+## Desarrollo
+
+Requisitos: Node.js 20+ y pnpm 10.33.0.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install --frozen-lockfile
+BACKEND_API_URL=http://localhost:8000 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+La aplicación queda disponible en `http://localhost:3000` y espera FastAPI en `http://localhost:8000` si no se define otra URL.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Verificación
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm build
+```
 
-## Learn More
+## Funcionalidad relevante
 
-To learn more about Next.js, take a look at the following resources:
+- Filtros y paginación de vuelos sincronizados con la URL.
+- Mapa y tabla alimentados por el mismo snapshot, con refresco cada 60 segundos sin ocultar datos previos.
+- Historial seleccionable por ciclo, con probabilidad base/final, ajuste operativo, umbral y SHAP persistido para ese momento.
+- Roles `user`, `admin` y `superadmin`; el perfil pasajero es obligatorio para usuarios comunes.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+La auditoría técnica y las decisiones de UX están documentadas en [`docs/AUDITORIA_FRONTEND_2026-08-09.md`](docs/AUDITORIA_FRONTEND_2026-08-09.md).

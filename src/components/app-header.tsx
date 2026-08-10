@@ -1,14 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Clock, Radio, LogOut } from "lucide-react";
-import { clearToken } from "@/lib/auth";
+import { apiLogout } from "@/lib/api";
 
 function UtcClock() {
   const [time, setTime] = React.useState("");
@@ -36,11 +35,9 @@ function UtcClock() {
 }
 
 export function AppHeader({ title }: { title?: string }) {
-  const router = useRouter();
-
-  function handleLogout() {
-    clearToken();
-    router.replace("/login");
+  async function handleLogout() {
+    await apiLogout().catch(() => undefined);
+    window.location.replace("/login");
   }
 
   return (
@@ -66,6 +63,7 @@ export function AppHeader({ title }: { title?: string }) {
           size="icon"
           onClick={handleLogout}
           title="Cerrar sesión"
+          aria-label="Cerrar sesión"
           className="text-muted-foreground hover:text-foreground"
         >
           <LogOut className="size-4" />
