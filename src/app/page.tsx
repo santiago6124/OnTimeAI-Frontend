@@ -5,7 +5,7 @@ import { FlightsTable } from "@/components/flights-table";
 import { WeatherCard } from "@/components/weather-card";
 import { HourlyDelayChart } from "@/components/hourly-delay-chart";
 import { ModelBadge } from "@/components/model-badge";
-import { getServerRole } from "@/lib/auth";
+import { getServerRole } from "@/lib/server-auth";
 
 export default async function DashboardPage() {
   const role = await getServerRole();

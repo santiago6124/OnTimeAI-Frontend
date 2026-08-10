@@ -11,9 +11,12 @@ import {
   usePalette,
 } from "@/components/providers/palette-provider";
 import { cn } from "@/lib/utils";
+import { ProfileSwitcher } from "@/components/profile-switcher";
+import { useSession } from "@/components/providers/session-provider";
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
+  const { user } = useSession();
 
   function handleSetTheme(t: string) {
     setTheme(t);
@@ -45,6 +48,7 @@ export default function SettingsPage() {
                 key={mode}
                 variant={theme === mode ? "default" : "outline"}
                 onClick={() => handleSetTheme(mode)}
+                aria-pressed={theme === mode}
                 className="capitalize"
               >
                 {mode === "system" ? "Sistema" : mode === "dark" ? "Oscuro" : "Claro"}
@@ -64,7 +68,9 @@ export default function SettingsPage() {
             {PALETTES.map((p) => (
               <button
                 key={p.id}
+                type="button"
                 onClick={() => setPalette(p.id)}
+                aria-pressed={palette === p.id}
                 className={cn(
                   "flex items-center gap-3 rounded-lg border p-3 text-left transition-colors",
                   palette === p.id
@@ -90,6 +96,20 @@ export default function SettingsPage() {
             ))}
           </CardContent>
         </Card>
+
+        {(user?.role === "admin" || user?.role === "superadmin") ? (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Perfil de uso</CardTitle>
+              <CardDescription>
+                Alterná entre la vista operativa y la experiencia simplificada para pasajeros.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ProfileSwitcher />
+            </CardContent>
+          </Card>
+        ) : null}
 
       </div>
     </AppShell>

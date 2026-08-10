@@ -8,11 +8,18 @@ import { ArrowLeft, EyeOff } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { FlightsTable } from "@/components/flights-table";
+import { FlightsTableView } from "@/components/flights-table";
 import { FlightRadarMap } from "@/components/maps/flight-radar-map-dynamic";
+import { flightsToTracks } from "@/hooks/use-real-flight-tracks";
+import { useFlights } from "@/hooks/use-flights";
 
 export default function TesisFlightsPage() {
   const [selectedId, setSelectedId] = React.useState<string | undefined>();
+  const flightsData = useFlights();
+  const tracks = React.useMemo(
+    () => flightsToTracks(flightsData.flights),
+    [flightsData.flights],
+  );
 
   return (
     <AppShell title="Laboratorio · Radar">
@@ -41,7 +48,7 @@ export default function TesisFlightsPage() {
             Radar predictivo de vuelos — ATL
           </h1>
           <p className="max-w-3xl text-sm text-muted-foreground">
-            Visualización estilo Flightradar con posiciones simuladas sobre
+            Visualización estilo Flightradar con posiciones estimadas sobre
             rutas great-circle desde ATL. Los aviones se colorean por riesgo
             predicho por el modelo. Hacé clic en un avión para ver su predicción
             y factores SHAP.
@@ -50,6 +57,7 @@ export default function TesisFlightsPage() {
 
         <Card className="p-0 overflow-hidden">
           <FlightRadarMap
+            flights={tracks}
             selectedId={selectedId}
             onSelect={(id) => setSelectedId(id || undefined)}
             height={600}
@@ -57,7 +65,7 @@ export default function TesisFlightsPage() {
         </Card>
 
         <Suspense fallback={<div className="h-96 animate-pulse rounded-lg bg-muted" />}>
-          <FlightsTable />
+          <FlightsTableView {...flightsData} />
         </Suspense>
       </div>
     </AppShell>

@@ -64,8 +64,16 @@ export function RoutesTable({ routes, loading, selectedRoute, onRouteSelect }: R
                     <TableRow
                       key={r.route}
                       onClick={() => onRouteSelect?.(r.origin, r.dest)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          onRouteSelect?.(r.origin, r.dest);
+                        }
+                      }}
+                      tabIndex={onRouteSelect ? 0 : undefined}
+                      aria-selected={isSelected}
                       className={cn(
-                        "transition-colors",
+                        "transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
                         onRouteSelect && "cursor-pointer",
                         isSelected
                           ? "bg-primary/8 hover:bg-primary/10"

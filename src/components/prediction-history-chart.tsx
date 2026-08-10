@@ -33,9 +33,13 @@ function riskColor(proba: number) {
 export function PredictionHistoryChart({
   history,
   arrDelayMin,
+  selectedAt,
+  onSelect,
 }: {
   history: PredictionPoint[];
   arrDelayMin?: number | null;
+  selectedAt?: string;
+  onSelect?: (predictedAt: string) => void;
 }) {
   const hasActual = arrDelayMin !== null && arrDelayMin !== undefined;
   const actuallyDelayed = hasActual && arrDelayMin! > 15;
@@ -57,6 +61,7 @@ export function PredictionHistoryChart({
   }
 
   const data = history.map((p) => ({
+    predictedAt: p.predicted_at_utc,
     time: fmtAxisTime(p.predicted_at_utc),
     fullTime: fmtTooltipTime(p.predicted_at_utc),
     proba: Math.round(p.delay_probability * 100),
@@ -109,7 +114,7 @@ export function PredictionHistoryChart({
       {header}
       <CardContent>
         <ResponsiveContainer width="100%" height={190}>
-          <AreaChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+          <AreaChart data={data} margin={{ top: 8, right: 52, bottom: 0, left: 0 }}>
             <defs>
               <linearGradient id="probaGrad" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor={color} stopOpacity={0.25} />
@@ -160,16 +165,48 @@ export function PredictionHistoryChart({
               label={{ value: "Medio 15%", position: "insideTopRight", fontSize: 10, fill: "var(--color-risk-medium)", dy: -6 }}
             />
             <Area
-              type="monotone"
+              type="linear"
               dataKey="proba"
               stroke={color}
               strokeWidth={2}
               fill="url(#probaGrad)"
-              dot={{ r: 3, fill: color, strokeWidth: 0 }}
+              dot={(props: HistoryDotProps) => (
+                <HistoryDot
+                  {...props}
+                  selected={props.payload?.predictedAt === selectedAt}
+                  onSelect={onSelect}
+                />
+              )}
               activeDot={{ r: 5, fill: color }}
             />
           </AreaChart>
         </ResponsiveContainer>
+        <div
+          className="mt-3 flex gap-2 overflow-x-auto pb-1"
+          aria-label="Ciclos de predicción disponibles"
+        >
+          {data.map((cycle, index) => (
+            <button
+              key={cycle.predictedAt}
+              type="button"
+              aria-pressed={cycle.predictedAt === selectedAt}
+              onClick={() => onSelect?.(cycle.predictedAt)}
+              className={`min-w-24 rounded-md border px-2.5 py-2 text-left text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                cycle.predictedAt === selectedAt
+                  ? "border-primary bg-primary/10"
+                  : "border-border bg-background hover:bg-muted"
+              }`}
+            >
+              <span className="block text-[10px] text-muted-foreground">
+                Ciclo {index + 1}
+              </span>
+              <span className="block font-mono font-semibold" style={{ color: riskColor(cycle.proba) }}>
+                {cycle.proba}%
+              </span>
+              <span className="block text-[10px] text-muted-foreground">{cycle.time} UTC</span>
+            </button>
+          ))}
+        </div>
         <p className="mt-1 text-[11px] text-muted-foreground">
           Actualización cada 15 min · Umbrales:{" "}
           <span className="text-risk-medium">15% medio</span>{" · "}
@@ -177,5 +214,34 @@ export function PredictionHistoryChart({
         </p>
       </CardContent>
     </Card>
+  );
+}
+
+type ChartDatum = {
+  predictedAt: string;
+  proba: number;
+};
+
+type HistoryDotProps = {
+  cx?: number;
+  cy?: number;
+  payload?: ChartDatum;
+  selected?: boolean;
+  onSelect?: (predictedAt: string) => void;
+};
+
+function HistoryDot({ cx, cy, payload, selected, onSelect }: HistoryDotProps) {
+  if (cx === undefined || cy === undefined || !payload) return <g />;
+  return (
+    <circle
+      cx={cx}
+      cy={cy}
+      r={selected ? 5 : 3.5}
+      fill={riskColor(payload.proba)}
+      stroke="hsl(var(--background))"
+      strokeWidth={selected ? 2.5 : 1.5}
+      className="cursor-pointer"
+      onClick={() => onSelect?.(payload.predictedAt)}
+    />
   );
 }

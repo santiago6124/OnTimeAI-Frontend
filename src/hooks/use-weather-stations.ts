@@ -27,7 +27,7 @@ type State = {
 
 export function useWeatherStations() {
   const [state, setState] = React.useState<State>({
-    status: "idle",
+    status: "loading",
     data: null,
     error: null,
   });
@@ -61,8 +61,33 @@ export function useWeatherStations() {
   }, []);
 
   React.useEffect(() => {
-    load();
-  }, [load]);
+    let active = true;
+
+    fetch("/api/weather", {
+      cache: "no-store",
+      headers: { Accept: "application/json" },
+    })
+      .then(async (res) => {
+        if (!res.ok) {
+          const err = (await res.json().catch(() => ({}))) as Partial<WeatherApiErrorResponse>;
+          throw new Error(err.error ?? `Proxy devolvió ${res.status} ${res.statusText}`);
+        }
+        return res.json() as Promise<WeatherApiResponse>;
+      })
+      .then((data) => {
+        if (active) setState({ status: "success", data, error: null });
+      })
+      .catch((error: unknown) => {
+        if (!active) return;
+        setState({
+          status: "error",
+          data: null,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      });
+
+    return () => { active = false; };
+  }, []);
 
   return { ...state, reload: load };
 }

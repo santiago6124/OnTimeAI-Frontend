@@ -1,5 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import type { ShapFactor } from "@/lib/mock-data";
+import type { ShapFactor } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 export function ShapPanel({
@@ -22,8 +22,8 @@ export function ShapPanel({
         </CardTitle>
         {!compact ? (
           <CardDescription>
-            Contribución de cada variable a la predicción de este vuelo.
-            Positiva = aumenta riesgo · Negativa = reduce riesgo.
+            Impacto sobre el score base del modelo, antes de calibración y ajustes
+            operativos. Positivo aumenta el riesgo; negativo lo reduce.
           </CardDescription>
         ) : null}
       </CardHeader>
@@ -56,9 +56,14 @@ function ShapRow({ factor, max }: { factor: ShapFactor; max: number }) {
           )}
         >
           {isPositive ? "+" : "−"}
-          {(factor.contribution * 100).toFixed(1)} pts
+          {factor.contribution.toFixed(3)} SHAP
         </span>
       </div>
+      {factor.value && factor.value !== "NaN" ? (
+        <div className="text-[10px] text-muted-foreground">
+          Valor observado: <span className="font-mono">{factor.value}</span>
+        </div>
+      ) : null}
       <div className="relative h-2 overflow-hidden rounded-full bg-muted">
         <div
           className={cn(

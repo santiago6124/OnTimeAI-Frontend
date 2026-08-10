@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getServerRole } from "@/lib/auth";
+import { getServerRole } from "@/lib/server-auth";
 
 export default async function AdminLayout({
   children,

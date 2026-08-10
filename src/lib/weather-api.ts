@@ -123,13 +123,13 @@ export async function fetchMetars(
   return data as AwcMetar[];
 }
 
-function parseVisibility(v: string | number | null): number {
-  if (v == null) return 10;
+function parseVisibility(v: string | number | null): number | null {
+  if (v == null) return null;
   if (typeof v === "number") return v;
   const trimmed = v.trim();
   if (trimmed.endsWith("+")) {
     const n = parseFloat(trimmed.slice(0, -1));
-    return Number.isFinite(n) ? n : 10;
+    return Number.isFinite(n) ? n : null;
   }
   if (trimmed.includes("/")) {
     let total = 0;
@@ -141,10 +141,10 @@ function parseVisibility(v: string | number | null): number {
         total += Number(part) || 0;
       }
     }
-    return total || 10;
+    return total || null;
   }
   const n = parseFloat(trimmed);
-  return Number.isFinite(n) ? n : 10;
+  return Number.isFinite(n) ? n : null;
 }
 
 function deriveCondition(m: AwcMetar): WeatherStation["condition"] {
@@ -155,7 +155,7 @@ function deriveCondition(m: AwcMetar): WeatherStation["condition"] {
   if (/SN/.test(wx)) return "rain";
 
   const vis = parseVisibility(m.visib);
-  if (vis < 3) return "fog";
+  if (vis !== null && vis < 3) return "fog";
 
   const clouds = m.clouds ?? [];
   const hasOvc = clouds.some((c) => c.cover === "OVC");
@@ -175,8 +175,8 @@ function deriveImpact(m: AwcMetar): WeatherStation["impact"] {
   const gust = m.wgst ?? 0;
   const wx = (m.wxString ?? "").toUpperCase();
 
-  if (/TS|SQ/.test(wx) || vis < 1 || wind > 25 || gust > 30) return "high";
-  if (/RA|SN|FG|BR/.test(wx) || vis < 5 || wind > 15) return "medium";
+  if (/TS|SQ/.test(wx) || (vis !== null && vis < 1) || wind > 25 || gust > 30) return "high";
+  if (/RA|SN|FG|BR/.test(wx) || (vis !== null && vis < 5) || wind > 15) return "medium";
   return "low";
 }
 
@@ -187,9 +187,8 @@ function cleanStationName(raw: string | undefined, icao: string): string {
 }
 
 export function metarToStation(m: AwcMetar): WeatherStation {
-  const tempF =
-    m.temp != null ? Math.round((m.temp * 9) / 5 + 32) : 0;
-  const vis = Math.round(parseVisibility(m.visib));
+  const tempF = m.temp != null ? Math.round((m.temp * 9) / 5 + 32) : null;
+  const parsedVisibility = parseVisibility(m.visib);
 
   return {
     code: m.icaoId.replace(/^K/, ""),
@@ -197,9 +196,9 @@ export function metarToStation(m: AwcMetar): WeatherStation {
     lat: m.lat,
     lng: m.lon,
     temperatureF: tempF,
-    windKt: Math.round(m.wspd ?? 0),
-    windDeg: m.wdir ?? 0,
-    visibilitySm: vis,
+    windKt: m.wspd == null ? null : Math.round(m.wspd),
+    windDeg: m.wdir,
+    visibilitySm: parsedVisibility == null ? null : Math.round(parsedVisibility),
     condition: deriveCondition(m),
     impact: deriveImpact(m),
   };

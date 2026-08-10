@@ -15,10 +15,9 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { RiskBadge } from "@/components/risk-badge";
-import { ShapPanel } from "@/components/shap-panel";
 import { WeatherCard } from "@/components/weather-card";
-import { api, fmtTime, fmtProba, riskLabel } from "@/lib/api";
-import { PredictionHistoryChart } from "@/components/prediction-history-chart";
+import { api, ApiError, fmtTime, fmtProba } from "@/lib/api";
+import { PredictionEvolution } from "@/components/prediction-evolution";
 
 export default async function FlightDetailPage(
   props: PageProps<"/flights/[id]">,
@@ -27,18 +26,17 @@ export default async function FlightDetailPage(
   let flight;
   try {
     flight = await api.flight(decodeURIComponent(id));
-  } catch {
-    notFound();
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) notFound();
+    throw error;
   }
 
-  const history = await api.flightHistory(decodeURIComponent(id)).catch(() => []);
-
-  const shap = (flight.shap ?? []).map((s) => ({
-    feature:      s.feature,
-    label:        s.label,
-    contribution: s.contribution,
-    direction:    s.direction,
-  }));
+  const history = await api.flightHistory(decodeURIComponent(id));
+  const historyWithLatestExplanation = history.map((cycle, index) =>
+    index === history.length - 1 && cycle.shap.length === 0
+      ? { ...cycle, shap: flight.shap ?? [] }
+      : cycle,
+  );
 
   return (
     <AppShell title={`Vuelo ${flight.flight_number}`}>
@@ -112,8 +110,8 @@ export default async function FlightDetailPage(
           </CardContent>
         </Card>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <Card className="lg:col-span-1">
+        <div className="grid gap-4">
+          <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium">
                 Predicción del modelo
@@ -148,12 +146,9 @@ export default async function FlightDetailPage(
             </CardContent>
           </Card>
 
-          <div className="lg:col-span-2">
-            <ShapPanel factors={shap} />
-          </div>
         </div>
 
-        <PredictionHistoryChart history={history} arrDelayMin={flight.arr_delay_min} />
+        <PredictionEvolution history={historyWithLatestExplanation} arrDelayMin={flight.arr_delay_min} />
 
         <Suspense fallback={<div className="h-48 animate-pulse rounded-lg bg-muted" />}>
           <WeatherCard />

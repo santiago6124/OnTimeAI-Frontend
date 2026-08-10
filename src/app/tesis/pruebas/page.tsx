@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { BASE_URL } from "@/lib/api";
+import { api } from "@/lib/api";
 
 // ── types ──────────────────────────────────────────────────────────────────
 
@@ -321,12 +321,10 @@ function EndpointCard({
     const path = ep.buildPath ? ep.buildPath(params) : ep.path;
     const t0 = performance.now();
     try {
-      const res = await fetch(`${BASE_URL}${path}`, { cache: "no-store" });
+      const data = await api.request<unknown>(path);
       const ms = Math.round(performance.now() - t0);
-      const data = await res.json();
       setState((s) => ({
-        ...s, status: res.ok ? "ok" : "error", ms, data,
-        verdict: res.ok ? s.verdict : "fail",
+        ...s, status: "ok", ms, data,
       }));
     } catch (e) {
       const ms = Math.round(performance.now() - t0);
@@ -476,7 +474,7 @@ export default function PruebasPage() {
           <p className="max-w-2xl text-sm text-muted-foreground">
             Ejecutá cada endpoint con el botón <strong>Ejecutar</strong>, verificá que el resultado
             coincida con lo esperado y marcá <strong>PASS</strong> o <strong>FAIL</strong>.
-            El backend corre en <code className="bg-muted px-1 py-0.5 rounded text-xs">{BASE_URL}</code>.
+            Las pruebas pasan por el BFF autenticado <code className="bg-muted px-1 py-0.5 rounded text-xs">/api/backend</code>.
           </p>
 
           {/* scoreboard */}

@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useState, useTransition } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Plane } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,10 +14,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { apiLogin } from "@/lib/api";
-import { setToken } from "@/lib/auth";
+import { safeReturnPath } from "@/lib/auth-types";
 
 function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -29,12 +28,15 @@ function LoginForm() {
     setError("");
     startTransition(async () => {
       try {
-        const { access_token } = await apiLogin(username, password);
-        setToken(access_token);
-        const from = searchParams.get("from") ?? "/";
-        router.replace(from);
-      } catch {
-        setError("Usuario o contraseña incorrectos.");
+        await apiLogin(username, password);
+        const from = safeReturnPath(searchParams.get("from"));
+        window.location.replace(from);
+      } catch (cause) {
+        setError(
+          cause instanceof Error
+            ? cause.message
+            : "No se pudo iniciar sesión.",
+        );
       }
     });
   }
