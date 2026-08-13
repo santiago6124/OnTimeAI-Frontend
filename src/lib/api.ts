@@ -57,6 +57,8 @@ export type HourlyBucket = {
   hour: string;
   total: number;
   high_risk: number;
+  medium_risk: number;
+  low_risk: number;
   avg_proba: number;
 };
 
