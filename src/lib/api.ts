@@ -39,6 +39,7 @@ export type Flight = {
   arr_delay_min: number | null;
   departure_delay_min: number | null;
   shap?: ShapFactor[];
+  is_historical?: boolean;
 };
 
 export type MetricsSummary = {

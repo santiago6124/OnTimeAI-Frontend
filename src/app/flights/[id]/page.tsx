@@ -16,6 +16,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { RiskBadge } from "@/components/risk-badge";
 import { WeatherCard } from "@/components/weather-card";
+import { Badge } from "@/components/ui/badge";
 import { api, ApiError, fmtTime, fmtProba } from "@/lib/api";
 import { PredictionEvolution } from "@/components/prediction-evolution";
 
@@ -62,6 +63,9 @@ export default async function FlightDetailPage(
             </div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
+            {flight.is_historical && (
+              <Badge variant="secondary" className="text-xs">Vuelo concluido</Badge>
+            )}
             <RiskBadge risk={flight.risk} size="md" />
             <Link
               href={`https://www.flightaware.com/live/flight/${flight.fa_flight_id.split("-")[0]}`}
