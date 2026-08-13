@@ -40,12 +40,16 @@ export function flightToTrack(f: Flight, now: number): MapTrack | null {
   const d = AIRPORTS[f.destination];
   if (!o || !d) return null;
 
-  const depMs = toMs(f.actual_out_utc) ?? toMs(f.estimated_out_utc) ?? toMs(f.scheduled_out_utc);
-  const arrMs = toMs(f.estimated_in_utc) ?? toMs(f.scheduled_in_utc);
+  const depMs = toMs(f.actual_out_utc) ?? toMs(f.actual_off_utc)
+    ?? toMs(f.estimated_out_utc) ?? toMs(f.scheduled_out_utc);
+  const arrMs = toMs(f.actual_in_utc) ?? toMs(f.actual_on_utc)
+    ?? toMs(f.estimated_in_utc) ?? toMs(f.scheduled_in_utc);
   if (!depMs || !arrMs || arrMs <= depMs) return null;
 
   // progress: 0 = at origin, 1 = at destination
-  const isDeparted = f.actual_out_utc !== null || f.departure_delay_min !== null;
+  const isDeparted = f.actual_out_utc !== null
+    || f.actual_off_utc !== null
+    || f.departure_delay_min !== null;
   let progress = isDeparted ? (now - depMs) / (arrMs - depMs) : 0;
   // show planes up to 60min before departure (pre-dep as dot at origin) through landing
   const minProgress = -60 / ((arrMs - depMs) / 60_000);

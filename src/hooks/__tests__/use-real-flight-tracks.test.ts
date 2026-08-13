@@ -15,6 +15,9 @@ function flight(overrides: Partial<Flight> = {}): Flight {
     estimated_out_utc: "2026-08-09T10:00:00Z",
     estimated_in_utc: "2026-08-09T12:00:00Z",
     actual_out_utc: null,
+    actual_off_utc: null,
+    actual_on_utc: null,
+    actual_in_utc: null,
     aircraft_type: "A320",
     risk: "medium",
     delay_probability: 0.22,
@@ -42,6 +45,15 @@ describe("flightToTrack", () => {
       flight({ actual_out_utc: "2026-08-09T10:00:00Z", departure_delay_min: 0 }),
       Date.parse("2026-08-09T11:00:00Z"),
     );
+    expect(track?.progress).toBeCloseTo(0.5);
+  });
+
+  it("uses wheels-up when the provider has no gate-out timestamp", () => {
+    const track = flightToTrack(
+      flight({ actual_off_utc: "2026-08-09T10:10:00Z", departure_delay_min: 10 }),
+      Date.parse("2026-08-09T11:05:00Z"),
+    );
+    expect(track?.isDeparted).toBe(true);
     expect(track?.progress).toBeCloseTo(0.5);
   });
 });
