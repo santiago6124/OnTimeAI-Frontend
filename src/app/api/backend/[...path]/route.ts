@@ -13,12 +13,6 @@ async function proxyRequest(
   request: NextRequest,
   context: { params: Promise<{ path: string[] }> },
 ) {
-  if (METHODS_WITH_BODY.has(request.method)) {
-    const origin = request.headers.get("origin");
-    if (origin && origin !== request.nextUrl.origin) {
-      return NextResponse.json({ detail: "Origen inválido" }, { status: 403 });
-    }
-  }
 
   const token = request.cookies.get(AUTH_COOKIE_NAME)?.value;
   if (!token) {
