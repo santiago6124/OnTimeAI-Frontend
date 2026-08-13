@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { AppShell } from "@/components/app-shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,10 +10,40 @@ import { Cloud, Eye, Radar, Thermometer, Wind } from "lucide-react";
 import { WeatherMap } from "@/components/maps/weather-map-dynamic";
 import { WeatherErrorCard } from "@/components/weather-error-card";
 import { useWeatherStations } from "@/hooks/use-weather-stations";
+import { api } from "@/lib/api";
 import type { WeatherStation } from "@/lib/mock-data";
 
+// Prefijos ICAO para regiones no continentales de EE.UU.
+const ICAO_EXCEPTIONS: Record<string, string> = {
+  HNL: "PHNL", OGG: "PHOG", KOA: "PHKO", LIH: "PHLI", ITO: "PHTO", MKK: "PHMK",
+  SJU: "TJSJ", BQN: "TJBQ", PSE: "TJPS", MAZ: "TJMZ",
+  STT: "TIST", STX: "TISX",
+  GUM: "PGUM", SPN: "PGSN",
+  PPG: "NSTU",
+};
+
+function iataToIcao(iata: string): string | null {
+  if (!iata || iata.length !== 3 || !/^[A-Z]{3}$/.test(iata)) return null;
+  return ICAO_EXCEPTIONS[iata] ?? "K" + iata;
+}
+
 export default function WeatherPage() {
-  const { status, data, error } = useWeatherStations();
+  const [icaoCodes, setIcaoCodes] = React.useState<string[]>([]);
+
+  React.useEffect(() => {
+    api.flights().then((flights) => {
+      const airports = new Set<string>(["KATL"]);
+      for (const f of flights) {
+        const orig = iataToIcao(f.origin);
+        const dest = iataToIcao(f.destination);
+        if (orig) airports.add(orig);
+        if (dest) airports.add(dest);
+      }
+      setIcaoCodes([...airports].slice(0, 150));
+    }).catch(() => setIcaoCodes(["KATL"]));
+  }, []);
+
+  const { status, data, error } = useWeatherStations(icaoCodes.length > 0 ? icaoCodes : undefined);
   const atlStation = data?.stations.find((s) => s.code === "ATL");
 
   return (

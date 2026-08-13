@@ -7,8 +7,7 @@ import {
 
 export const revalidate = 300;
 
-const ALLOWED_STATIONS = new Set(ATL_REGIONAL_STATIONS);
-const MAX_STATIONS = 20;
+const MAX_STATIONS = 150;
 
 export async function GET(request: Request) {
   const started = Date.now();
@@ -23,14 +22,9 @@ export async function GET(request: Request) {
     : ATL_REGIONAL_STATIONS;
 
   const uniqueIds = [...new Set(ids)];
-  const invalid = uniqueIds.filter((id) => !ALLOWED_STATIONS.has(id));
-  if (invalid.length > 0 || uniqueIds.length === 0 || uniqueIds.length > MAX_STATIONS) {
+  if (uniqueIds.length === 0 || uniqueIds.length > MAX_STATIONS) {
     return NextResponse.json(
-      {
-        error: invalid.length > 0
-          ? `Estaciones no permitidas: ${invalid.join(", ")}`
-          : `Solicitá entre 1 y ${MAX_STATIONS} estaciones`,
-      },
+      { error: `Solicitá entre 1 y ${MAX_STATIONS} estaciones` },
       { status: 400 },
     );
   }
