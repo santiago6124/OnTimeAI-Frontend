@@ -27,6 +27,9 @@ export type Flight = {
   estimated_out_utc: string;
   estimated_in_utc: string;
   actual_out_utc: string | null;
+  actual_off_utc: string | null;
+  actual_on_utc: string | null;
+  actual_in_utc: string | null;
   aircraft_type: string;
   risk: RiskLevel;
   delay_probability: number;

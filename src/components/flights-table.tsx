@@ -333,7 +333,9 @@ function TableSkeleton() {
 }
 
 function FlightRow({ flight }: { flight: Flight }) {
-  const departed = flight.actual_out_utc !== null || flight.departure_delay_min !== null;
+  const actualDeparture = flight.actual_out_utc ?? flight.actual_off_utc;
+  const actualArrival = flight.actual_in_utc ?? flight.actual_on_utc;
+  const departed = actualDeparture !== null || flight.departure_delay_min !== null;
   const detailHref = `/flights/${encodeURIComponent(flight.fa_flight_id)}`;
 
   return (
@@ -356,10 +358,11 @@ function FlightRow({ flight }: { flight: Flight }) {
       <TableCell className="hidden md:table-cell">
         <div className="flex flex-col gap-0.5 font-mono text-sm">
           <span>{fmtTime(flight.scheduled_out_utc)}</span>
-          {flight.actual_out_utc ? (
-            <span className="text-[10px] leading-none text-muted-foreground">Real: {fmtTime(flight.actual_out_utc)}</span>
-          ) : flight.estimated_out_utc && flight.estimated_out_utc !== flight.scheduled_out_utc ? (
+          {flight.estimated_out_utc && flight.estimated_out_utc !== flight.scheduled_out_utc ? (
             <span className="text-[10px] leading-none text-risk-medium">Est: {fmtTime(flight.estimated_out_utc)}</span>
+          ) : null}
+          {actualDeparture ? (
+            <span className="text-[10px] leading-none text-muted-foreground">Real: {fmtTime(actualDeparture)}</span>
           ) : null}
         </div>
       </TableCell>
@@ -368,6 +371,9 @@ function FlightRow({ flight }: { flight: Flight }) {
           <span>{fmtTime(flight.scheduled_in_utc)}</span>
           {flight.estimated_in_utc && flight.estimated_in_utc !== flight.scheduled_in_utc ? (
             <span className="text-[10px] leading-none text-muted-foreground">Est: {fmtTime(flight.estimated_in_utc)}</span>
+          ) : null}
+          {actualArrival ? (
+            <span className="text-[10px] leading-none text-muted-foreground">Real: {fmtTime(actualArrival)}</span>
           ) : null}
         </div>
       </TableCell>
