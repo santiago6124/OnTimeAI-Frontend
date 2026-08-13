@@ -92,7 +92,9 @@ export default async function FlightDetailPage(
           <CardContent className="flex flex-col gap-6 pt-6 md:flex-row md:items-center md:justify-between">
             <RouteEndpoint
               code={flight.origin}
-              time={fmtTime(flight.scheduled_out_utc)}
+              scheduledTime={flight.scheduled_out_utc}
+              estimatedTime={flight.estimated_out_utc}
+              actualTime={flight.actual_out_utc ?? flight.actual_off_utc}
               label="Salida (UTC)"
             />
             <div className="hidden flex-col items-center gap-1 md:flex">
@@ -107,8 +109,10 @@ export default async function FlightDetailPage(
             </div>
             <RouteEndpoint
               code={flight.destination}
-              time={fmtTime(flight.scheduled_in_utc)}
-              label="Llegada estimada (UTC)"
+              scheduledTime={flight.scheduled_in_utc}
+              estimatedTime={flight.estimated_in_utc}
+              actualTime={flight.actual_in_utc ?? flight.actual_on_utc}
+              label="Llegada (UTC)"
               align="right"
             />
           </CardContent>
@@ -163,17 +167,41 @@ export default async function FlightDetailPage(
 }
 
 function RouteEndpoint({
-  code, time, label, align = "left",
+  code, scheduledTime, estimatedTime, actualTime, label, align = "left",
 }: {
-  code: string; time: string; label: string; align?: "left" | "right";
+  code: string;
+  scheduledTime: string;
+  estimatedTime: string;
+  actualTime: string | null;
+  label: string;
+  align?: "left" | "right";
+}) {
+  const hasDistinctEstimate = estimatedTime && estimatedTime !== scheduledTime;
+
+  return (
+    <div className={`flex min-w-48 flex-col gap-2 ${align === "right" ? "md:items-end md:text-right" : ""}`}>
+      <div className="text-xs uppercase tracking-wide text-muted-foreground">{label}</div>
+      <span className="font-mono text-3xl font-semibold">{code}</span>
+      <div className={`grid gap-1 ${align === "right" ? "md:justify-items-end" : ""}`}>
+        <RouteTime label="Programada" value={scheduledTime} />
+        {hasDistinctEstimate ? (
+          <RouteTime label="Estimada" value={estimatedTime} className="text-risk-medium" />
+        ) : null}
+        {actualTime ? <RouteTime label="Real" value={actualTime} /> : null}
+      </div>
+    </div>
+  );
+}
+
+function RouteTime({
+  label, value, className,
+}: {
+  label: string; value: string; className?: string;
 }) {
   return (
-    <div className={`flex flex-col gap-1 ${align === "right" ? "md:items-end md:text-right" : ""}`}>
-      <div className="text-xs uppercase tracking-wide text-muted-foreground">{label}</div>
-      <div className="flex items-baseline gap-2">
-        <span className="font-mono text-3xl font-semibold">{code}</span>
-        <span className="font-mono text-lg text-muted-foreground">{time}</span>
-      </div>
+    <div className={`flex items-baseline gap-2 font-mono text-sm ${className ?? "text-muted-foreground"}`}>
+      <span className="w-20 text-[10px] uppercase tracking-wide">{label}</span>
+      <span className="text-base text-foreground">{fmtTime(value)}</span>
     </div>
   );
 }
