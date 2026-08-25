@@ -9,6 +9,7 @@ import {
   CloudSun,
   Settings,
   Users,
+  Globe,
 } from "lucide-react";
 
 import {
@@ -111,6 +112,17 @@ export function AppSidebar() {
               />
             </SidebarMenuItem>
           )}
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              tooltip="Vista pública"
+              render={
+                <Link href="/live">
+                  <Globe />
+                  <span>Vista pública</span>
+                </Link>
+              }
+            />
+          </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton
               tooltip="Ajustes"

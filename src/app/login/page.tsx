@@ -2,6 +2,7 @@
 
 import { Suspense, useState, useTransition } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { Plane } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -104,6 +105,13 @@ export default function LoginPage() {
         <Suspense fallback={<div className="h-64 animate-pulse rounded-lg bg-muted" />}>
           <LoginForm />
         </Suspense>
+
+        <p className="text-center text-sm text-muted-foreground">
+          ¿Sin cuenta?{" "}
+          <Link href="/live" className="text-primary underline underline-offset-4 hover:text-primary/80 transition-colors">
+            Ver predicciones en tiempo real →
+          </Link>
+        </p>
       </div>
     </div>
   );
