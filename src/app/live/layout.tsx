@@ -1,14 +1,18 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Plane } from "lucide-react";
+import { getVerifiedSession } from "@/lib/server-auth";
 
 export const metadata = {
-  title: "OnTimeAI Live — Vuelos ATL en tiempo real",
+  title: "OnTimeAI Lite — Vuelos ATL",
   description:
-    "Predicciones en tiempo real de retrasos para vuelos en el aeropuerto Hartsfield-Jackson Atlanta (ATL). Actualizado cada 15 minutos.",
+    "Vista simplificada de predicciones de retrasos para vuelos en ATL. Actualizado cada 15 minutos.",
 };
 
-export default function LiveLayout({ children }: { children: ReactNode }) {
+export default async function LiveLayout({ children }: { children: ReactNode }) {
+  const user = await getVerifiedSession();
+  if (!user) redirect("/login?from=/live");
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
       {/* Header */}
@@ -31,13 +35,18 @@ export default function LiveLayout({ children }: { children: ReactNode }) {
             EN VIVO · ATL
           </div>
 
-          {/* CTA */}
-          <Link
-            href="/login"
-            className="ml-auto text-xs font-medium px-3 py-1.5 rounded-md border border-border hover:bg-muted transition-colors"
-          >
-            Iniciar sesión →
-          </Link>
+          {/* Mode toggle */}
+          <div className="ml-auto flex items-center gap-1 rounded-full border border-border bg-muted/40 p-0.5">
+            <span className="px-3 py-1 rounded-full bg-background text-xs font-semibold shadow-sm">
+              Lite
+            </span>
+            <Link
+              href="/"
+              className="px-3 py-1 rounded-full text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Pro
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -65,8 +74,8 @@ export default function LiveLayout({ children }: { children: ReactNode }) {
       <footer className="border-t">
         <div className="max-w-6xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-muted-foreground">
           <span>OnTimeAI — Tesis UCC Grupo 9 · 2026</span>
-          <Link href="/login" className="hover:text-foreground transition-colors underline underline-offset-2">
-            Acceder al análisis completo →
+          <Link href="/" className="hover:text-foreground transition-colors underline underline-offset-2">
+            Cambiar a modo Pro →
           </Link>
         </div>
       </footer>
