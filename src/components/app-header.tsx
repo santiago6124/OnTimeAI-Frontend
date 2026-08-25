@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { ThemeSwitcher } from "@/components/theme-switcher";
@@ -57,6 +58,20 @@ export function AppHeader({ title }: { title?: string }) {
 
       <div className="ml-auto flex items-center gap-1 sm:gap-2">
         <div className="hidden sm:block"><UtcClock /></div>
+
+        {/* Lite / Pro mode toggle */}
+        <div className="flex items-center gap-0.5 rounded-full border border-border bg-muted/40 p-0.5 text-xs">
+          <Link
+            href="/live"
+            className="px-2.5 py-1 rounded-full font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Lite
+          </Link>
+          <span className="px-2.5 py-1 rounded-full bg-background font-semibold shadow-sm">
+            Pro
+          </span>
+        </div>
+
         <ThemeSwitcher />
         <Button
           variant="ghost"

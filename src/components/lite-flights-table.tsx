@@ -155,7 +155,7 @@ export function LiteFlightsTable({ initialFlights }: { initialFlights: Flight[] 
             {paged.map((f) => (
               <div
                 key={f.fa_flight_id}
-                title="Iniciá sesión para ver el historial y detalle completo"
+                title="Cambiá a modo Pro para ver historial y detalle completo"
                 className={cn(
                   "grid grid-cols-[1fr_1.5fr_1fr_120px] sm:grid-cols-[80px_1fr_1.5fr_1fr_120px] gap-3 px-4 py-3 items-center border-l-2 transition-colors hover:bg-muted/30 cursor-default",
                   RISK_BORDER[f.risk],
@@ -200,18 +200,18 @@ export function LiteFlightsTable({ initialFlights }: { initialFlights: Flight[] 
             <Lock className="size-4 text-primary" />
           </div>
           <div>
-            <p className="text-sm font-medium">Análisis completo disponible</p>
+            <p className="text-sm font-medium">Más detalle en modo Pro</p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Iniciá sesión para ver el historial de predicciones, explicación de factores (SHAP),
+              Historial de predicciones, explicación de factores (SHAP),
               métricas del modelo y comparación real vs predicho.
             </p>
           </div>
         </div>
         <a
-          href="/login"
+          href="/"
           className="shrink-0 text-xs font-medium px-3 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
         >
-          Iniciar sesión →
+          Ir a modo Pro →
         </a>
       </div>
     </div>
