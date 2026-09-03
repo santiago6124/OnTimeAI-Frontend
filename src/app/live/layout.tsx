@@ -12,7 +12,7 @@ export const metadata = {
 
 export default async function LiveLayout({ children }: { children: ReactNode }) {
   const user = await getVerifiedSession();
-  if (!user) redirect("/login?from=/live");
+
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
       {/* Header */}
@@ -35,17 +35,27 @@ export default async function LiveLayout({ children }: { children: ReactNode }) 
             EN VIVO · ATL
           </div>
 
-          {/* Mode toggle */}
-          <div className="ml-auto flex items-center gap-1 rounded-full border border-border bg-muted/40 p-0.5">
-            <span className="px-3 py-1 rounded-full bg-background text-xs font-semibold shadow-sm">
-              Lite
-            </span>
-            <Link
-              href="/"
-              className="px-3 py-1 rounded-full text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Pro
-            </Link>
+          {/* Mode toggle and login CTA */}
+          <div className="ml-auto flex items-center gap-2">
+            <div className="flex items-center gap-1 rounded-full border border-border bg-muted/40 p-0.5">
+              <span className="px-3 py-1 rounded-full bg-background text-xs font-semibold shadow-sm">
+                Lite
+              </span>
+              <Link
+                href="/"
+                className="px-3 py-1 rounded-full text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Pro
+              </Link>
+            </div>
+            {!user && (
+              <Link
+                href="/login?from=/live"
+                className="text-xs font-medium px-3 py-1.5 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+              >
+                Iniciar sesión
+              </Link>
+            )}
           </div>
         </div>
       </header>
