@@ -1,6 +1,10 @@
 import { Suspense } from "react";
 import { AppShell } from "@/components/app-shell";
 import { MetricCards, MetricCardsSkeleton } from "@/components/metric-cards";
+import {
+  OperationalImpactCards,
+  OperationalImpactSkeleton,
+} from "@/components/operational-impact-cards";
 import { FlightsTable } from "@/components/flights-table";
 import { WeatherCard } from "@/components/weather-card";
 import { HourlyDelayChart } from "@/components/hourly-delay-chart";
@@ -23,6 +27,10 @@ export default async function DashboardPage() {
 
         <Suspense fallback={<MetricCardsSkeleton />}>
           <MetricCards />
+        </Suspense>
+
+        <Suspense fallback={<OperationalImpactSkeleton />}>
+          <OperationalImpactCards />
         </Suspense>
 
         <div className="grid gap-4 lg:grid-cols-3">
