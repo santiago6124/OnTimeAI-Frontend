@@ -121,10 +121,12 @@ export function FlightRadarMap({
         attributionControl={false}
         style={{ height: "100%", width: "100%", background: "#0b1220" }}
       >
+        {/* CARTO pasó a exigir API key y estampa una marca de agua sobre cada
+            tile. Esri World Dark Gray es gratuito, sin clave y de estilo oscuro. */}
         <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-          subdomains={["a", "b", "c", "d"]}
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+          url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
+          maxZoom={16}
+          attribution='&copy; <a href="https://www.esri.com/">Esri</a>'
         />
 
         <FitToFlights flights={flights} />

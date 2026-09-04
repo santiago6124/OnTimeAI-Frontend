@@ -111,14 +111,16 @@ export function WeatherMap({
         attributionControl={false}
         style={{ height: "100%", width: "100%", background: "#0b1220" }}
       >
+        {/* CARTO pasó a exigir API key y estampa una marca de agua sobre cada
+            tile. Esri World Dark Gray es gratuito, sin clave y de estilo oscuro. */}
         <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png"
-          subdomains={["a", "b", "c", "d"]}
-          attribution='&copy; OSM &copy; CARTO'
+          url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
+          maxZoom={16}
+          attribution='&copy; <a href="https://www.esri.com/">Esri</a>'
         />
         <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png"
-          subdomains={["a", "b", "c", "d"]}
+          url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}"
+          maxZoom={16}
           opacity={0.6}
         />
 

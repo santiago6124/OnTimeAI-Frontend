@@ -56,4 +56,24 @@ describe("flightToTrack", () => {
     expect(track?.isDeparted).toBe(true);
     expect(track?.progress).toBeCloseTo(0.5);
   });
+
+  // El backend serializa con offset ("+00:00"), no con sufijo "Z". Estos
+  // fixtures replican ese formato: con la implementación anterior, que
+  // concatenaba "Z", cada timestamp quedaba inválido y el mapa mostraba 0
+  // vuelos aun teniendo cientos en la respuesta.
+  it("parses timestamps serialised with a UTC offset instead of Z", () => {
+    const track = flightToTrack(
+      flight({
+        scheduled_out_utc: "2026-08-09T10:00:00+00:00",
+        scheduled_in_utc: "2026-08-09T12:00:00+00:00",
+        estimated_out_utc: "2026-08-09T10:00:00+00:00",
+        estimated_in_utc: "2026-08-09T12:00:00+00:00",
+        actual_out_utc: "2026-08-09T10:00:00+00:00",
+        departure_delay_min: 0,
+      }),
+      Date.parse("2026-08-09T11:00:00Z"),
+    );
+    expect(track).not.toBeNull();
+    expect(track?.progress).toBeCloseTo(0.5);
+  });
 });
