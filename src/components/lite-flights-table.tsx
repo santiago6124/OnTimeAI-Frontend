@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { Lock, Search, X } from "lucide-react";
 import { RiskBadge } from "@/components/risk-badge";
 import { Input } from "@/components/ui/input";
@@ -43,9 +44,8 @@ export function LiteFlightsTable({ initialFlights }: { initialFlights: Flight[] 
   const [status, setStatus] = React.useState<StatusTab>("all");
   const [page, setPage]     = React.useState(0);
 
-  const now = new Date();
-
   const filtered = React.useMemo(() => {
+    const now = new Date();
     const q = query.toLowerCase().trim();
     return initialFlights.filter((f) => {
       if (risk !== "all" && f.risk !== risk) return false;
@@ -207,12 +207,12 @@ export function LiteFlightsTable({ initialFlights }: { initialFlights: Flight[] 
             </p>
           </div>
         </div>
-        <a
+        <Link
           href="/"
           className="shrink-0 text-xs font-medium px-3 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
         >
           Ir a modo Pro →
-        </a>
+        </Link>
       </div>
     </div>
   );

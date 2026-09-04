@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { Plane } from "lucide-react";
 import { getVerifiedSession } from "@/lib/server-auth";
 
