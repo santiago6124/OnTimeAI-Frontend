@@ -1,10 +1,22 @@
-import type { SessionUser } from "@/lib/auth-types";
+import { isRole, type SessionUser } from "@/lib/auth-types";
+import { API_ORIGIN, IS_BUNDLED, appPath } from "@/lib/mobile-env";
 
 const SERVER_BASE =
   process.env.BACKEND_API_URL ??
   process.env.NEXT_PUBLIC_API_URL ??
   "http://localhost:8000";
-const CLIENT_BASE = "/api/backend";
+/**
+ * Origen contra el que el navegador resuelve las llamadas al backend.
+ *
+ * Web y Android remoto: el BFF same-origin. El token no sale nunca del
+ * servidor — la cookie `HttpOnly` la lee el route handler, no el JS.
+ *
+ * Bundle nativo: el FastAPI directo. No hay BFF que empaquetar y la cookie no
+ * cruzaría de `capacitor://localhost` a otro origen, así que el token viaja en
+ * el header desde el almacenamiento nativo. Requiere que el backend liste
+ * `capacitor://localhost` en `ALLOWED_ORIGINS` (ver MOBILE_APP.md §5).
+ */
+const CLIENT_BASE = IS_BUNDLED ? API_ORIGIN : "/api/backend";
 
 export type RiskLevel = "low" | "medium" | "high";
 
@@ -196,7 +208,14 @@ export type TestCasesResponse = {
 };
 
 async function getAuthHeaders(): Promise<HeadersInit> {
-  if (typeof window !== "undefined") return {};
+  if (typeof window !== "undefined") {
+    // Web: la cookie HttpOnly viaja sola y el BFF pone el Authorization.
+    if (!IS_BUNDLED) return {};
+    // Bundle nativo: no hay BFF ni cookie que cruce de origen.
+    const { loadToken } = await import("@/lib/native/session");
+    const token = await loadToken();
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  }
 
   try {
     const { cookies } = await import("next/headers");
@@ -226,8 +245,15 @@ async function get<T>(path: string, options?: RequestInit): Promise<T> {
   });
   if (res.status === 401) {
     if (typeof window !== "undefined") {
+      // En la web el BFF ya vació la cookie al ver el 401 del backend. En el
+      // bundle no hay BFF: si el token expirado se queda guardado, el próximo
+      // arranque lo vuelve a mandar y la app entra en un ciclo de 401.
+      if (IS_BUNDLED) {
+        const { clearToken } = await import("@/lib/native/session");
+        await clearToken();
+      }
       if (!window.location.pathname.startsWith("/login")) {
-        window.location.replace("/login");
+        window.location.replace(appPath("/login"));
       }
     }
     throw new ApiError(401, "La sesión venció. Volvé a ingresar.");
@@ -245,7 +271,21 @@ async function get<T>(path: string, options?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+/** Usuario de la sesión actual, validado contra el backend. */
+export async function apiMe(): Promise<SessionUser> {
+  const payload = await get<Partial<SessionUser>>("/auth/me");
+  if (typeof payload.username !== "string" || !isRole(payload.role)) {
+    throw new ApiError(502, "No se pudo validar la sesión");
+  }
+  return { username: payload.username, role: payload.role };
+}
+
 export async function apiLogin(username: string, password: string) {
+  // El bundle nativo no tiene el BFF: hace los dos saltos que el route handler
+  // hacía del lado del servidor (login y luego /auth/me) y se queda con el
+  // token en almacenamiento nativo en vez de en una cookie HttpOnly.
+  if (IS_BUNDLED) return nativeLogin(username, password);
+
   const res = await fetch("/api/auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -264,7 +304,53 @@ export async function apiLogin(username: string, password: string) {
   return payload as SessionUser;
 }
 
+async function nativeLogin(
+  username: string,
+  password: string,
+): Promise<SessionUser> {
+  const { saveToken, clearToken } = await import("@/lib/native/session");
+
+  let res: Response;
+  try {
+    res = await fetch(`${API_ORIGIN}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+      signal: AbortSignal.timeout(10_000),
+    });
+  } catch {
+    throw new ApiError(503, "No se pudo conectar con el servidor.");
+  }
+
+  const payload = (await res.json().catch(() => null)) as
+    | { access_token?: string; detail?: string }
+    | null;
+  if (!res.ok || !payload?.access_token) {
+    throw new ApiError(
+      res.status || 401,
+      payload?.detail ?? "Credenciales incorrectas",
+    );
+  }
+
+  await saveToken(payload.access_token);
+  try {
+    return await apiMe();
+  } catch (cause) {
+    // Un token que no sirve para leer el propio usuario no es una sesión: si
+    // se queda guardado, el arranque siguiente cree que hay sesión y muestra un
+    // dashboard vacío en vez del login.
+    await clearToken();
+    throw cause;
+  }
+}
+
 export async function apiLogout() {
+  if (IS_BUNDLED) {
+    const { clearToken } = await import("@/lib/native/session");
+    await clearToken();
+    return;
+  }
+
   const response = await fetch("/api/auth/logout", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
