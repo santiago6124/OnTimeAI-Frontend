@@ -12,6 +12,7 @@ import {
 } from "@/components/providers/palette-provider";
 import { cn } from "@/lib/utils";
 import { ProfileSwitcher } from "@/components/profile-switcher";
+import { SystemHealthCard } from "@/components/system-health-card";
 import { useSession } from "@/components/providers/session-provider";
 
 export default function SettingsPage() {
@@ -110,6 +111,9 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
         ) : null}
+
+        {/* GET /admin/db-stats exige superadmin en el backend (_require_superadmin). */}
+        {user?.role === "superadmin" ? <SystemHealthCard /> : null}
 
       </div>
     </AppShell>

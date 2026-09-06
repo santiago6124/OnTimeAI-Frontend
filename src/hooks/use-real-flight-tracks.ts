@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import type { Flight } from "@/lib/api";
+import { toUTCDate, type Flight } from "@/lib/api";
 import { AIRPORTS, greatCirclePoint, initialBearing } from "@/lib/geo";
 import { useFlights } from "@/hooks/use-flights";
 
@@ -27,12 +27,10 @@ export type MapTrack = {
 
 function toMs(iso: string | null | undefined): number | null {
   if (!iso) return null;
-  try {
-    const s = iso.endsWith("Z") ? iso : iso + "Z";
-    return new Date(s).getTime();
-  } catch {
-    return null;
-  }
+  // El backend devuelve offsets ("...+00:00"), no sufijo "Z". Concatenar "Z"
+  // producía "...+00:00Z" — fecha inválida — y descartaba todos los vuelos.
+  const ms = toUTCDate(iso).getTime();
+  return Number.isNaN(ms) ? null : ms;
 }
 
 export function flightToTrack(f: Flight, now: number): MapTrack | null {

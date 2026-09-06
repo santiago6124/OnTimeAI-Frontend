@@ -227,6 +227,13 @@ async function getAuthHeaders(): Promise<HeadersInit> {
   }
 }
 
+/** Respuesta de GET /admin/db-stats. Los conteos varían según qué tablas existan. */
+export type DbStats = {
+  db_size_mb: number;
+  table_counts: Record<string, number>;
+  prediction_dates: { first: string | null; last: string | null };
+};
+
 export class ApiError extends Error {
   constructor(public readonly status: number, message: string) {
     super(message);
@@ -391,6 +398,8 @@ export const api = {
     get<{ ok: boolean }>(`/admin/users/${encodeURIComponent(username)}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(patch) }),
   deleteUser:    (username: string) =>
     get<void>(`/admin/users/${encodeURIComponent(username)}`, { method: "DELETE" }),
+  // System health (superadmin)
+  dbStats:       () => get<DbStats>("/admin/db-stats"),
   // User preferences
   getPreferences:    () => get<UserPreferences>("/users/me/preferences"),
   updatePreferences: (prefs: Partial<UserPreferences>) =>

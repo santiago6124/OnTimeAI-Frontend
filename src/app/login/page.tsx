@@ -104,6 +104,7 @@ export default function LoginPage() {
         <Suspense fallback={<div className="h-64 animate-pulse rounded-lg bg-muted" />}>
           <LoginForm />
         </Suspense>
+
       </div>
     </div>
   );
