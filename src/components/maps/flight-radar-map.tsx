@@ -19,6 +19,7 @@ import {
 import { AIRPORTS, greatCirclePath, type LatLng } from "@/lib/geo";
 import { cn } from "@/lib/utils";
 import type { MapTrack } from "@/hooks/use-real-flight-tracks";
+import { flightDetailHref } from "@/lib/routes";
 
 const RISK_COLOR: Record<MapTrack["risk"], string> = {
   low: "#4ade80",
@@ -248,7 +249,7 @@ function SelectedCard({ flight, onClose }: { flight: MapTrack | null; onClose: (
         </div>
       </div>
       <Link
-        href={`/flights/${flight.id}`}
+        href={flightDetailHref(flight.id)}
         className="mt-3 inline-flex w-full items-center justify-center rounded-md bg-white/10 px-2 py-1.5 text-[11px] font-medium text-white hover:bg-white/20"
       >
         Ver predicción y explicación
