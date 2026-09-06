@@ -48,16 +48,17 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
   );
 }
 
-export function HourlyDelayChart() {
-  const [data, setData] = React.useState<HourlyBucket[]>([]);
-  const [loading, setLoading] = React.useState(true);
+export function HourlyDelayChart({ initialData }: { initialData?: HourlyBucket[] } = {}) {
+  const [data, setData] = React.useState<HourlyBucket[]>(initialData ?? []);
+  const [loading, setLoading] = React.useState(!initialData);
 
   React.useEffect(() => {
+    if (initialData) return;
     api.hourly()
       .then(setData)
       .catch(() => setData([]))
       .finally(() => setLoading(false));
-  }, []);
+  }, [initialData]);
 
   const chartData: ChartItem[] = data.map((b) => ({
     hour:   b.hour,
