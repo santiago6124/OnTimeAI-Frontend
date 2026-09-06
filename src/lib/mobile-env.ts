@@ -42,6 +42,25 @@ export const API_ORIGIN = normalizeOrigin(process.env.NEXT_PUBLIC_API_ORIGIN);
  */
 export const APP_ORIGIN = normalizeOrigin(process.env.NEXT_PUBLIC_APP_ORIGIN);
 
+/**
+ * Si la vista Lite (`/live`) existe en este build.
+ *
+ * El default es `true`: sin la variable definida —web y Android remoto— esto
+ * rinde exactamente el árbol de hoy. Solo el bundle de iOS la apaga, porque ahí
+ * `app/live` directamente no se compila: su layout llama a `getVerifiedSession()`,
+ * que lee la cookie con `next/headers`, y `cookies()` es una de las APIs que
+ * `output: 'export'` no admite.
+ *
+ * Excluir la ruta sin ocultar el acceso sería peor que no excluirla: el toggle
+ * Lite/Pro del header quedaría llevando a una ruta que no existe en el bundle.
+ * Un botón que no lleva a ningún lado es exactamente el tipo de defecto por el
+ * que App Review rechaza una app.
+ *
+ * No se pierde nada en el teléfono: /live es una vista pública simplificada
+ * para compartir por web, y la app ya trae el dashboard completo.
+ */
+export const LIVE_ENABLED = process.env.NEXT_PUBLIC_DISABLE_LIVE !== "1";
+
 function normalizeOrigin(value: string | undefined): string {
   return (value ?? "").trim().replace(/\/+$/, "");
 }

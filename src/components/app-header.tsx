@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Clock, Radio, LogOut } from "lucide-react";
 import { apiLogout } from "@/lib/api";
+import { LIVE_ENABLED } from "@/lib/mobile-env";
 
 function UtcClock() {
   const [time, setTime] = React.useState("");
@@ -59,18 +60,23 @@ export function AppHeader({ title }: { title?: string }) {
       <div className="ml-auto flex items-center gap-1 sm:gap-2">
         <div className="hidden sm:block"><UtcClock /></div>
 
-        {/* Lite / Pro mode toggle */}
-        <div className="flex items-center gap-0.5 rounded-full border border-border bg-muted/40 p-0.5 text-xs">
-          <Link
-            href="/live"
-            className="px-2.5 py-1 rounded-full font-medium text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Lite
-          </Link>
-          <span className="px-2.5 py-1 rounded-full bg-background font-semibold shadow-sm">
-            Pro
-          </span>
-        </div>
+        {/* Lite / Pro mode toggle. En el bundle nativo /live no se compila
+            (su layout lee cookies() en el servidor), así que el toggle entero
+            se va: dejar "Pro" solo sugiere que hay otro modo al que no se
+            puede llegar. Ver LIVE_ENABLED en lib/mobile-env.ts. */}
+        {LIVE_ENABLED && (
+          <div className="flex items-center gap-0.5 rounded-full border border-border bg-muted/40 p-0.5 text-xs">
+            <Link
+              href="/live"
+              className="px-2.5 py-1 rounded-full font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Lite
+            </Link>
+            <span className="px-2.5 py-1 rounded-full bg-background font-semibold shadow-sm">
+              Pro
+            </span>
+          </div>
+        )}
 
         <ThemeSwitcher />
         <Button

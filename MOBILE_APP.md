@@ -66,6 +66,12 @@ Cloud Run.
 - **iOS — rutas**: `/flights/[id]` viaja como `/flights/detail/?id=…`, porque
   `output: 'export'` no admite segmentos dinámicos sin `generateStaticParams` y
   los `fa_flight_id` son datos vivos
+- **iOS — excluido**: `/live` (la vista Lite). Su layout llama a
+  `getVerifiedSession()`, que lee la cookie con `next/headers`, y `cookies()` no
+  existe en un export. Es además una superficie pública para compartir por web;
+  la app ya trae el dashboard completo. El toggle Lite/Pro del header se oculta
+  con `LIVE_ENABLED`, así que no queda ningún botón apuntando a una ruta
+  inexistente — que es motivo de rechazo en App Review
 
 ---
 
