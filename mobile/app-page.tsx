@@ -2,6 +2,7 @@
 
 import { AppShell } from "@/components/app-shell";
 import { MetricCards } from "@/components/metric-cards";
+import { OperationalImpactCards } from "@/components/operational-impact-cards";
 import { FlightsTable } from "@/components/flights-table";
 import { WeatherCard } from "@/components/weather-card";
 import { HourlyDelayChart } from "@/components/hourly-delay-chart";
@@ -40,6 +41,8 @@ export default function DashboardPage() {
         </header>
 
         <MetricCards />
+
+        <OperationalImpactCards />
 
         <div className="grid gap-4 lg:grid-cols-3">
           <div className="lg:col-span-2">
