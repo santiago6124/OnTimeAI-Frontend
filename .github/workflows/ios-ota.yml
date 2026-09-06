@@ -1,0 +1,118 @@
+name: iOS OTA (Capgo)
+
+# Publica un bundle nuevo a los dispositivos iOS ya instalados, sin pasar por
+# App Review.
+#
+# Esto es lo que devuelve los deploys rápidos de UI que costó empaquetar los
+# assets. El Apple Developer Program License Agreement §3.3.2 permite actualizar
+# código interpretado (JS/CSS/HTML) sin revisión; lo que NO se puede actualizar
+# así es código nativo. Si el cambio toca plugins de Capacitor, permisos, el
+# parche del router o cualquier cosa bajo ios/, esto no alcanza y hay que ir por
+# ios-release.yml.
+#
+# Corre en ubuntu: armar el bundle es un `next build`, no necesita Xcode ni los
+# minutos de macOS a 10x.
+#
+# REQUISITO: una cuenta de Capgo y el secret CAPGO_TOKEN. Además, el binario
+# instalado tiene que haberse compilado con `capgo: true` en ios-release.yml
+# (MOBILE_CAPGO=1) — si el OTA está apagado en la app instalada, publicar acá no
+# le llega a nadie.
+#
+# Seguridad del despliegue, en capas:
+#  - `--fail-on-incompatible` aborta si el bundle usa plugins nativos que la
+#    versión instalada no tiene, en vez de publicar algo que va a crashear.
+#  - `notifyAppReady()` (NativeSessionGate) confirma que el bundle arrancó; si
+#    no llega en 10 s el dispositivo vuelve solo al bundle anterior.
+#  - `--channel staging` permite probar en dispositivos propios sin tocar
+#    producción.
+
+on:
+  workflow_dispatch:
+    inputs:
+      canal:
+        description: "Canal de Capgo al que publicar"
+        required: true
+        type: choice
+        default: staging
+        options:
+          - staging
+          - production
+      version:
+        description: "Versión de este bundle en Capgo (semver, única y > 0.0.0)"
+        required: true
+        default: "1.0.1"
+      comentario:
+        description: "Qué cambia en este bundle (queda en el historial de Capgo)"
+        required: false
+        default: ""
+
+concurrency:
+  group: ios-ota-${{ inputs.canal }}
+  cancel-in-progress: false
+
+jobs:
+  publicar:
+    name: Publicar en ${{ inputs.canal }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node
+        # 20, igual que ios-release.yml: el bundle que se publica por OTA tiene
+        # que salir del mismo toolchain que el que viaja en el .ipa. El CLI de
+        # Capgo avisa que prefiere Node 22; es un warning, no un error.
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+
+      - name: Preflight — credenciales de Capgo
+        env:
+          CAPGO_TOKEN: ${{ secrets.CAPGO_TOKEN }}
+        run: |
+          if [ -z "$CAPGO_TOKEN" ]; then
+            echo "::error::Falta el secret CAPGO_TOKEN."
+            echo "Se saca de la cuenta de Capgo: Settings → API keys, con permiso 'upload'."
+            echo "Sin OTA la app igual funciona: sirve el bundle que trae el .ipa."
+            exit 1
+          fi
+          echo "OK — CAPGO_TOKEN presente."
+
+      - name: Dependencias
+        run: pnpm install --frozen-lockfile
+
+      - name: Bundle web empaquetado
+        # Las mismas variables que ios-release.yml: un OTA tiene que salir con
+        # la misma configuración que el build nativo, o los dispositivos
+        # quedarían apuntando a otro backend de un momento para otro.
+        env:
+          MOBILE_API_ORIGIN: ${{ vars.MOBILE_API_ORIGIN }}
+          MOBILE_APP_ORIGIN: ${{ vars.MOBILE_APP_ORIGIN }}
+        run: node scripts/build-mobile.mjs --strict
+
+      - name: Config de iOS
+        # El CLI de Capgo lee appId y webDir de capacitor.config.ts.
+        run: cp capacitor.config.ios.ts capacitor.config.ts
+
+      - name: Publicar bundle
+        env:
+          CAPGO_TOKEN: ${{ secrets.CAPGO_TOKEN }}
+        run: |
+          # El appId va posicional. `--auto-min-update-version` deriva de los
+          # plugins nativos qué versión instalada puede recibir este bundle, y
+          # `--fail-on-incompatible` aborta en vez de publicar algo que en un
+          # binario viejo crashea por un plugin que no tiene.
+          npx @capgo/cli bundle upload com.ontimeai.app \
+            --apikey "$CAPGO_TOKEN" \
+            --channel "${{ inputs.canal }}" \
+            --path .mobile/out \
+            --bundle "${{ inputs.version }}" \
+            --auto-min-update-version \
+            --fail-on-incompatible \
+            ${{ inputs.comentario && format('--comment "{0}"', inputs.comentario) || '' }}
