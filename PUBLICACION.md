@@ -7,8 +7,9 @@ hay que inventarlos; el resto lo completás vos en los bloques vacíos.
 Copiá este archivo por release si querés dejar registro:
 `cp PUBLICACION.md releases/2026-09-v1.0.md`
 
-El detalle técnico de cómo se compila cada plataforma está en
-[`MOBILE_APP.md`](MOBILE_APP.md).
+El **procedimiento** de iOS —qué crear en cada consola, certificados, TestFlight,
+review— está en [`PUBLICACION-IOS.md`](PUBLICACION-IOS.md). El detalle técnico de
+cómo se compila cada plataforma, en [`MOBILE_APP.md`](MOBILE_APP.md).
 
 ---
 
