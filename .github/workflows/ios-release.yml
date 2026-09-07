@@ -127,6 +127,37 @@ jobs:
           }
           JS
 
+      - name: Íconos y splash de la app
+        # `cap add ios` deja los placeholder de Capacitor. Sin este paso el
+        # .ipa sale con el ícono del framework, que es lo primero que ve quien
+        # revisa la app. Se generan desde assets/, que está versionado.
+        run: |
+          npx @capacitor/assets generate --ios \
+            --iconBackgroundColor '#0a0a0a' --iconBackgroundColorDark '#0a0a0a' \
+            --splashBackgroundColor '#0a0a0a' --splashBackgroundColorDark '#0a0a0a'
+          # Que el ícono no haya quedado con transparencia: Apple rechaza el
+          # binario en el momento del upload, no en la revisión.
+          ICON=ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png
+          if [ ! -f "$ICON" ]; then
+            echo "::error::No se generó el ícono de la app."
+            exit 1
+          fi
+          if python3 -c "
+          import sys
+          from struct import unpack
+          with open('$ICON','rb') as f:
+              d = f.read(26)
+          w, h = unpack('>II', d[16:24])
+          color = d[25]
+          # tipo 6 = RGBA, 4 = escala de grises con alpha
+          sys.exit(0 if (w == h == 1024 and color not in (4, 6)) else 1)
+          "; then
+            echo "OK — ícono 1024x1024 sin canal alpha."
+          else
+            echo "::error::El ícono tiene que ser 1024x1024 y sin canal alpha."
+            exit 1
+          fi
+
       - name: Router de export estático
         # Sin esto la app arranca en negro: el router de Capacitor manda toda
         # ruta sin extensión al index de la raíz, y Next exporta uno por
