@@ -22,9 +22,31 @@ import type { CapacitorConfig } from "@capacitor/cli";
  * Si algún día Play Store objeta lo mismo, el bundle de iOS ya existe y Android
  * puede consumirlo: ver MOBILE_APP.md §7.
  */
-const SERVER_URL =
-  process.env.CAP_SERVER_URL ??
+const SERVER_URL_DEFECTO =
   "https://ontimeai-frontend-871707213932.us-central1.run.app";
+
+/**
+ * URL que abre el WebView.
+ *
+ * El `||` no es intercambiable con `??` acá, y la diferencia rompió el primer
+ * build en CI. Un `workflow_dispatch` con el input vacío exporta
+ * `CAP_SERVER_URL=""` —una cadena vacía, no una variable ausente—, y `??` solo
+ * cae al default con `null` o `undefined`. El resultado era `new URL("")`, que
+ * tira `Invalid URL` y hace fallar el `cap sync` entero.
+ */
+const SERVER_URL = (process.env.CAP_SERVER_URL || "").trim() || SERVER_URL_DEFECTO;
+
+let host: string;
+try {
+  host = new URL(SERVER_URL).host;
+} catch {
+  // Un valor mal formado tiene que decir qué pasó: el error de `new URL` es un
+  // stack trace de la CLI de Capacitor que no menciona la variable.
+  throw new Error(
+    `CAP_SERVER_URL no es una URL válida: "${SERVER_URL}". ` +
+      `Esperaba algo como ${SERVER_URL_DEFECTO}`,
+  );
+}
 
 const config: CapacitorConfig = {
   appId: "com.ontimeai.app",
@@ -42,7 +64,7 @@ const config: CapacitorConfig = {
     url: SERVER_URL,
     // El WebView tiene que poder volver al sitio después de un redirect del
     // login. Sin esto, Capacitor abriría el navegador del sistema.
-    allowNavigation: [new URL(SERVER_URL).host],
+    allowNavigation: [host],
   },
 
   plugins: {
