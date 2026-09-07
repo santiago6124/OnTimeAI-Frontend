@@ -100,9 +100,16 @@ const config: CapacitorConfig = {
 
   ios: {
     /**
-     * El layout padea con `env(safe-area-inset-*)` y el viewport es
-     * `viewportFit: 'cover'`. Si además iOS metiera su propio inset
-     * automático, el contenido quedaría padeado dos veces bajo el notch.
+     * El viewport es `viewportFit: 'cover'`, así que el WebView ocupa la
+     * pantalla completa y quien separa el contenido del notch y de la barra de
+     * gestos es el CSS: las utilidades `.safe-top` / `.safe-bottom` de
+     * globals.css, aplicadas en el header y en el contenido del shell.
+     *
+     * `never` evita que iOS agregue ADEMÁS su propio inset automático, que
+     * padearía el contenido dos veces.
+     *
+     * Los dos lados van juntos: si alguien saca las utilidades del CSS, esto
+     * deja el header debajo del reloj y la batería.
      */
     contentInset: "never",
 

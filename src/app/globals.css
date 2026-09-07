@@ -238,3 +238,13 @@ html[data-palette="mono"].dark {
     scroll-behavior: auto !important;
   }
 }
+
+/* Áreas seguras del dispositivo.
+ *
+ * En un navegador de escritorio `env(safe-area-inset-*)` vale 0, así que esto
+ * es un no-op exacto para la web. Solo tiene efecto en el bundle nativo, donde
+ * el viewport es `viewport-fit: cover` y el WebView ocupa la pantalla completa
+ * —notch y barra de gestos incluidos—, así que el contenido queda debajo de
+ * ellos si nadie lo separa. */
+.safe-top { padding-top: env(safe-area-inset-top); }
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
