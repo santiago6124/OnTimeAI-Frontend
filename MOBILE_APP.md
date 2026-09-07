@@ -1,5 +1,9 @@
 # OnTimeAI — App móvil (Android / iOS)
 
+Para publicar: el procedimiento de iOS está en
+[`PUBLICACION-IOS.md`](PUBLICACION-IOS.md) y los metadatos de las dos tiendas en
+[`PUBLICACION.md`](PUBLICACION.md). Este archivo es la arquitectura.
+
 Estado al **2026-09-06**. Verificado: el bundle de iOS arranca, muestra el login
 y sirve todos sus assets desde el binario, en el simulador de iPhone 17 Pro.
 
