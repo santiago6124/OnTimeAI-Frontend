@@ -143,40 +143,38 @@ consola del navegador disponible. Así se encontró el bug de `Preferences.then(
 
 ---
 
-## 5. ⚠️ Lo único que falta y no está en este repo
+## 5. CORS del backend — resuelto
 
-**El backend tiene que permitir el origen del WebView.**
+El bundle de iOS le habla al FastAPI desde `capacitor://localhost`. Ese origen
+tiene que estar en la allowlist de CORS del backend o el login falla, aunque las
+credenciales sean correctas.
 
-El bundle de iOS le habla al FastAPI desde `capacitor://localhost`, y hoy el
-backend no lo tiene en su allowlist de CORS. Sin esto la app abre y muestra el
-login, pero **el login falla**.
+Está puesto en dos lugares, a propósito:
 
-Comprobado el 2026-09-06 contra el backend desplegado:
+| Dónde | Qué cubre |
+|---|---|
+| `ALLOWED_ORIGINS` en el service `ontimeai-backend` de Cloud Run | producción, vivo desde la revisión `00007-r8n` |
+| La lista por defecto de `api.py` | desarrollo local y cualquier deploy futuro sin esa variable |
 
-```
-http://localhost:3000                                → permitido
-https://ontimeai-frontend-hq7henvhjq-uc.a.run.app    → permitido
-capacitor://localhost                                → SIN Access-Control-Allow-Origin
-```
-
-Es un cambio de variable de entorno, sin tocar código:
+**La variable de entorno tapa el default del código.** Si sumás un origen en
+`api.py`, hay que actualizar también la variable en Cloud Run:
 
 ```bash
 gcloud run services update ontimeai-backend \
   --region us-central1 --project ontimeai-prod \
-  --update-env-vars 'ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000,https://ontimeai-frontend-871707213932.us-central1.run.app,capacitor://localhost'
+  --update-env-vars "^|^ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000,https://ontimeai-frontend-871707213932.us-central1.run.app,capacitor://localhost"
 ```
 
-> Nota: hoy la web no depende de ese CORS. El navegador nunca habla con el
-> FastAPI directo — pega contra el BFF `/api/backend/*`, que hace la llamada
-> servidor a servidor. Por eso la lista está desactualizada sin que nada falle.
-> El bundle nativo es el primer cliente que sí la necesita.
+El `^|^` no es decorativo: le dice a gcloud que separe los pares por `|` en vez
+de por coma, que es lo que necesita un valor que lleva comas adentro.
 
-La alternativa, si no se puede tocar el backend, es activar `CapacitorHttp`, que
-saca las llamadas del WebView y las hace nativas, salteando CORS. No se eligió
-porque parchea `fetch` globalmente y las navegaciones de Next también lo usan.
+> La web no depende de este CORS: el navegador nunca habla con el FastAPI
+> directo, pega contra el BFF `/api/backend/*`, que hace la llamada servidor a
+> servidor. Por eso la lista estuvo desactualizada mucho tiempo sin que nada
+> fallara — el bundle nativo es el primer cliente que la necesita de verdad.
 
----
+Si algún día Android pasa a servir sus assets desde el binario, su origen es
+`https://localhost` y hay que sumarlo.
 
 ## 6. Secrets de CI
 
@@ -265,3 +263,10 @@ Lo que hay que revisar en ese caso, porque Android no lo tiene resuelto hoy:
 
 5. **El router de iOS es código nativo.** Si se rompe, un OTA no lo arregla:
    hay que pasar por App Review.
+
+6. **`viewport-fit: cover` sin CSS de safe-area deja el header bajo el reloj.**
+   Los dos lados van juntos: el config pide `contentInset: 'never'` para que iOS
+   no padee por su cuenta, y entonces separar el contenido del notch y de la
+   barra de gestos es responsabilidad del CSS (`.safe-top` / `.safe-bottom` en
+   globals.css). En un navegador de escritorio esos `env()` valen 0, así que el
+   agregado es un no-op exacto para la web.
