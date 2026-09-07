@@ -45,3 +45,6 @@ next-env.d.ts
 
 # proyectos nativos generados por Capacitor
 /ios/
+
+# artefactos de build (no se versionan: son ~50 MB y se regeneran)
+/dist/
