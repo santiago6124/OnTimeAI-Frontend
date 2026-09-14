@@ -59,6 +59,7 @@ export function GoogleSignInButton({
   const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
   const containerId = useId();
   const containerRef = useRef<HTMLDivElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const callbackRef = useRef(onCredential);
   const [failed, setFailed] = useState(false);
 
@@ -73,6 +74,9 @@ export function GoogleSignInButton({
     loadGsiScript()
       .then(() => {
         if (cancelled || !containerRef.current || !window.google) return;
+        // Match the form width above; GSI accepts 200-400px.
+        const measured = wrapperRef.current?.offsetWidth ?? 0;
+        const width = Math.min(400, Math.max(200, measured || 320));
         window.google.accounts.id.initialize({
           client_id: clientId,
           callback: (response) => {
@@ -88,7 +92,7 @@ export function GoogleSignInButton({
           text: "continue_with",
           shape: "rectangular",
           logo_alignment: "center",
-          width: 320,
+          width,
         });
       })
       .catch(() => {
@@ -112,7 +116,7 @@ export function GoogleSignInButton({
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" ref={wrapperRef}>
       <div className="flex items-center gap-3">
         <span className="h-px flex-1 bg-border" />
         <span className="text-xs text-muted-foreground">o</span>
@@ -122,7 +126,7 @@ export function GoogleSignInButton({
         id={containerId}
         ref={containerRef}
         aria-busy={disabled}
-        className={disabled ? "pointer-events-none opacity-60" : undefined}
+        className={`flex justify-center${disabled ? " pointer-events-none opacity-60" : ""}`}
       />
     </div>
   );
