@@ -19,6 +19,7 @@ import {
 import { AIRPORTS, greatCirclePath, type LatLng } from "@/lib/geo";
 import { cn } from "@/lib/utils";
 import type { MapTrack } from "@/hooks/use-real-flight-tracks";
+import { flightDetailHref } from "@/lib/routes";
 
 const RISK_COLOR: Record<MapTrack["risk"], string> = {
   low: "#4ade80",
@@ -121,10 +122,12 @@ export function FlightRadarMap({
         attributionControl={false}
         style={{ height: "100%", width: "100%", background: "#0b1220" }}
       >
+        {/* CARTO pasó a exigir API key y estampa una marca de agua sobre cada
+            tile. Esri World Dark Gray es gratuito, sin clave y de estilo oscuro. */}
         <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-          subdomains={["a", "b", "c", "d"]}
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+          url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
+          maxZoom={16}
+          attribution='&copy; <a href="https://www.esri.com/">Esri</a>'
         />
 
         <FitToFlights flights={flights} />
@@ -248,7 +251,7 @@ function SelectedCard({ flight, onClose }: { flight: MapTrack | null; onClose: (
         </div>
       </div>
       <Link
-        href={`/flights/${flight.id}`}
+        href={flightDetailHref(flight.id)}
         className="mt-3 inline-flex w-full items-center justify-center rounded-md bg-white/10 px-2 py-1.5 text-[11px] font-medium text-white hover:bg-white/20"
       >
         Ver predicción y explicación

@@ -12,6 +12,15 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+
+    // Artefacto de build del bundle móvil: es una copia podada de src/, así que
+    // linteala duplica cada hallazgo y encima reporta el archivo equivocado.
+    ".mobile/**",
+
+    // Proyectos nativos generados por Capacitor. El JS que traen es de los
+    // plugins, no del repo, y se regenera en cada `cap sync`.
+    "android/**",
+    "ios/**",
   ]),
 ]);
 

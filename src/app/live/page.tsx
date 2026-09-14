@@ -4,7 +4,6 @@ import { api, fmtTime } from "@/lib/api";
 import { HourlyDelayChart } from "@/components/hourly-delay-chart";
 import { LiteFlightsTable } from "@/components/lite-flights-table";
 import { WeatherCard } from "@/components/weather-card";
-import { WeatherErrorCard } from "@/components/weather-error-card";
 
 async function getLiveData() {
   const [flights, hourly] = await Promise.all([
