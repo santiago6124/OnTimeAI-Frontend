@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import { useTheme } from "next-themes";
 
 const GSI_SRC = "https://accounts.google.com/gsi/client";
 
@@ -62,10 +61,6 @@ export function GoogleSignInButton({
   const containerRef = useRef<HTMLDivElement>(null);
   const callbackRef = useRef(onCredential);
   const [failed, setFailed] = useState(false);
-  const { resolvedTheme } = useTheme();
-  // Google's white 'outline' button leaves its iframe background showing on a
-  // dark card, so follow the app theme with the filled variants instead.
-  const googleTheme = resolvedTheme === "light" ? "outline" : "filled_black";
 
   useEffect(() => {
     callbackRef.current = onCredential;
@@ -89,7 +84,7 @@ export function GoogleSignInButton({
         });
         window.google.accounts.id.renderButton(containerRef.current, {
           type: "standard",
-          theme: googleTheme,
+          theme: "outline",
           size: "large",
           text: "continue_with",
           shape: "rectangular",
@@ -104,7 +99,7 @@ export function GoogleSignInButton({
     return () => {
       cancelled = true;
     };
-  }, [clientId, googleTheme]);
+  }, [clientId]);
 
   // Without a client ID configured the app keeps working with password login only.
   if (!clientId) return null;
@@ -128,7 +123,11 @@ export function GoogleSignInButton({
         id={containerId}
         ref={containerRef}
         aria-busy={disabled}
-        className={`flex justify-center${disabled ? " pointer-events-none opacity-60" : ""}`}
+        className={[
+          "flex justify-center",
+          "[&>div]:overflow-hidden [&>div]:rounded",
+          disabled ? "pointer-events-none opacity-60" : "",
+        ].join(" ")}
       />
     </div>
   );
