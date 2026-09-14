@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
+import { useTheme } from "next-themes";
 
 const GSI_SRC = "https://accounts.google.com/gsi/client";
 
@@ -61,6 +62,10 @@ export function GoogleSignInButton({
   const containerRef = useRef<HTMLDivElement>(null);
   const callbackRef = useRef(onCredential);
   const [failed, setFailed] = useState(false);
+  const { resolvedTheme } = useTheme();
+  // Google's white 'outline' button leaves its iframe background showing on a
+  // dark card, so follow the app theme with the filled variants instead.
+  const googleTheme = resolvedTheme === "light" ? "outline" : "filled_black";
 
   useEffect(() => {
     callbackRef.current = onCredential;
@@ -73,6 +78,7 @@ export function GoogleSignInButton({
     loadGsiScript()
       .then(() => {
         if (cancelled || !containerRef.current || !window.google) return;
+        containerRef.current.replaceChildren();
         window.google.accounts.id.initialize({
           client_id: clientId,
           callback: (response) => {
@@ -83,7 +89,7 @@ export function GoogleSignInButton({
         });
         window.google.accounts.id.renderButton(containerRef.current, {
           type: "standard",
-          theme: "outline",
+          theme: googleTheme,
           size: "large",
           text: "continue_with",
           shape: "rectangular",
@@ -98,7 +104,7 @@ export function GoogleSignInButton({
     return () => {
       cancelled = true;
     };
-  }, [clientId]);
+  }, [clientId, googleTheme]);
 
   // Without a client ID configured the app keeps working with password login only.
   if (!clientId) return null;
