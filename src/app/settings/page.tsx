@@ -1,11 +1,13 @@
 "use client";
 
+import { useState, useTransition } from "react";
+
 import { AppShell } from "@/components/app-shell";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
 import { useTheme } from "next-themes";
-import { api } from "@/lib/api";
+import { api, apiSetUserType } from "@/lib/api";
 import {
   PALETTES,
   usePalette,
@@ -13,10 +15,47 @@ import {
 import { cn } from "@/lib/utils";
 import { ProfileSwitcher } from "@/components/profile-switcher";
 import { useSession } from "@/components/providers/session-provider";
+import { type UserType } from "@/lib/auth-types";
+
+const ACCOUNT_PROFILES: { value: UserType; label: string; description: string }[] = [
+  {
+    value: "b2c",
+    label: "Viajero",
+    description: "Consulto el riesgo de retraso de mi vuelo",
+  },
+  {
+    value: "b2b",
+    label: "Operaciones",
+    description: "Monitoreo la operación del aeropuerto o mi flota",
+  },
+];
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
   const { user } = useSession();
+  const [userType, setUserType] = useState<UserType | null | undefined>(
+    user?.userType,
+  );
+  const [profileError, setProfileError] = useState("");
+  const [savingProfile, startSavingProfile] = useTransition();
+
+  function handleSetUserType(next: UserType) {
+    setProfileError("");
+    const previous = userType;
+    setUserType(next);
+    startSavingProfile(async () => {
+      try {
+        await apiSetUserType(next);
+        // The sidebar and landing route read this from the server session.
+        window.location.reload();
+      } catch (cause) {
+        setUserType(previous);
+        setProfileError(
+          cause instanceof Error ? cause.message : "No se pudo guardar el perfil.",
+        );
+      }
+    });
+  }
 
   function handleSetTheme(t: string) {
     setTheme(t);
@@ -97,12 +136,52 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Tu perfil</CardTitle>
+            <CardDescription>
+              Define con qué vista abrís OnTimeAI. Queda guardado en tu cuenta,
+              así te sigue en cualquier dispositivo.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-2 sm:grid-cols-2">
+            {ACCOUNT_PROFILES.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => handleSetUserType(option.value)}
+                disabled={savingProfile}
+                aria-pressed={userType === option.value}
+                className={cn(
+                  "flex items-center gap-3 rounded-lg border p-3 text-left transition-colors disabled:opacity-60",
+                  userType === option.value
+                    ? "border-primary bg-primary/5"
+                    : "hover:border-foreground/30",
+                )}
+              >
+                <div className="flex-1">
+                  <div className="text-sm font-medium">{option.label}</div>
+                  <div className="text-[11px] text-muted-foreground">
+                    {option.description}
+                  </div>
+                </div>
+                {userType === option.value ? (
+                  <Check className="size-4 text-primary" />
+                ) : null}
+              </button>
+            ))}
+            {profileError ? (
+              <p className="text-sm text-destructive sm:col-span-2">{profileError}</p>
+            ) : null}
+          </CardContent>
+        </Card>
+
         {(user?.role === "admin" || user?.role === "superadmin") ? (
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Perfil de uso</CardTitle>
+              <CardTitle className="text-base">Cambiar de vista</CardTitle>
               <CardDescription>
-                Alterná entre la vista operativa y la experiencia simplificada para pasajeros.
+                Cambio temporal solo en este navegador, para demos. No modifica el perfil de tu cuenta.
               </CardDescription>
             </CardHeader>
             <CardContent>
