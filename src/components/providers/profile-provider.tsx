@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useSession } from "@/components/providers/session-provider";
+import { profileIdForUserType } from "@/lib/auth-types";
 
 export type ProfileId = "airline" | "passenger";
 
@@ -35,11 +36,10 @@ function subscribe(listener: () => void) {
   };
 }
 
-function getStoredProfile(): ProfileId {
+/** Local override, only meaningful for roles allowed to switch views. */
+function getStoredProfile(): ProfileId | null {
   const stored = window.localStorage.getItem(STORAGE_KEY);
-  return stored === "passenger" || stored === "airline"
-    ? stored
-    : DEFAULT_PROFILE;
+  return stored === "passenger" || stored === "airline" ? stored : null;
 }
 
 type ProfileContextValue = {
@@ -56,11 +56,20 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
   const storedProfile = React.useSyncExternalStore(
     subscribe,
     getStoredProfile,
-    () => DEFAULT_PROFILE,
+    () => null,
   );
+
+  // The account's own segment (set during onboarding) is the source of truth.
+  const accountProfile = user?.userType
+    ? profileIdForUserType(user.userType)
+    : null;
+  // Operators and admins can still flip the view locally, e.g. to run a demo.
   const canSelectProfile =
     user?.role === "admin" || user?.role === "superadmin";
-  const profile = canSelectProfile ? storedProfile : "passenger";
+
+  const profile = canSelectProfile
+    ? storedProfile ?? accountProfile ?? DEFAULT_PROFILE
+    : accountProfile ?? "passenger";
 
   const setProfile = React.useCallback((next: ProfileId) => {
     if (!canSelectProfile) return;

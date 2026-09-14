@@ -1,4 +1,4 @@
-import type { SessionUser } from "@/lib/auth-types";
+import type { SessionUser, UserType } from "@/lib/auth-types";
 
 const SERVER_BASE =
   process.env.BACKEND_API_URL ??
@@ -262,6 +262,42 @@ export async function apiLogin(username: string, password: string) {
     );
   }
   return payload as SessionUser;
+}
+
+export async function apiLoginGoogle(idToken: string) {
+  const res = await fetch("/api/auth/google", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id_token: idToken }),
+    signal: AbortSignal.timeout(10_000),
+  });
+  const payload = (await res.json().catch(() => null)) as
+    | (SessionUser & { isNewUser: boolean; detail?: string })
+    | null;
+  if (!res.ok || !payload) {
+    throw new ApiError(
+      res.status,
+      payload?.detail ?? "No se pudo iniciar sesión con Google.",
+    );
+  }
+  return payload;
+}
+
+/** Persist the B2B/B2C profile for the signed-in user. */
+export async function apiSetUserType(userType: UserType) {
+  const res = await fetch(`${CLIENT_BASE}/users/me`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ user_type: userType }),
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (!res.ok) {
+    const payload = (await res.json().catch(() => null)) as { detail?: string } | null;
+    throw new ApiError(
+      res.status,
+      payload?.detail ?? "No se pudo guardar el perfil.",
+    );
+  }
 }
 
 export async function apiLogout() {
