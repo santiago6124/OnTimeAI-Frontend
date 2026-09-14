@@ -4,8 +4,13 @@ steps:
       - 'build'
       - '--build-arg'
       - 'NEXT_PUBLIC_API_URL=${_NEXT_PUBLIC_API_URL}'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_GOOGLE_CLIENT_ID=${_NEXT_PUBLIC_GOOGLE_CLIENT_ID}'
       - '-t'
       - 'gcr.io/$PROJECT_ID/ontimeai-frontend'
       - '.'
 images:
   - 'gcr.io/$PROJECT_ID/ontimeai-frontend'
+substitutions:
+  # Vacío = la app queda solo con login por usuario y contraseña.
+  _NEXT_PUBLIC_GOOGLE_CLIENT_ID: ''
