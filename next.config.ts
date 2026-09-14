@@ -1,5 +1,12 @@
 import type { NextConfig } from "next";
 
+// Google Identity Services needs its script, iframe, styles and XHR allowed.
+// https://developers.google.com/identity/gsi/web/guides/csp
+const GSI_SCRIPT = "https://accounts.google.com/gsi/client";
+const GSI_FRAME = "https://accounts.google.com/gsi/";
+const GSI_CONNECT = "https://accounts.google.com/gsi/";
+const GSI_STYLE = "https://accounts.google.com/gsi/style";
+
 const nextConfig: NextConfig = {
   output: "standalone",
   turbopack: {
@@ -22,10 +29,11 @@ const nextConfig: NextConfig = {
               "form-action 'self'",
               "frame-ancestors 'none'",
               "object-src 'none'",
-              "script-src 'self' 'unsafe-inline'",
-              "style-src 'self' 'unsafe-inline'",
+              `script-src 'self' 'unsafe-inline' ${GSI_SCRIPT}`,
+              `style-src 'self' 'unsafe-inline' ${GSI_STYLE}`,
               "img-src 'self' data: blob: https://*.basemaps.cartocdn.com",
-              "connect-src 'self'",
+              `connect-src 'self' ${GSI_CONNECT}`,
+              `frame-src 'self' ${GSI_FRAME}`,
               "font-src 'self' data:",
             ].join("; "),
           },
