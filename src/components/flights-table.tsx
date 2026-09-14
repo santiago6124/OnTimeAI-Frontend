@@ -19,6 +19,7 @@ import {
 import { useFlights } from "@/hooks/use-flights";
 import { fmtProba, fmtTime, toUTCDate, type Flight, type RiskLevel } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { flightDetailHref } from "@/lib/routes";
 
 export type RiskFilter = "all" | RiskLevel;
 export type StatusTab = "all" | "upcoming" | "departed";
@@ -336,7 +337,7 @@ function FlightRow({ flight }: { flight: Flight }) {
   const actualDeparture = flight.actual_out_utc ?? flight.actual_off_utc;
   const actualArrival = flight.actual_in_utc ?? flight.actual_on_utc;
   const departed = actualDeparture !== null || flight.departure_delay_min !== null;
-  const detailHref = `/flights/${encodeURIComponent(flight.fa_flight_id)}`;
+  const detailHref = flightDetailHref(flight.fa_flight_id);
 
   return (
     <TableRow className="group">

@@ -3,6 +3,7 @@
 import * as React from "react";
 import type { WeatherStation } from "@/lib/mock-data";
 import type { AwcMetar } from "@/lib/weather-api";
+import { appUrl } from "@/lib/mobile-env";
 
 export type WeatherApiResponse = {
   stations: WeatherStation[];
@@ -32,9 +33,14 @@ export function useWeatherStations(ids?: string[]) {
     error: null,
   });
 
+  // `/api/weather` es un route handler de este mismo Next: agrega los METARs de
+  // aviationweather.gov, que no manda cabeceras CORS y por eso no se puede
+  // llamar desde el WebView. En la web `appUrl` es identidad y esto queda igual
+  // que antes; en el bundle nativo lo apunta al deploy, donde el handler sigue
+  // corriendo.
   const url = ids && ids.length > 0
-    ? `/api/weather?ids=${ids.join(",")}`
-    : "/api/weather";
+    ? appUrl(`/api/weather?ids=${ids.join(",")}`)
+    : appUrl("/api/weather");
 
   const load = React.useCallback(async () => {
     setState((s) => ({ ...s, status: "loading", error: null }));

@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Un PR que recibe varios pushes seguidos no necesita terminar los runs viejos.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: pnpm
+
+      - name: Instalar dependencias
+        run: pnpm install --frozen-lockfile
+
+      - name: Tests
+        run: pnpm test
+
+      - name: Typecheck
+        # El script corre `next typegen` primero: los tipos de rutas de Next 16
+        # se generan dentro de .next/, así que sobre un checkout limpio tsc
+        # falla con "Cannot find name 'PageProps'" si no se generan antes.
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint

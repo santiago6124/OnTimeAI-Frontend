@@ -1,0 +1,131 @@
+name: Android Build
+
+# Compila la app Android en la nube: no hace falta JDK ni Android SDK local.
+#
+# Android va en modo remoto (ver capacitor.config.ts): el APK es un shell que
+# abre el Next desplegado en Cloud Run. Por eso este workflow NO corre
+# `next build` — no hay assets web que empaquetar, solo el proyecto nativo. Un
+# cambio de UI sale con un deploy normal de la web, sin recompilar la app.
+#
+# Dos salidas:
+#   - debug: APK instalable por sideload, para probar en un teléfono propio.
+#   - release: AAB firmado, que es lo que sube a Play Console.
+#
+# El release necesita el keystore en secrets. Sin ellos el job de release se
+# saltea y el de debug igual produce un APK.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tipo:
+        description: "Qué construir"
+        required: true
+        type: choice
+        default: debug
+        options:
+          - debug
+          - release
+      serverUrl:
+        description: "URL que abre la app (vacío = la de capacitor.config.ts)"
+        required: false
+        default: ""
+  push:
+    branches:
+      - feature/mobile-apps
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: APK/AAB
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+
+      - name: JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Dependencias
+        # --frozen-lockfile: el build tiene que fallar si el lockfile quedó
+        # desincronizado, no resolver versiones distintas a las probadas.
+        run: pnpm install --frozen-lockfile
+
+      - name: Sync del proyecto nativo
+        # Copia capacitor.config.ts al proyecto Android. Es lo que baja el
+        # server.url al APK; sin esto el shell no sabe qué abrir.
+        env:
+          CAP_SERVER_URL: ${{ inputs.serverUrl }}
+        run: |
+          if [ -n "${CAP_SERVER_URL:-}" ]; then
+            echo "Apuntando la app a $CAP_SERVER_URL"
+          fi
+          npx cap sync android
+
+      - name: Verificar que el APK sepa a dónde apuntar
+        # Un shell remoto sin server.url compila igual y se instala igual: la
+        # falla aparece recién al abrirlo, con una pantalla en blanco.
+        run: |
+          CONFIG=android/app/src/main/assets/capacitor.config.json
+          URL=$(node -p "require('./$CONFIG').server?.url ?? ''")
+          if [ -z "$URL" ]; then
+            echo "::error::El config del APK no tiene server.url. En modo remoto eso es una app que abre un WebView vacío."
+            exit 1
+          fi
+          echo "La app abrirá: $URL"
+
+      - name: Build debug
+        if: inputs.tipo != 'release'
+        run: ./gradlew assembleDebug --no-daemon
+        working-directory: android
+
+      - name: Preparar keystore de release
+        if: inputs.tipo == 'release'
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::error::Falta el secret ANDROID_KEYSTORE_BASE64."
+            echo "Generalo con:"
+            echo "  keytool -genkey -v -keystore ontimeai.jks -keyalg RSA -keysize 2048 -validity 10000 -alias ontimeai"
+            echo "  base64 -i ontimeai.jks | pbcopy"
+            echo "Y cargá también ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS y ANDROID_KEY_PASSWORD."
+            exit 1
+          fi
+          echo "$KEYSTORE_BASE64" | base64 -d > android/app/release.jks
+
+      - name: Build release (AAB firmado)
+        if: inputs.tipo == 'release'
+        env:
+          ONTIMEAI_KEYSTORE_FILE: release.jks
+          ONTIMEAI_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ONTIMEAI_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ONTIMEAI_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: ./gradlew bundleRelease --no-daemon
+        working-directory: android
+
+      - name: Publicar artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: ontimeai-android-${{ inputs.tipo || 'debug' }}
+          path: |
+            android/app/build/outputs/apk/debug/*.apk
+            android/app/build/outputs/bundle/release/*.aab
+          if-no-files-found: error
+          retention-days: 30

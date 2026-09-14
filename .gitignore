@@ -39,3 +39,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# bundle movil (artefacto de build)
+/.mobile/
+
+# proyectos nativos generados por Capacitor
+/ios/
+
+# artefactos de build (no se versionan: son ~50 MB y se regeneran)
+/dist/

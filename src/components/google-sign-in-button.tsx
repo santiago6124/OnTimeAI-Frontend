@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
+import { IS_BUNDLED } from "@/lib/mobile-env";
 
 const GSI_SRC = "https://accounts.google.com/gsi/client";
 
@@ -101,8 +102,10 @@ export function GoogleSignInButton({
     };
   }, [clientId]);
 
-  // Without a client ID configured the app keeps working with password login only.
-  if (!clientId) return null;
+  // Without a client ID the app keeps working with password login only. The
+  // bundled app has no route handlers to exchange the token, and Google blocks
+  // its web flow inside embedded webviews anyway: that needs the native plugin.
+  if (!clientId || IS_BUNDLED) return null;
 
   if (failed) {
     return (
