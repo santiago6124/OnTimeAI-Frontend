@@ -56,7 +56,7 @@ jobs:
         run: |
           BUILD_ID=$(gcloud builds submit \
             --config cloudbuild.yaml \
-            --substitutions "_NEXT_PUBLIC_API_URL=$BACKEND_URL" \
+            --substitutions "_NEXT_PUBLIC_API_URL=$BACKEND_URL,_NEXT_PUBLIC_GOOGLE_CLIENT_ID=871707213932-03a34jfb56ur6suc88rbuh5qelm6mbt3.apps.googleusercontent.com" \
             --async --format='value(id)' \
             --project="$PROJECT_ID" --quiet)
           echo "Build $BUILD_ID"
