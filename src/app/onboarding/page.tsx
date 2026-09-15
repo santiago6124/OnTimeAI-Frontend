@@ -4,6 +4,7 @@ import { Suspense, useState, useTransition } from "react";
 import { useSearchParams } from "next/navigation";
 import { LayoutDashboard, Plane } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { BrandMark } from "@/components/brand-mark";
 import { apiSetUserType } from "@/lib/api";
 import { homePathFor, safeReturnPath, type UserType } from "@/lib/auth-types";
 
@@ -90,11 +91,12 @@ export default function OnboardingPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-xl space-y-6">
-        <div className="flex flex-col items-center gap-2 text-center">
-          <h1 className="text-2xl font-bold tracking-tight">
+        <div className="flex flex-col items-center text-center">
+          <BrandMark showName={false} />
+          <h1 className="mt-8 text-2xl font-semibold tracking-tight">
             ¿Cómo vas a usar OnTimeAI?
           </h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="mt-1.5 text-sm text-muted-foreground">
             Elegí tu perfil para mostrarte la vista que te sirve.
           </p>
         </div>

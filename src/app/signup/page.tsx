@@ -225,7 +225,6 @@ export default function SignupPage() {
   return (
     <AuthShell
       title="Crear cuenta"
-      intro="Después elegís si la usás para una empresa o de forma personal."
       footer={
         <>
           ¿Ya tenés cuenta?{" "}

@@ -3,20 +3,21 @@
  *
  * Reemplaza la pila de cuatro bloques que tenían antes —insignia, nombre,
  * bajada, encabezado de tarjeta— donde el nombre del producto y el título de
- * la pantalla competían por el mismo lugar. Ahora hay un solo título: la marca
- * queda arriba, chica, como contexto.
+ * la pantalla competían por el mismo lugar. Ahora la marca abre la pantalla y
+ * el título dice qué se hace acá; no hay bajada, porque nadie llega al login
+ * necesitando que le expliquen el producto.
  */
 
 import type { ReactNode } from "react";
 
+import { BrandMark } from "@/components/brand-mark";
+
 export function AuthShell({
   title,
-  intro,
   children,
   footer,
 }: {
   title: string;
-  intro: string;
   children: ReactNode;
   footer?: ReactNode;
 }) {
@@ -28,12 +29,9 @@ export function AuthShell({
           izquierda. Centrar tambien las etiquetas separaria cada una de su
           campo y obligaria a buscar donde empieza lo que hay que escribir.
         */}
-        <header className="text-center">
-          <span className="text-sm font-semibold tracking-tight">OnTimeAI</span>
+        <header className="flex flex-col items-center text-center">
+          <BrandMark />
           <h1 className="mt-8 text-2xl font-semibold tracking-tight">{title}</h1>
-          <p className="mx-auto mt-1.5 max-w-xs text-sm leading-relaxed text-muted-foreground">
-            {intro}
-          </p>
         </header>
 
         <div className="mt-8">{children}</div>
