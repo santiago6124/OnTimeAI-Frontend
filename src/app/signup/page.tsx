@@ -1,27 +1,45 @@
 "use client";
 
 /**
- * Alta propia.
+ * Alta propia, con verificación del correo.
  *
- * Pide la contraseña dos veces: es la única de las dos pantallas donde un
- * error de tipeo queda grabado. En el acceso, equivocarse cuesta un reintento;
- * acá deja una cuenta cuya contraseña nadie conoce, y sin verificación por
- * correo no hay forma de recuperarla.
+ * El alta la hace Firebase, que manda el correo de verificación. La cuenta no
+ * entra a la app hasta que el enlace se abre: sin esa prueba, cualquiera podría
+ * registrar un correo ajeno.
+ *
+ * Por eso esta pantalla NO deja una sesión abierta al terminar. Termina
+ * diciendo que revise la casilla, que es un final honesto aunque sea menos
+ * inmediato que entrar de una.
+ *
+ * Pide la contraseña dos veces porque es la única de las dos pantallas donde
+ * un error de tipeo queda grabado.
  */
 
 import { Suspense, useState, useTransition } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { MailCheck } from "lucide-react";
+import {
+  createUserWithEmailAndPassword,
+  sendEmailVerification,
+  signOut,
+} from "firebase/auth";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/password-input";
 import { AuthShell, AuthDivider } from "@/components/auth-shell";
 import { GoogleSignInButton } from "@/components/google-sign-in-button";
-import { apiRegister, apiLoginGoogle } from "@/lib/api";
+import { apiLoginGoogle } from "@/lib/api";
+import { firebaseAuth, mensajeDeError } from "@/lib/firebase";
+import { cn } from "@/lib/utils";
 import { homePathFor, safeReturnPath } from "@/lib/auth-types";
 
-/** Lo exige el backend; se valida acá también para no gastar un viaje. */
+/**
+ * Firebase acepta desde 6. Diez es decisión nuestra: la cuenta da acceso a
+ * datos operativos y el costo de escribir cuatro caracteres más se paga una
+ * sola vez.
+ */
 const MIN_PASSWORD_LENGTH = 10;
 
 function SignupForm() {
@@ -30,6 +48,7 @@ function SignupForm() {
   const [password, setPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
   const [error, setError] = useState("");
+  const [enviado, setEnviado] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   const requestedPath = searchParams.get("from");
@@ -55,12 +74,20 @@ function SignupForm() {
     }
     startTransition(async () => {
       try {
-        await apiRegister(email, password);
-        window.location.replace(onboardingPath);
-      } catch (cause) {
-        setError(
-          cause instanceof Error ? cause.message : "No se pudo crear la cuenta.",
+        const auth = firebaseAuth();
+        const credencial = await createUserWithEmailAndPassword(
+          auth,
+          email.trim(),
+          password,
         );
+        await sendEmailVerification(credencial.user);
+        // Se cierra la sesión de Firebase a propósito: la cuenta existe pero
+        // todavía no probó el correo, y dejarla abierta invita a intentar
+        // entrar y chocar con un rechazo que no se entiende.
+        await signOut(auth);
+        setEnviado(true);
+      } catch (cause) {
+        setError(mensajeDeError(cause));
       }
     });
   }
@@ -87,6 +114,38 @@ function SignupForm() {
         );
       }
     });
+  }
+
+  if (enviado) {
+    return (
+      <div className="space-y-5">
+        <div className="flex items-start gap-3 rounded-lg border border-border p-4">
+          <MailCheck
+            className="mt-0.5 h-5 w-5 shrink-0 text-primary"
+            aria-hidden="true"
+          />
+          <div className="space-y-1">
+            <p className="text-sm font-medium">Te mandamos un correo</p>
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              Abrí el enlace que enviamos a{" "}
+              <span className="font-medium text-foreground">{email}</span> para
+              activar la cuenta. Después vas a poder ingresar.
+            </p>
+          </div>
+        </div>
+
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          Si no aparece en unos minutos, revisá el correo no deseado.
+        </p>
+
+        <Link
+          href="/login"
+          className={cn(buttonVariants({ variant: "outline" }), "w-full")}
+        >
+          Ir a ingresar
+        </Link>
+      </div>
+    );
   }
 
   return (

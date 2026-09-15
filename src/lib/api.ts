@@ -331,16 +331,16 @@ export async function apiLoginGoogle(idToken: string) {
 }
 
 /**
- * Alta propia con correo y contraseña.
+ * Cambia un ID token de Firebase por la sesión propia.
  *
- * Devuelve la misma forma que `apiLoginGoogle` porque los dos crean una cuenta
- * nueva: quien llama tiene que mandar al onboarding en ambos casos.
+ * Firebase ya verificó quién es; esto convierte esa prueba en un JWT nuestro,
+ * que es el que lleva el rol y el tipo de cuenta.
  */
-export async function apiRegister(email: string, password: string) {
-  const res = await fetch("/api/auth/register", {
+export async function apiLoginFirebase(idToken: string) {
+  const res = await fetch("/api/auth/firebase", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ id_token: idToken }),
     signal: AbortSignal.timeout(10_000),
   });
   const payload = (await res.json().catch(() => null)) as
@@ -349,7 +349,7 @@ export async function apiRegister(email: string, password: string) {
   if (!res.ok || !payload) {
     throw new ApiError(
       res.status,
-      payload?.detail ?? "No se pudo crear la cuenta.",
+      payload?.detail ?? "No se pudo iniciar sesión.",
     );
   }
   return payload;
