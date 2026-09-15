@@ -1,27 +1,22 @@
 "use client";
 
 /**
- * Alta propia con correo y contraseña.
+ * Alta propia.
  *
- * Hasta ahora solo un superadmin podía crear estas cuentas, mientras que
- * cualquiera con cuenta de Google se registraba solo. El sistema ya era
- * abierto; esto quita la asimetría.
+ * Pide la contraseña dos veces: es la única de las dos pantallas donde un
+ * error de tipeo queda grabado. En el acceso, equivocarse cuesta un reintento;
+ * acá deja una cuenta cuya contraseña nadie conoce, y sin verificación por
+ * correo no hay forma de recuperarla.
  */
 
 import { Suspense, useState, useTransition } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Plane } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { PasswordInput } from "@/components/ui/password-input";
+import { AuthShell, AuthDivider } from "@/components/auth-shell";
 import { GoogleSignInButton } from "@/components/google-sign-in-button";
 import { apiRegister, apiLoginGoogle } from "@/lib/api";
 import { homePathFor, safeReturnPath } from "@/lib/auth-types";
@@ -33,6 +28,7 @@ function SignupForm() {
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmation, setConfirmation] = useState("");
   const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
 
@@ -41,11 +37,20 @@ function SignupForm() {
     ? `/onboarding?from=${encodeURIComponent(safeReturnPath(requestedPath))}`
     : "/onboarding";
 
+  // Solo se avisa cuando ya escribió algo en la confirmación: marcar en rojo
+  // desde la primera tecla es acusar a alguien de un error que todavía está
+  // cometiendo.
+  const mismatch = confirmation.length > 0 && confirmation !== password;
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     if (password.length < MIN_PASSWORD_LENGTH) {
       setError(`La contraseña necesita al menos ${MIN_PASSWORD_LENGTH} caracteres.`);
+      return;
+    }
+    if (password !== confirmation) {
+      setError("Las contraseñas no coinciden.");
       return;
     }
     startTransition(async () => {
@@ -85,93 +90,100 @@ function SignupForm() {
   }
 
   return (
-    <Card>
-      <CardHeader className="pb-4">
-        <CardTitle className="text-base">Crear cuenta</CardTitle>
-        <CardDescription>
-          Después vas a elegir si la usás para una empresa o de forma personal.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="email">Correo</Label>
-            <Input
-              id="email"
-              type="email"
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              disabled={isPending}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="password">Contraseña</Label>
-            <Input
-              id="password"
-              type="password"
-              autoComplete="new-password"
-              minLength={MIN_PASSWORD_LENGTH}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              disabled={isPending}
-            />
-            <p className="text-xs text-muted-foreground">
-              Al menos {MIN_PASSWORD_LENGTH} caracteres.
-            </p>
-          </div>
+    <>
+      <GoogleSignInButton
+        onCredential={handleGoogleCredential}
+        disabled={isPending}
+      />
 
-          {error && (
-            <p role="alert" className="text-sm text-destructive">
-              {error}
-            </p>
-          )}
+      <AuthDivider>o con tu correo</AuthDivider>
 
-          <Button type="submit" className="w-full" disabled={isPending}>
-            {isPending ? "Creando..." : "Crear cuenta"}
-          </Button>
-        </form>
-
-        <div className="mt-4">
-          <GoogleSignInButton
-            onCredential={handleGoogleCredential}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-1.5">
+          <Label htmlFor="email">Correo</Label>
+          <Input
+            id="email"
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
             disabled={isPending}
           />
         </div>
 
-        <p className="mt-6 text-center text-sm text-muted-foreground">
-          ¿Ya tenés cuenta?{" "}
-          <Link href="/login" className="underline underline-offset-4">
-            Ingresá
-          </Link>
-        </p>
-      </CardContent>
-    </Card>
+        <div className="space-y-1.5">
+          <Label htmlFor="password">Contraseña</Label>
+          <PasswordInput
+            id="password"
+            autoComplete="new-password"
+            minLength={MIN_PASSWORD_LENGTH}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            disabled={isPending}
+            aria-describedby="password-hint"
+          />
+          <p id="password-hint" className="text-xs text-muted-foreground">
+            Al menos {MIN_PASSWORD_LENGTH} caracteres.
+          </p>
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="confirmation">Repetir contraseña</Label>
+          <PasswordInput
+            id="confirmation"
+            autoComplete="new-password"
+            value={confirmation}
+            onChange={(e) => setConfirmation(e.target.value)}
+            required
+            disabled={isPending}
+            aria-invalid={mismatch}
+            revealLabel="confirmación"
+          />
+          {mismatch && (
+            <p className="text-xs text-destructive">
+              Todavía no coincide con la anterior.
+            </p>
+          )}
+        </div>
+
+        {error && (
+          <p role="alert" className="text-sm text-destructive">
+            {error}
+          </p>
+        )}
+
+        <Button type="submit" className="w-full" disabled={isPending}>
+          {isPending ? "Creando…" : "Crear cuenta"}
+        </Button>
+      </form>
+    </>
   );
 }
 
 export default function SignupPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="w-full max-w-sm space-y-6">
-        <div className="flex flex-col items-center gap-2 text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-            <Plane className="h-6 w-6 text-primary" />
-          </div>
-          <h1 className="text-2xl font-bold tracking-tight">OnTimeAI</h1>
-          <p className="text-sm text-muted-foreground">
-            Predicción de retrasos · ATL
-          </p>
-        </div>
-
-        <Suspense
-          fallback={<div className="h-80 animate-pulse rounded-lg bg-muted" />}
-        >
-          <SignupForm />
-        </Suspense>
-      </div>
-    </div>
+    <AuthShell
+      title="Crear cuenta"
+      intro="Después elegís si la usás para una empresa o de forma personal."
+      footer={
+        <>
+          ¿Ya tenés cuenta?{" "}
+          <Link
+            href="/login"
+            className="font-medium text-foreground underline underline-offset-4"
+          >
+            Ingresá
+          </Link>
+        </>
+      }
+    >
+      <Suspense
+        fallback={<div className="h-96 animate-pulse rounded-lg bg-muted" />}
+      >
+        <SignupForm />
+      </Suspense>
+    </AuthShell>
   );
 }
