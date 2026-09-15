@@ -1,10 +1,10 @@
 /**
  * Marco compartido por las pantallas de acceso y alta.
  *
- * Reemplaza la pila de cuatro bloques centrados que tenían antes —insignia,
- * nombre, bajada, encabezado de tarjeta— donde el nombre del producto y el
- * título de la pantalla competían por el mismo lugar. Ahora hay un solo
- * título: la marca queda arriba, chica, como contexto.
+ * Reemplaza la pila de cuatro bloques que tenían antes —insignia, nombre,
+ * bajada, encabezado de tarjeta— donde el nombre del producto y el título de
+ * la pantalla competían por el mismo lugar. Ahora hay un solo título: la marca
+ * queda arriba, chica, como contexto.
  */
 
 import type { ReactNode } from "react";
@@ -23,22 +23,23 @@ export function AuthShell({
   return (
     <main className="flex min-h-screen flex-col justify-center bg-background px-6 py-12">
       <div className="mx-auto w-full max-w-sm">
-        <div className="flex items-baseline gap-2">
+        {/*
+          Encabezado y pie centrados; el formulario se queda alineado a la
+          izquierda. Centrar tambien las etiquetas separaria cada una de su
+          campo y obligaria a buscar donde empieza lo que hay que escribir.
+        */}
+        <header className="text-center">
           <span className="text-sm font-semibold tracking-tight">OnTimeAI</span>
-          <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-            KATL
-          </span>
-        </div>
-
-        <h1 className="mt-8 text-2xl font-semibold tracking-tight">{title}</h1>
-        <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-          {intro}
-        </p>
+          <h1 className="mt-8 text-2xl font-semibold tracking-tight">{title}</h1>
+          <p className="mx-auto mt-1.5 max-w-xs text-sm leading-relaxed text-muted-foreground">
+            {intro}
+          </p>
+        </header>
 
         <div className="mt-8">{children}</div>
 
         {footer && (
-          <div className="mt-8 border-t border-border pt-6 text-sm text-muted-foreground">
+          <div className="mt-8 border-t border-border pt-6 text-center text-sm text-muted-foreground">
             {footer}
           </div>
         )}
