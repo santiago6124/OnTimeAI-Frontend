@@ -115,23 +115,17 @@ export function GoogleSignInButton({
     );
   }
 
+  // Sin separador propio: quien lo usa decide si hace falta y con que texto.
   return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-3">
-        <span className="h-px flex-1 bg-border" />
-        <span className="text-xs text-muted-foreground">o</span>
-        <span className="h-px flex-1 bg-border" />
-      </div>
-      <div
-        id={containerId}
-        ref={containerRef}
-        aria-busy={disabled}
-        className={[
-          "flex justify-center",
-          "[&>div]:overflow-hidden [&>div]:rounded",
-          disabled ? "pointer-events-none opacity-60" : "",
-        ].join(" ")}
-      />
-    </div>
+    <div
+      id={containerId}
+      ref={containerRef}
+      aria-busy={disabled}
+      className={[
+        "flex justify-center",
+        "[&>div]:overflow-hidden [&>div]:rounded",
+        disabled ? "pointer-events-none opacity-60" : "",
+      ].join(" ")}
+    />
   );
 }
