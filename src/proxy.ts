@@ -33,7 +33,10 @@ export function proxy(request: NextRequest) {
     return hardenCookie(NextResponse.next(), token);
   }
 
-  if (pathname === "/login") {
+  // Login y alta: accesibles sin sesión, y sin sentido con una. Quien ya entró
+  // y vuelve acá —por un enlace viejo, por el botón de atrás— va al inicio en
+  // vez de ver un formulario que no necesita.
+  if (pathname === "/login" || pathname === "/signup") {
     if (token) {
       return hardenCookie(
         NextResponse.redirect(new URL("/", request.url)),

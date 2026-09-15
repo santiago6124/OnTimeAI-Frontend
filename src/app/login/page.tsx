@@ -2,6 +2,7 @@
 
 import { Suspense, useState, useTransition } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { Plane } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -116,6 +117,13 @@ function LoginForm() {
             disabled={isPending}
           />
         </div>
+
+        <p className="mt-6 text-center text-sm text-muted-foreground">
+          ¿No tenés cuenta?{" "}
+          <Link href="/signup" className="underline underline-offset-4">
+            Registrate
+          </Link>
+        </p>
       </CardContent>
     </Card>
   );

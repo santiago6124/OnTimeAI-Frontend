@@ -330,6 +330,31 @@ export async function apiLoginGoogle(idToken: string) {
   return payload;
 }
 
+/**
+ * Alta propia con correo y contraseña.
+ *
+ * Devuelve la misma forma que `apiLoginGoogle` porque los dos crean una cuenta
+ * nueva: quien llama tiene que mandar al onboarding en ambos casos.
+ */
+export async function apiRegister(email: string, password: string) {
+  const res = await fetch("/api/auth/register", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+    signal: AbortSignal.timeout(10_000),
+  });
+  const payload = (await res.json().catch(() => null)) as
+    | (SessionUser & { isNewUser: boolean; detail?: string })
+    | null;
+  if (!res.ok || !payload) {
+    throw new ApiError(
+      res.status,
+      payload?.detail ?? "No se pudo crear la cuenta.",
+    );
+  }
+  return payload;
+}
+
 /** Persist the B2B/B2C profile for the signed-in user. */
 export async function apiSetUserType(userType: UserType) {
   const res = await fetch(`${CLIENT_BASE}/users/me`, {
