@@ -1,12 +1,9 @@
 /**
- * Alta propia con correo y contraseña.
+ * Cambia un ID token de Firebase por la sesión propia.
  *
- * Espeja al handler de Google y no al de login: los dos crean una cuenta nueva
- * y tienen que mandar al onboarding, mientras que el login entra a una que ya
- * existe.
- *
- * Igual que los otros, el token nunca llega al navegador: viaja en una cookie
- * HttpOnly que el cliente no puede leer.
+ * Espeja al handler de Google: el token de Firebase se valida del lado del
+ * backend, que devuelve un JWT nuestro y lo deja en una cookie HttpOnly. El
+ * token de Firebase no se guarda: sirve una sola vez para probar quién es.
  */
 import { NextResponse } from "next/server";
 
@@ -14,6 +11,7 @@ import {
   AUTH_COOKIE_NAME,
   AUTH_MAX_AGE_SECONDS,
   isRole,
+  isUserType,
   type SessionUser,
 } from "@/lib/auth-types";
 
@@ -30,36 +28,31 @@ export async function POST(request: Request) {
     return NextResponse.json({ detail: "Solicitud inválida" }, { status: 400 });
   }
 
-  const { email, password } = (body ?? {}) as {
-    email?: unknown;
-    password?: unknown;
-  };
-  if (typeof email !== "string" || typeof password !== "string") {
-    return NextResponse.json(
-      { detail: "Faltan el correo o la contraseña" },
-      { status: 400 },
-    );
+  const { id_token: idToken } = (body ?? {}) as { id_token?: unknown };
+  if (typeof idToken !== "string" || !idToken) {
+    return NextResponse.json({ detail: "Falta el token" }, { status: 400 });
   }
 
   try {
-    const created = await fetch(`${BACKEND}/auth/register`, {
+    const exchanged = await fetch(`${BACKEND}/auth/firebase`, {
       method: "POST",
       cache: "no-store",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ id_token: idToken }),
       signal: AbortSignal.timeout(10_000),
     });
-    const payload = (await created.json().catch(() => ({}))) as {
+    const payload = (await exchanged.json().catch(() => ({}))) as {
       access_token?: string;
+      user_type?: unknown;
+      is_new_user?: boolean;
       detail?: string;
     };
-    if (!created.ok || !payload.access_token) {
-      // Se reenvía el mensaje del backend tal cual: distingue "ya existe una
-      // cuenta con ese correo" de "la contraseña es corta", y esa diferencia
-      // es la que necesita quien está en el formulario.
+    if (!exchanged.ok || !payload.access_token) {
+      // El 403 de "falta verificar el correo" tiene que llegar tal cual: es
+      // accionable y distinto de un token inválido.
       return NextResponse.json(
-        { detail: payload.detail ?? "No se pudo crear la cuenta" },
-        { status: created.status || 400 },
+        { detail: payload.detail ?? "No se pudo iniciar sesión" },
+        { status: exchanged.status || 401 },
       );
     }
 
@@ -76,11 +69,12 @@ export async function POST(request: Request) {
       );
     }
 
+    const userType = isUserType(payload.user_type) ? payload.user_type : null;
     const response = NextResponse.json({
       username: user.username,
       role: user.role,
-      userType: null,
-      isNewUser: true,
+      userType,
+      isNewUser: payload.is_new_user === true || userType === null,
     });
     response.cookies.set(AUTH_COOKIE_NAME, payload.access_token, {
       httpOnly: true,
