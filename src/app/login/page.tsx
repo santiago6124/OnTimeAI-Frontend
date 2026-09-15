@@ -13,8 +13,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { apiLogin } from "@/lib/api";
-import { safeReturnPath } from "@/lib/auth-types";
+import { GoogleSignInButton } from "@/components/google-sign-in-button";
+import { apiLogin, apiLoginGoogle } from "@/lib/api";
+import { homePathFor, safeReturnPath } from "@/lib/auth-types";
 
 function LoginForm() {
   const searchParams = useSearchParams();
@@ -23,19 +24,45 @@ function LoginForm() {
   const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
 
+  const requestedPath = searchParams.get("from");
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     startTransition(async () => {
       try {
         await apiLogin(username, password);
-        const from = safeReturnPath(searchParams.get("from"));
-        window.location.replace(from);
+        window.location.replace(safeReturnPath(requestedPath));
       } catch (cause) {
         setError(
           cause instanceof Error
             ? cause.message
             : "No se pudo iniciar sesión.",
+        );
+      }
+    });
+  }
+
+  function handleGoogleCredential(idToken: string) {
+    setError("");
+    startTransition(async () => {
+      try {
+        const session = await apiLoginGoogle(idToken);
+        if (session.isNewUser) {
+          const next = requestedPath
+            ? `?from=${encodeURIComponent(safeReturnPath(requestedPath))}`
+            : "";
+          window.location.replace(`/onboarding${next}`);
+          return;
+        }
+        window.location.replace(
+          requestedPath ? safeReturnPath(requestedPath) : homePathFor(session.userType),
+        );
+      } catch (cause) {
+        setError(
+          cause instanceof Error
+            ? cause.message
+            : "No se pudo iniciar sesión con Google.",
         );
       }
     });
@@ -82,6 +109,13 @@ function LoginForm() {
             {isPending ? "Ingresando..." : "Ingresar"}
           </Button>
         </form>
+
+        <div className="mt-4">
+          <GoogleSignInButton
+            onCredential={handleGoogleCredential}
+            disabled={isPending}
+          />
+        </div>
       </CardContent>
     </Card>
   );

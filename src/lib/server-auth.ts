@@ -6,6 +6,7 @@ import { cookies } from "next/headers";
 import {
   AUTH_COOKIE_NAME,
   isRole,
+  isUserType,
   type Role,
   type SessionUser,
 } from "@/lib/auth-types";
@@ -32,9 +33,15 @@ export const getVerifiedSession = cache(async (): Promise<SessionUser | null> =>
     });
     if (!response.ok) return null;
 
-    const payload = (await response.json()) as Partial<SessionUser>;
+    const payload = (await response.json()) as Partial<SessionUser> & {
+      user_type?: unknown;
+    };
     if (typeof payload.username !== "string" || !isRole(payload.role)) return null;
-    return { username: payload.username, role: payload.role };
+    return {
+      username: payload.username,
+      role: payload.role,
+      userType: isUserType(payload.user_type) ? payload.user_type : null,
+    };
   } catch {
     return null;
   }
