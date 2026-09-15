@@ -232,7 +232,6 @@ export default function LoginPage() {
   return (
     <AuthShell
       title="Ingresar"
-      intro="Predicción de retrasos en Hartsfield-Jackson, recalculada cada quince minutos."
       footer={
         <>
           ¿No tenés cuenta?{" "}

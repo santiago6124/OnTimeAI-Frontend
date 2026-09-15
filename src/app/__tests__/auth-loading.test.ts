@@ -7,13 +7,18 @@
  * con sesión o sin ella, antes de llegar a un formulario.
  *
  * Se verifica sobre los archivos porque el defecto es de estructura: no hay
- * render que lo exponga, solo la ausencia de un archivo.
+ * render que lo exponga, solo la ausencia de un archivo. `/onboarding` se sumo
+ * despues, por eso mismo: se llega una sola vez por cuenta y nadie lo miro
+ * hasta que aparecio en una captura.
  */
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const APP = join(process.cwd(), "src", "app");
+
+/** Rutas propias que se ven sin el marco del dashboard. */
+const RUTAS = ["login", "signup", "onboarding"];
 
 describe("estados de carga de las rutas de acceso", () => {
   it("el loading raíz sigue importando AppShell", () => {
@@ -22,11 +27,11 @@ describe("estados de carga de las rutas de acceso", () => {
     expect(raiz).toMatch(/import .*AppShell.* from/);
   });
 
-  it.each(["login", "signup"])("/%s tiene su propio loading", (ruta) => {
+  it.each(RUTAS)("/%s tiene su propio loading", (ruta) => {
     expect(existsSync(join(APP, ruta, "loading.tsx"))).toBe(true);
   });
 
-  it.each(["login", "signup"])("el loading de /%s no trae el chrome", (ruta) => {
+  it.each(RUTAS)("el loading de /%s no trae el chrome", (ruta) => {
     // Se mira el import y no la palabra: el comentario de esos archivos
     // nombra a `AppShell` justamente para explicar por qué no lo usan.
     const contenido = readFileSync(join(APP, ruta, "loading.tsx"), "utf8");
