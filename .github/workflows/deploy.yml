@@ -48,6 +48,30 @@ jobs:
             --region "$REGION" --project "$PROJECT_ID" \
             --format='value(status.url)')" >> "$GITHUB_ENV"
 
+      - name: Leer el client id de Google del backend
+        # De ahi y no de una variable propia del frontend: el backend valida el
+        # ID token contra su GOOGLE_CLIENT_ID, asi que si los dos valores se
+        # separan el login falla con "Wrong recipient" y nada lo avisa antes.
+        #
+        # Es un valor publico —viaja al navegador en el bundle— asi que no
+        # necesita Secret Manager. Vacio deja la app con usuario y contrasena
+        # nomas, que es el comportamiento que tenia hasta ahora.
+        #
+        # Se usa jq y no un filtro de --format: el filtro devuelve la
+        # representacion de lista y el valor sale con `']` pegado al final, que
+        # rompe el client id sin que nada avise.
+        run: |
+          CID=$(gcloud run services describe ontimeai-backend \
+            --region "$REGION" --project "$PROJECT_ID" --format=json \
+            | jq -r '.spec.template.spec.containers[0].env[]?
+                     | select(.name == "GOOGLE_CLIENT_ID") | .value // ""')
+          if [ -z "$CID" ]; then
+            echo "::warning::El backend no tiene GOOGLE_CLIENT_ID; el boton de Google no se va a renderizar"
+          else
+            echo "Client id tomado del backend (termina en ${CID: -24})"
+          fi
+          echo "GOOGLE_CLIENT_ID=$CID" >> "$GITHUB_ENV"
+
       - name: Construir imagen
         # Se lanza en modo asincrono y se consulta el estado en vez de dejar que
         # gcloud espere: al esperar intenta leer el bucket de logs, lo que exige
@@ -56,7 +80,7 @@ jobs:
         run: |
           BUILD_ID=$(gcloud builds submit \
             --config cloudbuild.yaml \
-            --substitutions "_NEXT_PUBLIC_API_URL=$BACKEND_URL" \
+            --substitutions "_NEXT_PUBLIC_API_URL=$BACKEND_URL,_NEXT_PUBLIC_GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID" \
             --async --format='value(id)' \
             --project="$PROJECT_ID" --quiet)
           echo "Build $BUILD_ID"
