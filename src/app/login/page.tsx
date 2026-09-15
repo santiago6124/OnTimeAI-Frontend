@@ -1,19 +1,25 @@
 "use client";
 
+/**
+ * Acceso con cuenta existente.
+ *
+ * La composición anterior apilaba insignia, nombre, bajada y encabezado de
+ * tarjeta antes del primer campo: cuatro bloques centrados donde el nombre del
+ * producto y el título de la pantalla competían por el mismo lugar. Ahora hay
+ * un solo título, y la marca queda arriba como contexto.
+ *
+ * Google va primero porque es el camino que la mayoría usa y el que no exige
+ * recordar nada. El correo queda abajo, no escondido.
+ */
+
 import { Suspense, useState, useTransition } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Plane } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { PasswordInput } from "@/components/ui/password-input";
+import { AuthShell, AuthDivider } from "@/components/auth-shell";
 import { GoogleSignInButton } from "@/components/google-sign-in-button";
 import { apiLogin, apiLoginGoogle } from "@/lib/api";
 import { homePathFor, safeReturnPath } from "@/lib/auth-types";
@@ -36,9 +42,7 @@ function LoginForm() {
         window.location.replace(safeReturnPath(requestedPath));
       } catch (cause) {
         setError(
-          cause instanceof Error
-            ? cause.message
-            : "No se pudo iniciar sesión.",
+          cause instanceof Error ? cause.message : "No se pudo iniciar sesión.",
         );
       }
     });
@@ -57,7 +61,9 @@ function LoginForm() {
           return;
         }
         window.location.replace(
-          requestedPath ? safeReturnPath(requestedPath) : homePathFor(session.userType),
+          requestedPath
+            ? safeReturnPath(requestedPath)
+            : homePathFor(session.userType),
         );
       } catch (cause) {
         setError(
@@ -70,84 +76,75 @@ function LoginForm() {
   }
 
   return (
-    <Card>
-      <CardHeader className="pb-4">
-        <CardTitle className="text-base">Iniciar sesión</CardTitle>
-        <CardDescription>
-          Ingresá tus credenciales para acceder al dashboard.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="username">Usuario</Label>
-            <Input
-              id="username"
-              type="text"
-              autoComplete="username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-              disabled={isPending}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="password">Contraseña</Label>
-            <Input
-              id="password"
-              type="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              disabled={isPending}
-            />
-          </div>
+    <>
+      <GoogleSignInButton
+        onCredential={handleGoogleCredential}
+        disabled={isPending}
+      />
 
-          {error && <p className="text-sm text-destructive">{error}</p>}
+      <AuthDivider>o con tu correo</AuthDivider>
 
-          <Button type="submit" className="w-full" disabled={isPending}>
-            {isPending ? "Ingresando..." : "Ingresar"}
-          </Button>
-        </form>
-
-        <div className="mt-4">
-          <GoogleSignInButton
-            onCredential={handleGoogleCredential}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-1.5">
+          <Label htmlFor="username">Correo o usuario</Label>
+          <Input
+            id="username"
+            type="text"
+            autoComplete="username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            required
+            disabled={isPending}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="password">Contraseña</Label>
+          <PasswordInput
+            id="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
             disabled={isPending}
           />
         </div>
 
-        <p className="mt-6 text-center text-sm text-muted-foreground">
-          ¿No tenés cuenta?{" "}
-          <Link href="/signup" className="underline underline-offset-4">
-            Registrate
-          </Link>
-        </p>
-      </CardContent>
-    </Card>
+        {error && (
+          <p role="alert" className="text-sm text-destructive">
+            {error}
+          </p>
+        )}
+
+        <Button type="submit" className="w-full" disabled={isPending}>
+          {isPending ? "Ingresando…" : "Ingresar"}
+        </Button>
+      </form>
+    </>
   );
 }
 
 export default function LoginPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="w-full max-w-sm space-y-6">
-        <div className="flex flex-col items-center gap-2 text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-            <Plane className="h-6 w-6 text-primary" />
-          </div>
-          <h1 className="text-2xl font-bold tracking-tight">OnTimeAI</h1>
-          <p className="text-sm text-muted-foreground">
-            Predicción de retrasos · ATL
-          </p>
-        </div>
-
-        <Suspense fallback={<div className="h-64 animate-pulse rounded-lg bg-muted" />}>
-          <LoginForm />
-        </Suspense>
-
-      </div>
-    </div>
+    <AuthShell
+      title="Ingresar"
+      intro="Predicción de retrasos en Hartsfield-Jackson, recalculada cada quince minutos."
+      footer={
+        <>
+          ¿No tenés cuenta?{" "}
+          <Link
+            href="/signup"
+            className="font-medium text-foreground underline underline-offset-4"
+          >
+            Registrate
+          </Link>
+        </>
+      }
+    >
+      <Suspense
+        fallback={<div className="h-72 animate-pulse rounded-lg bg-muted" />}
+      >
+        <LoginForm />
+      </Suspense>
+    </AuthShell>
   );
 }
