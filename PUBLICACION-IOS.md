@@ -24,55 +24,15 @@ diferencia — y el paso 7 es el que hay que saber defender si te preguntan.
 
 ## 0 · Bloqueadores conocidos
 
-### 🔴 El ícono es el placeholder de Capacitor
+### ✅ Ícono — resuelto el 2026-09-16
 
-Hoy `ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png` es el
-logo de Capacitor: un rayo azul sobre una grilla. Es lo que genera
-`npx cap add ios` y se instalaría tal cual. Una app con el ícono de su framework
-se lee como inacabada, y es lo primero que ve el revisor.
-
-En el repo hay un ícono real diseñado — `public/logo.png`, avión blanco sobre
-degradado violeta — pero **no sirve tal cual**, por dos motivos:
-
-| Problema | Por qué importa |
-|---|---|
-| Tiene canal alpha | Apple rechaza íconos con transparencia |
-| Ya trae esquinas redondeadas, glow y margen sobre fondo oscuro | iOS aplica su propia máscara: quedaría un ícono chico flotando dentro de un cuadrado negro |
-
-El ícono de iOS tiene que ser **a sangre**: 1024×1024, el arte llenando el
-cuadrado completo, sin transparencia, sin esquinas redondeadas propias y sin
-sombra. Estos pasos lo producen a partir de `logo.png`, y están probados:
-
-```bash
-# 1. Recortar al cuadrado del degradado, dejando fuera el glow y el margen
-sips -c 700 700 public/logo.png --out /tmp/ic-crop.png
-
-# 2. Llevar a 1024x1024
-sips --resampleHeightWidth 1024 1024 /tmp/ic-crop.png --out /tmp/ic-1024.png
-
-# 3. Aplanar el alpha. El paso por JPEG es lo que lo saca: sips no tiene una
-#    opción para descartar el canal, y convertir a PNG directo lo conserva.
-sips -s format jpeg -s formatOptions 100 /tmp/ic-1024.png --out /tmp/ic.jpg
-sips -s format png /tmp/ic.jpg --out /tmp/AppIcon-512@2x.png
-
-# 4. Verificar. Tiene que decir `hasAlpha: no` y 1024x1024.
-sips -g pixelWidth -g pixelHeight -g hasAlpha /tmp/AppIcon-512@2x.png
-```
-
-> El paso 3 no es opcional ni cosmético. Sin el rodeo por JPEG el archivo sale
-> con `hasAlpha: yes` y Apple lo rechaza — un `sips -s format png` sobre un PNG
-> con transparencia la conserva.
-
-Mirá el resultado antes de usarlo: las esquinas quedan blancas donde había
-transparencia. La máscara de iOS es más redondeada que el arte, así que las
-recorta, pero conviene confirmarlo en un dispositivo. Si querés cero riesgo,
-ajustá el recorte del paso 1 (probá 660) o re-exportá el arte a sangre desde el
-diseño original.
-
-> `ios/` no está versionado: se regenera en cada build. Si vas a reemplazar el
-> ícono de forma permanente, el archivo tiene que vivir en el repo y copiarse
-> desde `scripts/ios-prepare.sh`, o el próximo `cap add ios` lo vuelve a pisar
-> con el de Capacitor.
+Las dos plataformas usaban el placeholder de Capacitor. Ahora los íconos y el
+splash se generan desde `assets/icon.png` y `assets/splash*.png` (versionados,
+derivados de `public/logo.png`: a sangre, 1024×1024, sin alpha) con
+`@capacitor/assets`, tanto en `scripts/ios-prepare.sh` como en `ios-release.yml`.
+El workflow además verifica el PNG (1024×1024 y sin canal alpha) antes de firmar.
+Está confirmado dentro del `.app` de iOS y del APK. No hay que hacer nada a
+mano; si cambia el arte, se reemplaza `assets/icon.png` y listo.
 
 ### 🔴 Falta la política de privacidad publicada
 
@@ -200,8 +160,9 @@ Actions*:
 
 | Input | Qué poner |
 |---|---|
+| `version` | semver de tres números (`1.0.0`). Es la que ve App Store y la base que Capgo compara. El número de build lo pone el workflow (el del run), no hace falta tocarlo |
 | `apiOrigin` / `appOrigin` | vacío usa las variables del repo |
-| `capgo` | `false` mientras no exista la cuenta de Capgo (ver §10) |
+| `capgo` | `true`: la cuenta existe desde el 2026-09-16 (ver §10). Un binario con `false` nunca recibe OTAs |
 | `subir` | `true` para que además lo mande a TestFlight |
 
 El workflow verifica tres cosas antes de firmar, y las tres son fallas que de
@@ -298,9 +259,31 @@ Agreement §3.3.2 permite actualizar código interpretado (JS, CSS, HTML) sin pa
 por revisión. De eso se ocupa *Actions → iOS OTA (Capgo)*, y es lo que devuelve
 los deploys rápidos que costó empaquetar los assets.
 
-Requisitos, los dos: una cuenta de Capgo con el secret `CAPGO_TOKEN`, y que el
-binario instalado se haya compilado con `capgo: true`. Si el OTA está apagado en
-la app que la gente tiene instalada, publicar un bundle no le llega a nadie.
+La cuenta existe desde el 2026-09-16 (org **OntimeAI**, app `com.ontimeai.app`,
+canales `production` y `staging`; `production` tiene el bundle 1.0.1, idéntico
+al build nativo 1.0.0). El ciclo completo está verificado en el simulador —
+detección, descarga, aplicación, `notifyAppReady` y vuelta atrás desde la
+consola. Lo que falta de tu lado:
+
+1. **El secret `CAPGO_TOKEN`** en GitHub (*Settings → Secrets → Actions*). Generá
+   una key nueva en Capgo (*Settings → API keys*) con permiso **`upload`**
+   solamente: es lo único que el workflow necesita, y una key acotada en CI
+   vale menos si se filtra.
+2. **Que el binario instalado se haya compilado con `capgo: true`.** Si el OTA
+   está apagado en la app que la gente tiene, publicar un bundle no le llega a
+   nadie.
+3. **Elegir un plan** antes de que venza la prueba (~2026-10-01).
+
+**Probar un OTA en tu iPhone antes de tocar producción.** Publicá a `staging`
+(es el default del workflow) y, en la consola de Capgo, forzá tu dispositivo a
+ese canal (*Devices → tu device → Channel*). El id del dispositivo aparece en
+*Logs* apenas la app abre. Cuando el bundle esté bien, volvés a correr el
+workflow con `canal: production`.
+
+**Versionado.** Cada bundle lleva un semver único y mayor que el nativo: con
+binario `1.0.0`, los bundles son `1.0.1`, `1.0.2`… Una versión subida no se
+puede reutilizar aunque se borre. La próxima release nativa sube el minor
+(`1.1.0`) y los OTAs siguen desde ahí.
 
 **Lo que el OTA NO puede actualizar.** Cualquier cosa nativa: plugins de
 Capacitor, permisos, el `Info.plist`, y el parche del router de assets. Todo eso

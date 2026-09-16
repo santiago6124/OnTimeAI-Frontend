@@ -1,30 +1,34 @@
 /**
- * Señal de "hay una pantalla real arriba".
+ * Dos señales del arranque nativo que conviene no confundir, porque tienen
+ * ventanas de tiempo distintas:
  *
- * Dispara dos cosas que tienen que pasar juntas y una sola vez:
+ *  1. `notifyAppReady()` — confirmarle a Capgo que este bundle arrancó. Si no
+ *     llega dentro de `appReadyTimeout` (10 s en `capacitor.config.ios.ts`),
+ *     el plugin asume que el bundle nuevo rompió el arranque y revierte solo al
+ *     anterior. Es el seguro contra un OTA malo, y lo que prueba es que el JS
+ *     carga y React monta: eso es lo que un bundle roto no consigue. NO debe
+ *     esperar a la sesión —`/auth/me` contra un Cloud Run frío puede tardar
+ *     más que la ventana— porque entonces un backend lento se leería como un
+ *     bundle roto y Capgo desharía un OTA sano en cada arranque en frío.
  *
- *  1. Bajar el splash. El arranque del bundle tiene varios saltos —el WebView
- *     carga el index, bootea React, y recién ahí la sesión resuelve si va al
- *     dashboard o al login—. Bajar el splash antes muestra blanco.
+ *  2. `hideSplash()` — bajar el splash. Acá sí hay que esperar: el arranque del
+ *     bundle tiene varios saltos (el WebView carga el index, bootea React, y
+ *     recién ahí la sesión resuelve si va al dashboard o al login). Bajarlo
+ *     antes muestra blanco.
  *
- *  2. Confirmarle a Capgo que este bundle arrancó. Si no llega dentro de
- *     `appReadyTimeout` (10 s en `capacitor.config.ios.ts`), el plugin asume que
- *     el bundle nuevo rompió el arranque y revierte solo al anterior. Ese es el
- *     seguro que hace que un OTA malo no deje la app tapiada: para que sirva,
- *     esto tiene que llamarse cuando hay UI de verdad, no apenas corre el JS.
+ * Las dos corren una sola vez por arranque y son no-op fuera del nativo.
  */
 
-let notified = false;
+let readyNotified = false;
+let splashHidden = false;
 
 export async function notifyAppReady(): Promise<void> {
-  if (notified) return;
-  notified = true;
+  if (readyNotified) return;
+  readyNotified = true;
 
   const { Capacitor } = await import("@capacitor/core");
   if (!Capacitor.isNativePlatform()) return;
 
-  // Capgo primero: es el que tiene ventana de tiempo. El splash puede esperar
-  // unos milisegundos más; el rollback automático no.
   try {
     const { CapacitorUpdater } = await import("@capgo/capacitor-updater");
     await CapacitorUpdater.notifyAppReady();
@@ -32,6 +36,14 @@ export async function notifyAppReady(): Promise<void> {
     // Sin OTA configurado el plugin no está o falla: la app igual tiene que
     // arrancar. El bundle empaquetado no depende de Capgo para funcionar.
   }
+}
+
+export async function hideSplash(): Promise<void> {
+  if (splashHidden) return;
+  splashHidden = true;
+
+  const { Capacitor } = await import("@capacitor/core");
+  if (!Capacitor.isNativePlatform()) return;
 
   try {
     const { SplashScreen } = await import("@capacitor/splash-screen");

@@ -31,11 +31,39 @@ import { KeyboardResize } from "@capacitor/keyboard";
  * nada, porque no hay ningún bundle que pueda bajar.
  *
  * El plugin igual viaja en el binario y `notifyAppReady()` ya está cableado
- * (`lib/native/app-ready.ts`), así que prender el OTA cuando exista la cuenta
- * es una variable de entorno: `MOBILE_CAPGO=1`. No hay que recompilar nada
- * más ni tocar código.
+ * (`lib/native/app-ready.ts`), así que prender el OTA es una variable de
+ * entorno: `MOBILE_CAPGO=1`. La cuenta existe desde 2026-09-16 (org
+ * "OntimeAI", app `com.ontimeai.app`), y `ios-release.yml` lo prende con el
+ * input `capgo`.
  */
 const CAPGO_OTA = process.env.MOBILE_CAPGO === "1";
+
+/**
+ * Versión nativa que el plugin le declara a Capgo como punto de partida
+ * (`version_build`). Capgo la compara con la del bundle que ofrece, y exige
+ * semver estricto: el `1.0` que Xcode pone por defecto no lo es.
+ *
+ * Viene de `MOBILE_APP_VERSION`, el mismo input `version` con el que
+ * `ios-release.yml` fija `MARKETING_VERSION` en xcodebuild — una sola fuente
+ * para el binario y para el OTA, porque si difieren Capgo decide con un número
+ * que no es el que ve App Store. Sin OTA no hace falta; con OTA es obligatoria,
+ * y un valor inválido tiene que frenar acá y no en el teléfono.
+ */
+const APP_VERSION = (process.env.MOBILE_APP_VERSION || "").trim();
+if (CAPGO_OTA && !/^\d+\.\d+\.\d+$/.test(APP_VERSION)) {
+  throw new Error(
+    `MOBILE_CAPGO=1 exige MOBILE_APP_VERSION en semver (ej. 1.0.0); recibí "${APP_VERSION}".`,
+  );
+}
+
+/**
+ * Canal de Capgo fijado en el binario. Vacío en producción: el canal lo decide
+ * la nube (`production` es el default) y así un dispositivo se puede mover de
+ * canal desde la consola sin recompilar. Un build de prueba que deba mirar
+ * `staging` se compila con `MOBILE_CAPGO_CHANNEL=staging`; el canal tiene que
+ * permitir auto-asignación, y `staging` la tiene.
+ */
+const CAPGO_CHANNEL = (process.env.MOBILE_CAPGO_CHANNEL || "").trim();
 
 const config: CapacitorConfig = {
   appId: "com.ontimeai.app",
@@ -48,15 +76,20 @@ const config: CapacitorConfig = {
   plugins: {
     CapacitorUpdater: {
       autoUpdate: CAPGO_OTA,
-      defaultChannel: "production",
+      // App de Capgo a consultar. Coincide con el bundle id, pero es un
+      // campo aparte: Capgo lo lee de acá, no del `appId` de arriba.
+      appId: "com.ontimeai.app",
+      ...(APP_VERSION ? { version: APP_VERSION } : {}),
+      ...(CAPGO_CHANNEL ? { defaultChannel: CAPGO_CHANNEL } : {}),
 
       /**
        * Si la app no llama a `notifyAppReady()` dentro de esta ventana, el
        * plugin asume que el bundle nuevo rompió el arranque y vuelve solo al
-       * anterior. Quien la llama es `CapacitorBootstrap`, atado a la misma
-       * señal que baja el splash — o sea, recién cuando hay una pantalla real
-       * arriba (`lib/native/app-ready.ts`). Un bundle que crashea antes de eso
-       * se revierte sin que nadie intervenga.
+       * anterior. Quien la llama es `NativeSessionGate` apenas React monta
+       * (`lib/native/app-ready.ts`): eso ya prueba que el bundle carga, que es
+       * lo único que un OTA malo no consigue. No espera a la sesión a
+       * propósito — un backend frío que tarde más que esta ventana no es un
+       * bundle roto, y no debe disparar un rollback.
        */
       appReadyTimeout: 10000,
     },

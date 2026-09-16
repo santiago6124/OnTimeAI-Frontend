@@ -88,7 +88,7 @@ Cloud Run.
 | `src/lib/mobile-env.ts` | Banderas de build. Sin variables definidas, todo rinde como antes — la web es un no-op verificable |
 | `src/lib/routes.ts` | `flightDetailHref()`: emite la forma de enlace que corresponde a cada build |
 | `src/lib/native/session.ts` | Token en `@capacitor/preferences` |
-| `src/lib/native/app-ready.ts` | Baja el splash y confirma el bundle a Capgo |
+| `src/lib/native/app-ready.ts` | Dos señales separadas: confirma el bundle a Capgo apenas React monta; baja el splash recién cuando hay pantalla |
 | `src/components/providers/native-session-provider.tsx` | El gate de sesión: reemplazo de `proxy.ts` en el bundle |
 | `src/components/*-view.tsx` | Vistas puras. Web y móvil traen los datos distinto pero dibujan lo mismo |
 
@@ -131,9 +131,20 @@ En la nube: *Actions* → **Android Build** → *Run workflow* → `debug` o `re
 
 ```bash
 pnpm cap:ios                # bundle + config + sync + parche + abrir Xcode
+
+# Con OTA activo (lo que compila CI para TestFlight): la versión es obligatoria
+MOBILE_CAPGO=1 MOBILE_APP_VERSION=1.0.0 bash scripts/ios-prepare.sh
 ```
 
-En la nube: *Actions* → **iOS Release (TestFlight)**.
+En la nube: *Actions* → **iOS Release (TestFlight)**. El input `version` fija
+`MARKETING_VERSION` en xcodebuild y `plugins.CapacitorUpdater.version` en el
+config — una sola fuente para App Store y para Capgo. El número de build es el
+del run de Actions, así nunca se repite.
+
+Con **Xcode 27** en local, `xcodebuild` rechaza el target iOS 14.0 que genera
+Capacitor 7 en los Pods. Se pasa `IPHONEOS_DEPLOYMENT_TARGET=15.0` en la línea
+de comandos (o se sube el target en Xcode); CI no lo necesita porque `macos-15`
+trae Xcode 16.
 
 Para probar el bundle sin Xcode, en un navegador de escritorio:
 
@@ -188,7 +199,7 @@ Si algún día Android pasa a servir sus assets desde el binario, su origen es
 | `IOS_CERTIFICATE_P12_BASE64` + `_PASSWORD` | Firmar el `.ipa` | Falta exportarlo de la cuenta Apple |
 | `IOS_PROVISIONING_PROFILE_BASE64`, `IOS_TEAM_ID` | Perfil y equipo | Falta |
 | `APPSTORE_API_KEY_ID`, `_ISSUER_ID`, `_PRIVATE_KEY` | Subir a TestFlight | Falta |
-| `CAPGO_TOKEN` | OTA de iOS | **No hay cuenta de Capgo todavía** |
+| `CAPGO_TOKEN` | OTA de iOS | Cuenta creada el 2026-09-16. **Falta cargar el secret**: generá una key con permiso `upload` solamente (Capgo → Settings → API keys), no la de onboarding |
 
 Variables (no secretas): `MOBILE_API_ORIGIN`, `MOBILE_APP_ORIGIN`.
 
@@ -208,19 +219,36 @@ actualizar la app publicada en Play.
 
 ---
 
-## 7. Capgo (OTA de iOS) — apagado por ahora
+## 7. Capgo (OTA de iOS) — configurado, se prende por build
 
-El plugin viaja en el binario y `notifyAppReady()` ya está cableado, pero
-`autoUpdate` arranca **apagado**.
+Cuenta creada el 2026-09-16: organización **OntimeAI**, app `com.ontimeai.app`
+(mismo id que el bundle, pero Capgo lo lee de `plugins.CapacitorUpdater.appId`,
+no del `appId` de Capacitor). Canales:
 
-No es una omisión: con `autoUpdate: true` y sin cuenta configurada, el plugin
-consulta el cloud de Capgo en cada arranque, cobra un `429 (on_premise_app)` y
-bloquea el inicio contra un semáforo hasta que vence `appReadyTimeout`. Son diez
-segundos de pantalla muerta a cambio de nada, porque no hay ningún bundle que
-bajar. Está medido en los logs del simulador.
+| Canal | Rol | Quién lo mira |
+|---|---|---|
+| `production` | default de la nube | todo binario compilado con `capgo: true` que no diga otra cosa |
+| `staging` | privado, con auto-asignación | un build compilado con `MOBILE_CAPGO_CHANNEL=staging`, o un dispositivo forzado desde la consola |
 
-Cuando exista la cuenta, prenderlo es una sola cosa: correr `ios-release.yml`
-con `capgo: true` (que setea `MOBILE_CAPGO=1`). No hay código que tocar.
+El config **no** fija `defaultChannel`: lo decide la nube, y así un dispositivo
+se puede mover de canal desde la consola sin recompilar.
+
+**Verificado en el simulador el 2026-09-16, de punta a punta**: binario 1.0.0 →
+bundle 1.0.1 detectado, descargado (checksum igual al del upload), aplicado al
+pasar a segundo plano, `notifyAppReady` a tiempo, sin rollback. Después un
+bundle con un cambio visible en el login llegó a la misma app sin reinstalar ni
+`cap sync`, y al devolver el canal a 1.0.1 desde la CLI el dispositivo volvió.
+`production` quedó en **1.0.1**, idéntico al build nativo.
+
+Sigue siendo opt-in por build: `autoUpdate` es `MOBILE_CAPGO=1`, que
+`ios-release.yml` setea con `capgo: true`. La razón de que no esté prendido de
+fábrica sigue vigente para cualquier build sin cuenta: el plugin bloquea el
+arranque contra un semáforo hasta `appReadyTimeout` si el cloud le contesta 429.
+Un binario compilado con `capgo: false` **no recibe OTAs**, publicar un bundle
+no le llega.
+
+La cuenta está en período de prueba (vence ~2026-10-01): hay que elegir un plan
+antes, o los dispositivos dejan de recibir bundles.
 
 ---
 
@@ -274,3 +302,20 @@ Lo que hay que revisar en ese caso, porque Android no lo tiene resuelto hoy:
    barra de gestos es responsabilidad del CSS (`.safe-top` / `.safe-bottom` en
    globals.css). En un navegador de escritorio esos `env()` valen 0, así que el
    agregado es un no-op exacto para la web.
+
+7. **`notifyAppReady()` no puede esperar a la sesión.** Capgo revierte el bundle
+   si no llega en 10 s, y `/auth/me` contra un Cloud Run frío puede tardar más:
+   un backend lento se leería como un bundle roto y desharía un OTA sano en
+   cada arranque en frío. Por eso se llama apenas React monta —eso ya prueba
+   que el bundle carga— y el splash se baja aparte, cuando hay pantalla.
+
+8. **El puente de Capacitor imprime los valores de `Preferences` en la consola.**
+   En un build Debug cada `Preferences get` sale con su `value` — o sea, el
+   token de sesión en texto plano. Un log del simulador es un secreto: no
+   pegarlo en issues ni en documentación sin filtrar esas líneas.
+
+9. **La CLI de Capgo lee siempre `capacitor.config.ts`.** Igual que la de
+   Capacitor, no acepta `--config`. Para subir un bundle a mano hay que copiar
+   `capacitor.config.ios.ts` encima y restaurar después; si no, toma el config
+   de Android (`webDir` distinto, `autoUpdate: false`). `ios-ota.yml` ya lo
+   hace en el checkout efímero.

@@ -14,6 +14,10 @@ name: iOS Release (TestFlight)
 on:
   workflow_dispatch:
     inputs:
+      version:
+        description: "Versión de la app (semver, ej. 1.0.0). Es la que ve App Store y la que Capgo usa de base"
+        required: true
+        default: "1.0.0"
       apiOrigin:
         description: "Origen del FastAPI (vacío = el default del script)"
         required: false
@@ -43,6 +47,18 @@ jobs:
     runs-on: macos-15
 
     steps:
+      - name: Validar la versión
+        # Apple acepta hasta tres enteros en CFBundleShortVersionString y Capgo
+        # exige semver estricto: `1.0` falla en Capgo, `1.0.0` sirve en los dos.
+        # El número de build es el del run, así nunca se repite — App Store
+        # Connect rechaza un build con el mismo (versión, build) que uno subido.
+        run: |
+          if ! [[ "${{ inputs.version }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::version tiene que ser semver de tres números (ej. 1.0.0); recibí '${{ inputs.version }}'."
+            exit 1
+          fi
+          echo "OK — versión ${{ inputs.version }}, build ${{ github.run_number }}."
+
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -73,8 +89,11 @@ jobs:
         run: cp capacitor.config.ios.ts capacitor.config.ts
 
       - name: Proyecto nativo
+        # MOBILE_APP_VERSION es la misma que va a MARKETING_VERSION más abajo:
+        # el config de iOS se la declara a Capgo como versión nativa instalada.
         env:
           MOBILE_CAPGO: ${{ inputs.capgo && '1' || '0' }}
+          MOBILE_APP_VERSION: ${{ inputs.version }}
         run: |
           npx cap add ios
           npx cap sync ios
@@ -212,6 +231,8 @@ jobs:
             -archivePath "$RUNNER_TEMP/App.xcarchive" \
             -destination "generic/platform=iOS" \
             DEVELOPMENT_TEAM="$TEAM_ID" \
+            MARKETING_VERSION="${{ inputs.version }}" \
+            CURRENT_PROJECT_VERSION="${{ github.run_number }}" \
             archive
 
       - name: Exportar .ipa
@@ -240,6 +261,8 @@ jobs:
         run: |
           xcodebuild -workspace ios/App/App.xcworkspace \
             -scheme App -sdk iphonesimulator -configuration Debug \
+            MARKETING_VERSION="${{ inputs.version }}" \
+            CURRENT_PROJECT_VERSION="${{ github.run_number }}" \
             CODE_SIGNING_ALLOWED=NO build
 
       - name: Subir a TestFlight
