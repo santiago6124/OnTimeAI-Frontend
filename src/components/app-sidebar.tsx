@@ -32,8 +32,17 @@ const AIRLINE_NAV = [
   { href: "/flights", label: "Vuelos ATL", icon: Plane },
   { href: "/routes", label: "Historial por ruta", icon: Route },
   { href: "/weather", label: "Meteorología", icon: CloudSun },
-  // Solo en el menú de operaciones: a quien viaja no le sirve el AUC del
-  // modelo, le sirve si su vuelo sale a horario.
+];
+
+/**
+ * Entradas que dependen del rol y no del perfil.
+ *
+ * "Evolución del modelo" estaba en el menú de operaciones, y eso la escondía de
+ * cualquier cuenta con perfil de viajero —incluida la de un administrador—
+ * mientras la dejaba visible para un usuario común que eligiera operaciones.
+ * El criterio del issue es el rol: admin y superadmin la ven, el resto no.
+ */
+const ADMIN_NAV = [
   { href: "/reports", label: "Evolución del modelo", icon: TrendingUp },
 ];
 
@@ -48,7 +57,11 @@ export function AppSidebar() {
   const { profile } = useProfile();
   const { user } = useSession();
   const role = user?.role ?? "user";
-  const nav = profile === "airline" ? AIRLINE_NAV : PASSENGER_NAV;
+  const esAdmin = role === "admin" || role === "superadmin";
+  const nav = [
+    ...(profile === "airline" ? AIRLINE_NAV : PASSENGER_NAV),
+    ...(esAdmin ? ADMIN_NAV : []),
+  ];
 
   return (
     <Sidebar collapsible="icon">
