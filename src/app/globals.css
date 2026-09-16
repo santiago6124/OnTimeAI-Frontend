@@ -248,3 +248,45 @@ html[data-palette="mono"].dark {
  * ellos si nadie lo separa. */
 .safe-top { padding-top: env(safe-area-inset-top); }
 .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+
+/* Despegue de las tarjetas de perfil.
+ *
+ * Elegir perfil es lo primero que hace alguien con la cuenta recién creada, y
+ * pasa una sola vez: es el momento donde la app se presenta. La metáfora sale
+ * del proyecto —una pista, un avión que se alinea y despega— y no de un efecto
+ * cualquiera.
+ *
+ * Todo se define con `currentColor` y tokens, porque `--primary` cambia según
+ * la paleta elegida en Configuración.
+ *
+ * El bloque de `prefers-reduced-motion` de más arriba las desactiva solo; no
+ * hace falta repetir la regla acá.
+ */
+
+/* Las marcas de la pista corren hacia el avión mientras el mouse está encima. */
+@keyframes ontime-pista {
+  from { background-position: 0 0; }
+  to { background-position: -24px 0; }
+}
+
+/* El avión se agacha un instante antes de salir: sin esa pausa se lee como que
+ * se desliza, no como que despega. */
+@keyframes ontime-despegue {
+  0% { transform: translate(0, 0) rotate(0deg) scale(1); opacity: 1; }
+  18% { transform: translate(1px, 3px) rotate(0deg) scale(0.92); opacity: 1; }
+  100% { transform: translate(130px, -130px) rotate(-38deg) scale(0.65); opacity: 0; }
+}
+
+/* Un barrido de luz cruza la tarjeta una sola vez, como las luces de pista. */
+@keyframes ontime-barrido {
+  from { transform: translateX(-130%) skewX(-18deg); }
+  to { transform: translateX(260%) skewX(-18deg); }
+}
+
+.ontime-pista {
+  background-image: repeating-linear-gradient(
+    to right,
+    currentColor 0 12px,
+    transparent 12px 24px
+  );
+}
