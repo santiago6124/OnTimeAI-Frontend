@@ -8,6 +8,7 @@ import {
   Route,
   CloudSun,
   Settings,
+  TrendingUp,
   Users,
 } from "lucide-react";
 
@@ -31,6 +32,9 @@ const AIRLINE_NAV = [
   { href: "/flights", label: "Vuelos ATL", icon: Plane },
   { href: "/routes", label: "Historial por ruta", icon: Route },
   { href: "/weather", label: "Meteorología", icon: CloudSun },
+  // Solo en el menú de operaciones: a quien viaja no le sirve el AUC del
+  // modelo, le sirve si su vuelo sale a horario.
+  { href: "/reports", label: "Evolución del modelo", icon: TrendingUp },
 ];
 
 const PASSENGER_NAV = [
