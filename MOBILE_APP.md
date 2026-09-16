@@ -76,6 +76,20 @@ Cloud Run.
   la app ya trae el dashboard completo. El toggle Lite/Pro del header se oculta
   con `LIVE_ENABLED`, así que no queda ningún botón apuntando a una ruta
   inexistente — que es motivo de rechazo en App Review
+- **iOS — excluido**: `/reports` (Evolución del modelo, solo admin). Es una
+  página de servidor por partida doble: `getServerRole()` lee cookies y
+  `searchParams` la vuelve dinámica. Su entrada del menú se oculta con
+  `REPORTS_ENABLED`. Portarla al bundle es el patrón vista + wrapper cliente
+  que usan las demás páginas; está pendiente
+- **iOS — pendiente (2026-09-16)**: el flujo de auth nuevo (Firebase, Google,
+  onboarding, PRs #25–#29) no tiene rama para el bundle. `apiLoginFirebase()`
+  y `apiLoginGoogle()` llaman a `/api/auth/*` relativo, que en el teléfono no
+  existe; `apiSetUserType()` no manda `Authorization`; `apiMe()` no trae
+  `userType`; y el botón de Google necesita `NEXT_PUBLIC_GOOGLE_CLIENT_ID` y un
+  origen `https`, que `capacitor://localhost` no es (hace falta un plugin nativo
+  de Google Sign-In). **El login del bundle compilado desde `main` no funciona
+  hasta resolver esto** — no publicar un OTA ni una release desde `main` antes.
+  `production` en Capgo sigue en 1.0.1, anterior a esos cambios, y su login anda
 
 ---
 
