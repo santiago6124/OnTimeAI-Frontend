@@ -100,11 +100,18 @@ export function NativeSessionGate({ children }: { children: React.ReactNode }) {
   }, []);
 
   React.useEffect(() => {
+    // React montó: el bundle carga y ejecuta, que es lo único que el plugin tiene
+    // que saber para no revertirlo. Va antes de resolver la sesión a propósito
+    // —ver `lib/native/app-ready.ts`—: un /auth/me lento no es un bundle roto.
+    void import("@/lib/native/app-ready").then((m) => m.notifyAppReady());
+  }, []);
+
+  React.useEffect(() => {
     if (status === "resolving") return;
     // Hay una pantalla real arriba —o una que explica por qué no la hay—:
-    // bajar el splash y confirmarle el bundle a Capgo. También en el caso de
-    // error, porque un splash que no baja nunca es peor que un mensaje.
-    void import("@/lib/native/app-ready").then((m) => m.notifyAppReady());
+    // bajar el splash. También en el caso de error, porque un splash que no
+    // baja nunca es peor que un mensaje.
+    void import("@/lib/native/app-ready").then((m) => m.hideSplash());
   }, [status]);
 
   if (status === "failed") {

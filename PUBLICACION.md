@@ -79,17 +79,26 @@ Vale para las dos tiendas.
 
 ### Versión que subís — `versionName` / `MARKETING_VERSION`
 
-Hoy el repo dice `1.0`. Es la que ve el usuario. Subila en cada release que
-quieras diferenciar.
+Es la que ve el usuario. Subila en cada release que quieras diferenciar.
+
+- **iOS**: la fija el input `version` de *iOS Release (TestFlight)*. Semver de
+  tres números (`1.0.0`, no `1.0`): el servidor de OTA la usa de base y exige
+  ese formato. Los bundles OTA van `1.0.1`, `1.0.2`…; la siguiente release
+  nativa sube el minor (`1.1.0`).
+- **Android**: `versionName` en `android/app/build.gradle` (hoy `1.0`).
 
 ```
-1.0
+
 ```
 
 ### Build — `versionCode` / `CURRENT_PROJECT_VERSION`
 
-Hoy el repo dice `1`. Entero, y **tiene que subir en cada subida** aunque la
-versión no cambie: las dos tiendas rechazan un build repetido.
+Entero, y **tiene que subir en cada subida** aunque la versión no cambie: las
+dos tiendas rechazan un build repetido.
+
+- **iOS**: lo pone el workflow solo — es el número del run de Actions. No hay
+  que tocarlo; anotá acá el que salió.
+- **Android**: `versionCode` en `android/app/build.gradle` (hoy `1`), a mano.
 
 ```
 
@@ -434,7 +443,7 @@ Contestá rápido: una consulta sin respuesta se convierte en rechazo.
 |---|---|---|
 | Android | *Actions → Android Build → Run workflow*, tipo `release` | AAB firmado |
 | iOS | *Actions → iOS Release (TestFlight)* | `.ipa` firmado |
-| OTA iOS | *Actions → iOS OTA (Capgo)* | bundle sin pasar por review |
+| OTA iOS | *Actions → iOS OTA* | bundle sin pasar por review, al bucket propio |
 
 Los tres verifican solos lo que puede salir mal en silencio: que el APK tenga
 `server.url`, que el `.ipa` **no** lo tenga, y que los plugins declarados

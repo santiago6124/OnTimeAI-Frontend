@@ -61,6 +61,15 @@ export const APP_ORIGIN = normalizeOrigin(process.env.NEXT_PUBLIC_APP_ORIGIN);
  */
 export const LIVE_ENABLED = process.env.NEXT_PUBLIC_DISABLE_LIVE !== "1";
 
+/**
+ * Si "Evolución del modelo" (/reports) está disponible. Misma lógica que
+ * LIVE_ENABLED: la página es de servidor (getServerRole() lee cookies() y
+ * searchParams la vuelve dinámica), el bundle la poda, y el menú tiene que
+ * saberlo para no ofrecer un enlace que en el teléfono no lleva a ningún lado.
+ * En la web siempre es true.
+ */
+export const REPORTS_ENABLED = process.env.NEXT_PUBLIC_DISABLE_REPORTS !== "1";
+
 function normalizeOrigin(value: string | undefined): string {
   return (value ?? "").trim().replace(/\/+$/, "");
 }

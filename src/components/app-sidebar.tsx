@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/sidebar";
 import { useProfile } from "@/components/providers/profile-provider";
 import { useSession } from "@/components/providers/session-provider";
+import { REPORTS_ENABLED } from "@/lib/mobile-env";
 
 const AIRLINE_NAV = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -60,7 +61,9 @@ export function AppSidebar() {
   const esAdmin = role === "admin" || role === "superadmin";
   const nav = [
     ...(profile === "airline" ? AIRLINE_NAV : PASSENGER_NAV),
-    ...(esAdmin ? ADMIN_NAV : []),
+    // REPORTS_ENABLED es false solo en el bundle móvil, donde /reports no
+    // existe (ver lib/mobile-env.ts).
+    ...(esAdmin && REPORTS_ENABLED ? ADMIN_NAV : []),
   ];
 
   return (
