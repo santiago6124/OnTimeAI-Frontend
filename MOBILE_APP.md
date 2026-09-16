@@ -16,7 +16,7 @@ y sirve todos sus assets desde el binario, en el simulador de iPhone 17 Pro.
 | | Android | iOS |
 |---|---|---|
 | Assets | Remotos (`server.url` → Cloud Run) | Empaquetados en el `.ipa` |
-| Cambio de UI | Deploy normal de la web | Release nativa, u OTA con Capgo |
+| Cambio de UI | Deploy normal de la web | Release nativa, u OTA (servidor propio) |
 | Sin conexión | No bootea | Bootea con el bundle instalado |
 | Auth | Cookie `HttpOnly` + BFF, igual que la web | Token en almacenamiento nativo + `Bearer` |
 | Código propio | **Ninguno** | El árbol paralelo de `mobile/` |
@@ -89,7 +89,7 @@ Cloud Run.
   origen `https`, que `capacitor://localhost` no es (hace falta un plugin nativo
   de Google Sign-In). **El login del bundle compilado desde `main` no funciona
   hasta resolver esto** — no publicar un OTA ni una release desde `main` antes.
-  `production` en Capgo sigue en 1.0.1, anterior a esos cambios, y su login anda
+  el bundle 1.0.1 publicado es anterior a esos cambios, y su login anda
 
 ---
 
@@ -102,7 +102,7 @@ Cloud Run.
 | `src/lib/mobile-env.ts` | Banderas de build. Sin variables definidas, todo rinde como antes — la web es un no-op verificable |
 | `src/lib/routes.ts` | `flightDetailHref()`: emite la forma de enlace que corresponde a cada build |
 | `src/lib/native/session.ts` | Token en `@capacitor/preferences` |
-| `src/lib/native/app-ready.ts` | Dos señales separadas: confirma el bundle a Capgo apenas React monta; baja el splash recién cuando hay pantalla |
+| `src/lib/native/app-ready.ts` | Dos señales separadas: confirma el bundle al plugin de OTA apenas React monta; baja el splash recién cuando hay pantalla |
 | `src/components/providers/native-session-provider.tsx` | El gate de sesión: reemplazo de `proxy.ts` en el bundle |
 | `src/components/*-view.tsx` | Vistas puras. Web y móvil traen los datos distinto pero dibujan lo mismo |
 
@@ -147,12 +147,12 @@ En la nube: *Actions* → **Android Build** → *Run workflow* → `debug` o `re
 pnpm cap:ios                # bundle + config + sync + parche + abrir Xcode
 
 # Con OTA activo (lo que compila CI para TestFlight): la versión es obligatoria
-MOBILE_CAPGO=1 MOBILE_APP_VERSION=1.0.0 bash scripts/ios-prepare.sh
+MOBILE_OTA=1 MOBILE_APP_VERSION=1.0.0 bash scripts/ios-prepare.sh
 ```
 
 En la nube: *Actions* → **iOS Release (TestFlight)**. El input `version` fija
 `MARKETING_VERSION` en xcodebuild y `plugins.CapacitorUpdater.version` en el
-config — una sola fuente para App Store y para Capgo. El número de build es el
+config — una sola fuente para App Store y para el OTA. El número de build es el
 del run de Actions, así nunca se repite.
 
 Con **Xcode 27** en local, `xcodebuild` rechaza el target iOS 14.0 que genera
@@ -213,7 +213,6 @@ Si algún día Android pasa a servir sus assets desde el binario, su origen es
 | `IOS_CERTIFICATE_P12_BASE64` + `_PASSWORD` | Firmar el `.ipa` | Falta exportarlo de la cuenta Apple |
 | `IOS_PROVISIONING_PROFILE_BASE64`, `IOS_TEAM_ID` | Perfil y equipo | Falta |
 | `APPSTORE_API_KEY_ID`, `_ISSUER_ID`, `_PRIVATE_KEY` | Subir a TestFlight | Falta |
-| `CAPGO_TOKEN` | OTA de iOS | Cuenta creada el 2026-09-16. **Falta cargar el secret**: generá una key con permiso `upload` solamente (Capgo → Settings → API keys), no la de onboarding |
 
 Variables (no secretas): `MOBILE_API_ORIGIN`, `MOBILE_APP_ORIGIN`.
 
@@ -233,38 +232,55 @@ actualizar la app publicada en Play.
 
 ---
 
-## 7. Capgo (OTA de iOS) — configurado, se prende por build
+## 7. OTA de iOS — servidor propio
 
-Cuenta creada el 2026-09-16: organización **OntimeAI**, app `com.ontimeai.app`
-(mismo id que el bundle, pero Capgo lo lee de `plugins.CapacitorUpdater.appId`,
-no del `appId` de Capacitor). Canales:
+El plugin es `@capgo/capacitor-updater` (MPL-2.0), pero el cloud de Capgo no
+interviene: la cuenta que se creó el 2026-09-16 se probó, funcionó, y se
+descartó porque no es gratis (trial de 15 días, después ~USD 12–15/mes). Lo que
+el plugin necesita es solo un endpoint, y ese endpoint es nuestro.
 
-| Canal | Rol | Quién lo mira |
+| Pieza | Dónde | Qué hace |
 |---|---|---|
-| `production` | default de la nube | todo binario compilado con `capgo: true` que no diga otra cosa |
-| `staging` | privado, con auto-asignación | un build compilado con `MOBILE_CAPGO_CHANNEL=staging`, o un dispositivo forzado desde la consola |
+| `src/app/api/ota/updates/route.ts` | Next en Cloud Run | Recibe el `POST` del plugin, lee el manifest y contesta `{version, url, checksum}` o `{kind: "up_to_date"}` |
+| `gs://ontimeai-ota/ios/` | GCS, proyecto `ontimeai-prod`, lectura pública | `manifest.json` + un `<version>.zip` por bundle |
+| `scripts/ota-publish.mjs` | local o CI | `upload`, `set` (apuntar un canal), `retire`, `status`. Toda la "base de datos" es el manifest |
+| `ios-ota.yml` | GitHub Actions | El script con la identidad de `deploy.yml` (`github-deployer`, `objectAdmin` sobre el bucket) |
 
-El config **no** fija `defaultChannel`: lo decide la nube, y así un dispositivo
-se puede mover de canal desde la consola sin recompilar.
+El contrato está leído del Swift del plugin y documentado en el route handler:
+`kind` solo puede ser `up_to_date`, `blocked` o `failed`; el checksum es el
+SHA-256 del zip; `index.html` va en la raíz del zip. El manifest se sube con
+`Cache-Control: no-cache` para que un rollback rija de inmediato, y la URL va
+hardcodeada en el código con override por env porque `deploy.yml` borra las
+variables de Cloud Run que no pasa.
 
-**Verificado en el simulador el 2026-09-16, de punta a punta**: binario 1.0.0 →
-bundle 1.0.1 detectado, descargado (checksum igual al del upload), aplicado al
-pasar a segundo plano, `notifyAppReady` a tiempo, sin rollback. Después un
-bundle con un cambio visible en el login llegó a la misma app sin reinstalar ni
-`cap sync`, y al devolver el canal a 1.0.1 desde la CLI el dispositivo volvió.
-`production` quedó en **1.0.1**, idéntico al build nativo.
+Canales, sin registro de dispositivos: el binario decide.
 
-Sigue siendo opt-in por build: `autoUpdate` es `MOBILE_CAPGO=1`, que
-`ios-release.yml` setea con `capgo: true`. La razón de que no esté prendido de
-fábrica sigue vigente para cualquier build sin cuenta: el plugin bloquea el
-arranque contra un semáforo hasta `appReadyTimeout` si el cloud le contesta 429.
-Un binario compilado con `capgo: false` **no recibe OTAs**, publicar un bundle
-no le llega.
+| Canal | Quién lo mira |
+|---|---|
+| `production` | todo binario compilado con `ota: true` que no fije canal |
+| `staging` | un build compilado con `MOBILE_OTA_CHANNEL=staging` (lo manda como `defaultChannel`) |
 
-La cuenta está en período de prueba (vence ~2026-10-01): hay que elegir un plan
-antes, o los dispositivos dejan de recibir bundles.
+Reglas del servidor: no ofrece un bundle igual al que corre, ni uno anterior a
+la versión nativa instalada, ni uno cuyo `min_native` supere esa versión (es el
+reemplazo manual de `--fail-on-incompatible`). Cada consulta deja una línea
+JSON en el log de Cloud Run con dispositivo, canal, versión y decisión: eso son
+las "estadísticas".
 
----
+**Verificado en el simulador el 2026-09-16, de punta a punta**, con el route
+handler corriendo en `next dev` y `MOBILE_OTA_URL` apuntando a él: binario 1.0.0
+→ 1.0.1 detectado, descargado con checksum igual al del manifest, aplicado,
+`notifyAppReady` a tiempo; un bundle con cambio visible llegó sin reinstalar ni
+`cap sync`; `set --channel production --version 1.0.1` hizo volver al
+dispositivo. `production` quedó en **1.0.1**, idéntico al build nativo. Lo que
+no probé: el mismo handler en Cloud Run, que existe recién a partir del deploy
+que incluya este código — un `curl -X POST .../api/ota/updates` con el JSON del
+test lo confirma en segundos.
+
+Sigue siendo opt-in por build: `autoUpdate` es `MOBILE_OTA=1`, que
+`ios-release.yml` setea con `ota: true`. Un build de desarrollo no lo prende
+porque el plugin bloquea el arranque contra un semáforo hasta `appReadyTimeout`
+si no puede hablar con el servidor. Un binario con `ota: false` **no recibe
+OTAs**: publicar un bundle no le llega.
 
 ## 8. Si Play Store objeta el shell remoto
 
@@ -317,8 +333,8 @@ Lo que hay que revisar en ese caso, porque Android no lo tiene resuelto hoy:
    globals.css). En un navegador de escritorio esos `env()` valen 0, así que el
    agregado es un no-op exacto para la web.
 
-7. **`notifyAppReady()` no puede esperar a la sesión.** Capgo revierte el bundle
-   si no llega en 10 s, y `/auth/me` contra un Cloud Run frío puede tardar más:
+7. **`notifyAppReady()` no puede esperar a la sesión.** El plugin revierte el
+   bundle si no llega en 10 s, y `/auth/me` contra un Cloud Run frío puede tardar más:
    un backend lento se leería como un bundle roto y desharía un OTA sano en
    cada arranque en frío. Por eso se llama apenas React monta —eso ya prueba
    que el bundle carga— y el splash se baja aparte, cuando hay pantalla.
@@ -328,8 +344,13 @@ Lo que hay que revisar en ese caso, porque Android no lo tiene resuelto hoy:
    token de sesión en texto plano. Un log del simulador es un secreto: no
    pegarlo en issues ni en documentación sin filtrar esas líneas.
 
-9. **La CLI de Capgo lee siempre `capacitor.config.ts`.** Igual que la de
-   Capacitor, no acepta `--config`. Para subir un bundle a mano hay que copiar
-   `capacitor.config.ios.ts` encima y restaurar después; si no, toma el config
-   de Android (`webDir` distinto, `autoUpdate: false`). `ios-ota.yml` ya lo
-   hace en el checkout efímero.
+9. **Una versión de bundle es inmutable.** El plugin identifica el bundle por
+   su versión: si ya bajó 1.0.2, no vuelve a bajar otro 1.0.2 con contenido
+   distinto. `ota-publish.mjs upload` se niega a pisar una versión, y `retire`
+   avisa que no se reutilice el número. Cada publicación es la siguiente.
+
+10. **Para probar el OTA contra un servidor local hay que abrirle ATS.** El
+   plugin descarga con URLSession, y iOS bloquea `http://` por defecto. Con
+   `MOBILE_OTA_URL=http://localhost:3000/api/ota/updates` y
+   `NSAllowsLocalNetworking = true` en el `Info.plist` generado (`ios/` no está
+   versionado) el simulador llega al `next dev` del Mac. Nada de eso va al repo.

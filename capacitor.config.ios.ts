@@ -17,53 +17,61 @@ import { KeyboardResize } from "@capacitor/keyboard";
  *
  * Que los assets estén empaquetados no congela la UI. El Apple Developer
  * Program License Agreement §3.3.2 permite actualizar código interpretado
- * (JS/CSS/HTML) sin pasar por review, que es de lo que se ocupa Capgo. Y a
+ * (JS/CSS/HTML) sin pasar por review, que es lo que hace el OTA (plugin de
+ * Capgo contra un servidor propio, ver abajo). Y a
  * diferencia del modo remoto, si el servidor de OTA está caído la app sigue
  * andando con el bundle que ya tiene instalado.
  */
 /**
- * Si el OTA de Capgo está activo.
+ * Si el OTA está activo.
  *
- * Arranca APAGADO, y es deliberado. Con `autoUpdate: true` y sin cuenta de
- * Capgo configurada, el plugin consulta su cloud en cada arranque, cobra un
- * `429 (on_premise_app)` y bloquea el inicio contra un semáforo hasta que
- * vence `appReadyTimeout` — o sea, diez segundos de pantalla muerta a cambio de
- * nada, porque no hay ningún bundle que pueda bajar.
+ * Arranca APAGADO, y es deliberado: con `autoUpdate: true` el plugin consulta
+ * el servidor de updates en cada arranque y, si no puede hablar con él, bloquea
+ * el inicio contra un semáforo hasta que vence `appReadyTimeout` — diez
+ * segundos de pantalla muerta. Un build de desarrollo no tiene por qué pagar
+ * eso. `ios-release.yml` lo prende con el input `ota` (= `MOBILE_OTA=1`).
  *
- * El plugin igual viaja en el binario y `notifyAppReady()` ya está cableado
- * (`lib/native/app-ready.ts`), así que prender el OTA es una variable de
- * entorno: `MOBILE_CAPGO=1`. La cuenta existe desde 2026-09-16 (org
- * "OntimeAI", app `com.ontimeai.app`), y `ios-release.yml` lo prende con el
- * input `capgo`.
+ * El servidor es propio: `/api/ota/updates` en el Next desplegado en Cloud Run
+ * (src/app/api/ota/updates/route.ts), con los bundles en un bucket de GCS que
+ * escribe scripts/ota-publish.mjs. El plugin es el de Capgo (MPL-2.0), pero su
+ * cloud no interviene: `updateUrl` es nuestro y las estadísticas van apagadas.
  */
-const CAPGO_OTA = process.env.MOBILE_CAPGO === "1";
+const OTA = process.env.MOBILE_OTA === "1";
 
 /**
- * Versión nativa que el plugin le declara a Capgo como punto de partida
- * (`version_build`). Capgo la compara con la del bundle que ofrece, y exige
- * semver estricto: el `1.0` que Xcode pone por defecto no lo es.
+ * A dónde pregunta el plugin. Por defecto el Next de producción; se pisa para
+ * probar contra un servidor local expuesto por túnel. Sin OTA no se usa.
+ */
+const OTA_UPDATE_URL =
+  (process.env.MOBILE_OTA_URL || "").trim() ||
+  "https://ontimeai-frontend-871707213932.us-central1.run.app/api/ota/updates";
+
+/**
+ * Versión nativa que el plugin declara como punto de partida (`version_build`).
+ * El servidor la compara con la del bundle que ofrece —no baja por debajo del
+ * nativo, y respeta `min_native`— y exige semver estricto: el `1.0` que Xcode
+ * pone por defecto no lo es.
  *
  * Viene de `MOBILE_APP_VERSION`, el mismo input `version` con el que
  * `ios-release.yml` fija `MARKETING_VERSION` en xcodebuild — una sola fuente
- * para el binario y para el OTA, porque si difieren Capgo decide con un número
- * que no es el que ve App Store. Sin OTA no hace falta; con OTA es obligatoria,
+ * para el binario y para el OTA. Sin OTA no hace falta; con OTA es obligatoria,
  * y un valor inválido tiene que frenar acá y no en el teléfono.
  */
 const APP_VERSION = (process.env.MOBILE_APP_VERSION || "").trim();
-if (CAPGO_OTA && !/^\d+\.\d+\.\d+$/.test(APP_VERSION)) {
+if (OTA && !/^\d+\.\d+\.\d+$/.test(APP_VERSION)) {
   throw new Error(
-    `MOBILE_CAPGO=1 exige MOBILE_APP_VERSION en semver (ej. 1.0.0); recibí "${APP_VERSION}".`,
+    `MOBILE_OTA=1 exige MOBILE_APP_VERSION en semver (ej. 1.0.0); recibí "${APP_VERSION}".`,
   );
 }
 
 /**
- * Canal de Capgo fijado en el binario. Vacío en producción: el canal lo decide
- * la nube (`production` es el default) y así un dispositivo se puede mover de
- * canal desde la consola sin recompilar. Un build de prueba que deba mirar
- * `staging` se compila con `MOBILE_CAPGO_CHANNEL=staging`; el canal tiene que
- * permitir auto-asignación, y `staging` la tiene.
+ * Canal fijado en el binario. Vacío en producción: el servidor usa
+ * `production`. Un build de prueba que deba mirar `staging` se compila con
+ * `MOBILE_OTA_CHANNEL=staging`; el plugin lo manda como `defaultChannel` y el
+ * servidor rutea por eso. No hay registro de dispositivos ni asignación desde
+ * una consola: el canal es una decisión de compilación.
  */
-const CAPGO_CHANNEL = (process.env.MOBILE_CAPGO_CHANNEL || "").trim();
+const OTA_CHANNEL = (process.env.MOBILE_OTA_CHANNEL || "").trim();
 
 const config: CapacitorConfig = {
   appId: "com.ontimeai.app",
@@ -75,12 +83,16 @@ const config: CapacitorConfig = {
 
   plugins: {
     CapacitorUpdater: {
-      autoUpdate: CAPGO_OTA,
-      // App de Capgo a consultar. Coincide con el bundle id, pero es un
-      // campo aparte: Capgo lo lee de acá, no del `appId` de arriba.
+      autoUpdate: OTA,
+      updateUrl: OTA_UPDATE_URL,
+      // Sin esto el plugin reporta cada arranque al cloud de Capgo, que no
+      // usamos. Vacío = no reportar. El log de /api/ota/updates en Cloud Run
+      // es el registro de qué dispositivo pidió qué.
+      statsUrl: "",
+      // Viaja como `app_id` en cada consulta; el servidor lo verifica.
       appId: "com.ontimeai.app",
       ...(APP_VERSION ? { version: APP_VERSION } : {}),
-      ...(CAPGO_CHANNEL ? { defaultChannel: CAPGO_CHANNEL } : {}),
+      ...(OTA_CHANNEL ? { defaultChannel: OTA_CHANNEL } : {}),
 
       /**
        * Si la app no llama a `notifyAppReady()` dentro de esta ventana, el

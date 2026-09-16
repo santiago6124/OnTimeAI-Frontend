@@ -100,7 +100,7 @@ export function NativeSessionGate({ children }: { children: React.ReactNode }) {
   }, []);
 
   React.useEffect(() => {
-    // React montó: el bundle carga y ejecuta, que es lo único que Capgo tiene
+    // React montó: el bundle carga y ejecuta, que es lo único que el plugin tiene
     // que saber para no revertirlo. Va antes de resolver la sesión a propósito
     // —ver `lib/native/app-ready.ts`—: un /auth/me lento no es un bundle roto.
     void import("@/lib/native/app-ready").then((m) => m.notifyAppReady());

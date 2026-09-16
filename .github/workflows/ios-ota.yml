@@ -1,36 +1,42 @@
-name: iOS OTA (Capgo)
+name: iOS OTA
 
-# Publica un bundle nuevo a los dispositivos iOS ya instalados, sin pasar por
-# App Review.
+# Publica un bundle web nuevo para los binarios de iOS ya instalados, sin
+# pasar por App Review. Solo JS/CSS/HTML: cualquier cambio nativo (plugins,
+# permisos, ios/) necesita ios-release.yml.
 #
-# Esto es lo que devuelve los deploys rápidos de UI que costó empaquetar los
-# assets. El Apple Developer Program License Agreement §3.3.2 permite actualizar
-# código interpretado (JS/CSS/HTML) sin revisión; lo que NO se puede actualizar
-# así es código nativo. Si el cambio toca plugins de Capacitor, permisos, el
-# parche del router o cualquier cosa bajo ios/, esto no alcanza y hay que ir por
-# ios-release.yml.
+# El servidor es propio: los bundles van a un bucket de GCS y la app pregunta a
+# /api/ota/updates (src/app/api/ota/updates/route.ts), que decide leyendo el
+# manifest que scripts/ota-publish.mjs escribe. Este workflow es ese script
+# corriendo con la identidad que ya usa deploy.yml.
 #
-# Corre en ubuntu: armar el bundle es un `next build`, no necesita Xcode ni los
-# minutos de macOS a 10x.
-#
-# REQUISITO: una cuenta de Capgo y el secret CAPGO_TOKEN. Además, el binario
-# instalado tiene que haberse compilado con `capgo: true` en ios-release.yml
-# (MOBILE_CAPGO=1) — si el OTA está apagado en la app instalada, publicar acá no
-# le llega a nadie.
+# REQUISITO: que el binario instalado se haya compilado con `ota: true` en
+# ios-release.yml. Si el OTA está apagado en la app que la gente tiene, publicar
+# acá no le llega a nadie.
 #
 # Seguridad del despliegue, en capas:
-#  - `--fail-on-incompatible` aborta si el bundle usa plugins nativos que la
-#    versión instalada no tiene, en vez de publicar algo que va a crashear.
+#  - `min_native`: si el bundle usa un plugin nativo que un binario viejo no
+#    tiene, se declara acá la primera versión nativa que sí lo tiene, y el
+#    servidor no se lo ofrece a los anteriores.
 #  - `notifyAppReady()` (NativeSessionGate) confirma que el bundle arrancó; si
 #    no llega en 10 s el dispositivo vuelve solo al bundle anterior.
-#  - `--channel staging` permite probar en dispositivos propios sin tocar
-#    producción.
+#  - `staging` permite probar en un binario compilado con
+#    MOBILE_OTA_CHANNEL=staging sin tocar producción.
+#  - `apuntar` devuelve un canal a cualquier versión ya publicada: es el
+#    rollback, y rige de inmediato porque el manifest no se cachea.
 
 on:
   workflow_dispatch:
     inputs:
+      accion:
+        description: "publicar: compila y sube una versión nueva · apuntar: mueve el canal a una versión ya publicada (rollback)"
+        required: true
+        type: choice
+        default: publicar
+        options:
+          - publicar
+          - apuntar
       canal:
-        description: "Canal de Capgo al que publicar"
+        description: "Canal"
         required: true
         type: choice
         default: staging
@@ -38,81 +44,107 @@ on:
           - staging
           - production
       version:
-        description: "Versión de este bundle en Capgo (semver, única y > 0.0.0)"
+        description: "Versión del bundle (semver, única y mayor que la nativa; ej. 1.0.2). Con 'apuntar', una ya publicada"
         required: true
         default: "1.0.1"
+      minNative:
+        description: "Solo 'publicar': primera versión nativa que puede correr este bundle (vacío = cualquiera)"
+        required: false
+        default: ""
       comentario:
-        description: "Qué cambia en este bundle (queda en el historial de Capgo)"
+        description: "Solo 'publicar': qué cambia (queda en el manifest)"
         required: false
         default: ""
 
+permissions:
+  id-token: write
+  contents: read
+
 concurrency:
-  group: ios-ota-${{ inputs.canal }}
+  group: ios-ota
   cancel-in-progress: false
 
 jobs:
-  publicar:
-    name: Publicar en ${{ inputs.canal }}
+  ota:
+    name: ${{ inputs.accion }} ${{ inputs.version }} en ${{ inputs.canal }}
     runs-on: ubuntu-latest
 
     steps:
+      - name: Validar la versión
+        run: |
+          # 'none' con apuntar deja el canal sin bundle (los dispositivos se quedan como están).
+          if [ "${{ inputs.accion }}" = "apuntar" ] && [ "${{ inputs.version }}" = "none" ]; then
+            echo "OK — el canal ${{ inputs.canal }} queda sin bundle."
+          elif ! [[ "${{ inputs.version }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::version tiene que ser semver de tres números (ej. 1.0.2); recibí '${{ inputs.version }}'."
+            exit 1
+          fi
+          if [ -n "${{ inputs.minNative }}" ] && ! [[ "${{ inputs.minNative }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::minNative tiene que ser semver o vacío; recibí '${{ inputs.minNative }}'."
+            exit 1
+          fi
+
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Autenticar en GCP
+        # La misma identidad federada que deploy.yml. Tiene objectAdmin sobre
+        # el bucket ontimeai-ota, y nada más que lo que ya tenía.
+        uses: google-github-actions/auth@v2
+        with:
+          project_id: ontimeai-prod
+          workload_identity_provider: projects/871707213932/locations/global/workloadIdentityPools/github/providers/github
+          service_account: github-deployer@ontimeai-prod.iam.gserviceaccount.com
+
+      - uses: google-github-actions/setup-gcloud@v2
+
       - name: Node
         # 20, igual que ios-release.yml: el bundle que se publica por OTA tiene
-        # que salir del mismo toolchain que el que viaja en el .ipa. El CLI de
-        # Capgo avisa que prefiere Node 22; es un warning, no un error.
+        # que salir del mismo toolchain que el que viaja en el .ipa.
+        if: inputs.accion == 'publicar'
         uses: actions/setup-node@v4
         with:
           node-version: "20"
 
       - name: pnpm
+        if: inputs.accion == 'publicar'
         uses: pnpm/action-setup@v4
         with:
           version: 10.33.0
 
-      - name: Preflight — credenciales de Capgo
-        env:
-          CAPGO_TOKEN: ${{ secrets.CAPGO_TOKEN }}
-        run: |
-          if [ -z "$CAPGO_TOKEN" ]; then
-            echo "::error::Falta el secret CAPGO_TOKEN."
-            echo "Se saca de la cuenta de Capgo: Settings → API keys, con permiso 'upload'."
-            echo "Sin OTA la app igual funciona: sirve el bundle que trae el .ipa."
-            exit 1
-          fi
-          echo "OK — CAPGO_TOKEN presente."
-
       - name: Dependencias
+        if: inputs.accion == 'publicar'
         run: pnpm install --frozen-lockfile
 
       - name: Bundle web empaquetado
         # Las mismas variables que ios-release.yml: un OTA tiene que salir con
         # la misma configuración que el build nativo, o los dispositivos
         # quedarían apuntando a otro backend de un momento para otro.
+        if: inputs.accion == 'publicar'
         env:
           MOBILE_API_ORIGIN: ${{ vars.MOBILE_API_ORIGIN }}
           MOBILE_APP_ORIGIN: ${{ vars.MOBILE_APP_ORIGIN }}
         run: node scripts/build-mobile.mjs --strict
 
-      - name: Config de iOS
-        # El CLI de Capgo lee appId y webDir de capacitor.config.ts.
-        run: cp capacitor.config.ios.ts capacitor.config.ts
-
-      - name: Publicar bundle
-        env:
-          CAPGO_TOKEN: ${{ secrets.CAPGO_TOKEN }}
+      - name: Publicar
+        if: inputs.accion == 'publicar'
         run: |
-          # El appId va posicional. `--auto-min-update-version` deriva de los
-          # plugins nativos qué versión instalada puede recibir este bundle, y
-          # `--fail-on-incompatible` aborta en vez de publicar algo que en un
-          # binario viejo crashea por un plugin que no tiene.
-          npx @capgo/cli bundle upload com.ontimeai.app \
-            --apikey "$CAPGO_TOKEN" \
+          node scripts/ota-publish.mjs upload \
+            --version "${{ inputs.version }}" \
             --channel "${{ inputs.canal }}" \
-            --path .mobile/out \
-            --bundle "${{ inputs.version }}" \
-            --auto-min-update-version \
-            --fail-on-incompatible \
-            ${{ inputs.comentario && format('--comment "{0}"', inputs.comentario) || '' }}
+            --min-native "${{ inputs.minNative }}" \
+            --comment "${{ inputs.comentario }}"
+
+      - name: Apuntar el canal
+        if: inputs.accion == 'apuntar'
+        run: |
+          node scripts/ota-publish.mjs set \
+            --channel "${{ inputs.canal }}" \
+            --version "${{ inputs.version }}"
+
+      - name: Estado
+        run: |
+          echo '### OTA' >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          node scripts/ota-publish.mjs status >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"

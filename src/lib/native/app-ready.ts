@@ -2,14 +2,14 @@
  * Dos señales del arranque nativo que conviene no confundir, porque tienen
  * ventanas de tiempo distintas:
  *
- *  1. `notifyAppReady()` — confirmarle a Capgo que este bundle arrancó. Si no
+ *  1. `notifyAppReady()` — confirmarle al plugin de OTA que este bundle arrancó. Si no
  *     llega dentro de `appReadyTimeout` (10 s en `capacitor.config.ios.ts`),
  *     el plugin asume que el bundle nuevo rompió el arranque y revierte solo al
  *     anterior. Es el seguro contra un OTA malo, y lo que prueba es que el JS
  *     carga y React monta: eso es lo que un bundle roto no consigue. NO debe
  *     esperar a la sesión —`/auth/me` contra un Cloud Run frío puede tardar
  *     más que la ventana— porque entonces un backend lento se leería como un
- *     bundle roto y Capgo desharía un OTA sano en cada arranque en frío.
+ *     bundle roto y el plugin desharía un OTA sano en cada arranque en frío.
  *
  *  2. `hideSplash()` — bajar el splash. Acá sí hay que esperar: el arranque del
  *     bundle tiene varios saltos (el WebView carga el index, bootea React, y
@@ -34,7 +34,7 @@ export async function notifyAppReady(): Promise<void> {
     await CapacitorUpdater.notifyAppReady();
   } catch {
     // Sin OTA configurado el plugin no está o falla: la app igual tiene que
-    // arrancar. El bundle empaquetado no depende de Capgo para funcionar.
+    // arrancar. El bundle empaquetado no depende del OTA para funcionar.
   }
 }
 

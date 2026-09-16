@@ -88,7 +88,7 @@ const config: CapacitorConfig = {
       // un deploy de la web ya es la actualización. Dejarlo prendido acá haría
       // que el plugin intente pisar un `webDir` que no se usa.
       autoUpdate: false,
-      // Sin esto el plugin igual reporta cada arranque a Capgo y el teléfono
+      // Sin esto el plugin igual reporta cada arranque al cloud de Capgo y el teléfono
       // aparece como dispositivo de la app — cuenta para el MAU del plan sin
       // poder recibir nunca un bundle. Vacío = no reportar.
       statsUrl: "",

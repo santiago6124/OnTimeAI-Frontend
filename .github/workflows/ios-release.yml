@@ -7,15 +7,15 @@ name: iOS Release (TestFlight)
 # (scripts/build-mobile.mjs) y mete el resultado adentro del binario.
 #
 # Cada cambio de UI que salga por acá pasa por App Review. Para cambios que solo
-# tocan JS/CSS/HTML existe ios-ota.yml, que los publica sin review — pero
-# requiere una cuenta de Capgo. Si el cambio toca plugins nativos, permisos o
-# cualquier cosa bajo ios/, este es el único camino.
+# tocan JS/CSS/HTML existe ios-ota.yml, que los publica sin review al servidor
+# propio de OTA. Si el cambio toca plugins nativos, permisos o cualquier cosa
+# bajo ios/, este es el único camino.
 
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Versión de la app (semver, ej. 1.0.0). Es la que ve App Store y la que Capgo usa de base"
+        description: "Versión de la app (semver, ej. 1.0.0). Es la que ve App Store y la base que el servidor de OTA compara"
         required: true
         default: "1.0.0"
       apiOrigin:
@@ -26,8 +26,8 @@ on:
         description: "Origen del Next desplegado, para /api/weather"
         required: false
         default: ""
-      capgo:
-        description: "Activar el OTA de Capgo en este binario"
+      ota:
+        description: "Activar el OTA en este binario (consulta /api/ota/updates al arrancar)"
         required: true
         type: boolean
         default: false
@@ -48,8 +48,9 @@ jobs:
 
     steps:
       - name: Validar la versión
-        # Apple acepta hasta tres enteros en CFBundleShortVersionString y Capgo
-        # exige semver estricto: `1.0` falla en Capgo, `1.0.0` sirve en los dos.
+        # Apple acepta hasta tres enteros en CFBundleShortVersionString y el
+        # servidor de OTA exige semver estricto: `1.0` falla ahí, `1.0.0` sirve
+        # en los dos.
         # El número de build es el del run, así nunca se repite — App Store
         # Connect rechaza un build con el mismo (versión, build) que uno subido.
         run: |
@@ -90,9 +91,9 @@ jobs:
 
       - name: Proyecto nativo
         # MOBILE_APP_VERSION es la misma que va a MARKETING_VERSION más abajo:
-        # el config de iOS se la declara a Capgo como versión nativa instalada.
+        # el config de iOS se la declara al servidor de OTA como versión nativa.
         env:
-          MOBILE_CAPGO: ${{ inputs.capgo && '1' || '0' }}
+          MOBILE_OTA: ${{ inputs.ota && '1' || '0' }}
           MOBILE_APP_VERSION: ${{ inputs.version }}
         run: |
           npx cap add ios

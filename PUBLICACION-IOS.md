@@ -160,9 +160,9 @@ Actions*:
 
 | Input | Qué poner |
 |---|---|
-| `version` | semver de tres números (`1.0.0`). Es la que ve App Store y la base que Capgo compara. El número de build lo pone el workflow (el del run), no hace falta tocarlo |
+| `version` | semver de tres números (`1.0.0`). Es la que ve App Store y la base que el servidor de OTA compara. El número de build lo pone el workflow (el del run), no hace falta tocarlo |
 | `apiOrigin` / `appOrigin` | vacío usa las variables del repo |
-| `capgo` | `true`: la cuenta existe desde el 2026-09-16 (ver §10). Un binario con `false` nunca recibe OTAs |
+| `ota` | `true` para el binario que va a la tienda (ver §10). Un binario con `false` nunca recibe OTAs |
 | `subir` | `true` para que además lo mande a TestFlight |
 
 El workflow verifica tres cosas antes de firmar, y las tres son fallas que de
@@ -256,43 +256,50 @@ llega por *Resolution Center* con la guideline citada.
 
 **Actualizaciones de interfaz sin review.** El Apple Developer Program License
 Agreement §3.3.2 permite actualizar código interpretado (JS, CSS, HTML) sin pasar
-por revisión. De eso se ocupa *Actions → iOS OTA (Capgo)*, y es lo que devuelve
-los deploys rápidos que costó empaquetar los assets.
+por revisión. De eso se ocupa *Actions → iOS OTA*, y es lo que devuelve los
+deploys rápidos que costó empaquetar los assets.
 
-La cuenta existe desde el 2026-09-16 (org **OntimeAI**, app `com.ontimeai.app`,
-canales `production` y `staging`; `production` tiene el bundle 1.0.1, idéntico
-al build nativo 1.0.0). El ciclo completo está verificado en el simulador —
-detección, descarga, aplicación, `notifyAppReady` y vuelta atrás desde la
-consola. Lo que falta de tu lado:
+El servidor es **propio**, no hay cuenta de terceros ni costo: los bundles van a
+un bucket de GCS (`gs://ontimeai-ota`) y la app pregunta a `/api/ota/updates`
+del Next desplegado en Cloud Run, que decide con un manifest JSON del bucket.
+Está verificado en el simulador de punta a punta (detección, descarga con
+checksum, aplicación, `notifyAppReady`, rollback). Detalle en `MOBILE_APP.md` §7.
 
-1. **El secret `CAPGO_TOKEN`** en GitHub (*Settings → Secrets → Actions*). Generá
-   una key nueva en Capgo (*Settings → API keys*) con permiso **`upload`**
-   solamente: es lo único que el workflow necesita, y una key acotada en CI
-   vale menos si se filtra.
-2. **Que el binario instalado se haya compilado con `capgo: true`.** Si el OTA
+Lo que tiene que cumplirse:
+
+1. **Que el binario instalado se haya compilado con `ota: true`.** Si el OTA
    está apagado en la app que la gente tiene, publicar un bundle no le llega a
-   nadie.
-3. **Elegir un plan** antes de que venza la prueba (~2026-10-01).
+   nadie. El `.ipa` de la tienda va siempre con `ota: true`.
+2. **Que el Next desplegado tenga `/api/ota/updates`** — está en `main`, así
+   que cualquier deploy posterior a ese merge lo trae.
 
-**Probar un OTA en tu iPhone antes de tocar producción.** Publicá a `staging`
-(es el default del workflow) y, en la consola de Capgo, forzá tu dispositivo a
-ese canal (*Devices → tu device → Channel*). El id del dispositivo aparece en
-*Logs* apenas la app abre. Cuando el bundle esté bien, volvés a correr el
-workflow con `canal: production`.
-
-**Versionado.** Cada bundle lleva un semver único y mayor que el nativo: con
-binario `1.0.0`, los bundles son `1.0.1`, `1.0.2`… Una versión subida no se
-puede reutilizar aunque se borre. La próxima release nativa sube el minor
+**Cómo publicar.** *Actions → iOS OTA → Run workflow* con `accion: publicar`,
+el `canal` y una `version` nueva (semver, única, mayor que la nativa: con
+binario `1.0.0`, los bundles son `1.0.1`, `1.0.2`…). Una versión subida no se
+puede reutilizar aunque se retire. La próxima release nativa sube el minor
 (`1.1.0`) y los OTAs siguen desde ahí.
+
+**Probar un OTA antes de tocar producción.** Publicá a `staging` (es el default
+del workflow). Solo lo mira un binario compilado con `MOBILE_OTA_CHANNEL=staging`
+—por ejemplo el que instalás en tu iPhone desde Xcode con `pnpm cap:ios`—; los
+de la tienda no lo ven. Cuando esté bien, publicá la misma versión a
+`production`... o mejor, corré `apuntar` con `canal: production` y esa versión:
+el bundle ya está subido, solo cambia a quién se le ofrece.
+
+**Rollback.** *Run workflow* con `accion: apuntar`, `canal: production` y la
+versión anterior. Rige en el siguiente arranque de cada dispositivo: el manifest
+se sirve sin caché.
 
 **Lo que el OTA NO puede actualizar.** Cualquier cosa nativa: plugins de
 Capacitor, permisos, el `Info.plist`, y el parche del router de assets. Todo eso
-necesita una release nueva por el paso 7.
+necesita una release nueva por el paso 7. Si un bundle empieza a usar un plugin
+que un binario viejo no trae, publicalo con `minNative` = la primera versión
+nativa que lo tiene, y el servidor no se lo ofrece a los anteriores.
 
-**Red de seguridad.** El upload corre con `--fail-on-incompatible`, que aborta si
-el bundle usa plugins nativos que la versión instalada no tiene. Y si un bundle
-nuevo no llama a `notifyAppReady()` en 10 segundos, el dispositivo vuelve solo al
-anterior — así un OTA malo no deja la app tapiada.
+**Red de seguridad.** Si un bundle nuevo no llama a `notifyAppReady()` en 10
+segundos, el dispositivo vuelve solo al anterior — así un OTA malo no deja la
+app tapiada. Y el plugin verifica el SHA-256 del zip contra el del manifest:
+un archivo corrupto o cambiado se descarta.
 
 ---
 
