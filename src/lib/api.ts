@@ -117,6 +117,35 @@ export type RouteHistoryPoint = {
   avg_delay_min: number;
 };
 
+/**
+ * Un día de la serie de calidad del modelo, de `metrics_daily`.
+ *
+ * Los agregados sobreviven a la purga de 30 días de las tablas crudas, así que
+ * esta serie crece sin límite práctico. Casi todo puede venir en `null`: un día
+ * sin vuelos aterrizados no tiene AUC, y uno sin positivos no tiene precisión.
+ */
+export type ModelHistoryPoint = {
+  day: string;
+  n_flights: number;
+  n_delayed: number;
+  n_flagged: number;
+  actual_delay_rate: number | null;
+  precision: number | null;
+  recall: number | null;
+  auc: number | null;
+  brier: number | null;
+  ece: number | null;
+  mean_proba: number | null;
+  mean_threshold: number | null;
+  model_version: string | null;
+};
+
+export type ModelHistory = {
+  segment: string;
+  days: number;
+  points: ModelHistoryPoint[];
+};
+
 export type OperationalContext = {
   gdp_origin_delay_min: number | null;
   gdp_destination_delay_min: number | null;
@@ -450,6 +479,7 @@ export const api = {
   summary:       () => get<MetricsSummary>("/metrics/summary"),
   hourly:        () => get<HourlyBucket[]>("/metrics/hourly"),
   model:         () => get<ModelInfo>("/metrics/model"),
+  modelHistory:  (days = 56) => get<ModelHistory>(`/metrics/history?days=${days}`),
   testCases:     () => get<TestCasesResponse>("/test-cases"),
   // User management (superadmin)
   listUsers:     () => get<ManagedUser[]>("/admin/users"),
