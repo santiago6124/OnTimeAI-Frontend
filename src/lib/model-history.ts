@@ -141,6 +141,26 @@ export function tendencia(
   return sube === MEJORA_AL_SUBIR[metrica] ? "mejor" : "peor";
 }
 
+/** Períodos que la pantalla ofrece, en semanas. */
+export const PERIODOS_SEMANAS = [4, 8, 12] as const;
+export const PERIODO_DEFECTO = 8;
+
+/**
+ * Lee el período de la URL contra una lista cerrada.
+ *
+ * Cerrada y no un rango: el valor termina en la query del backend, y aceptar
+ * cualquier número dejaría que un enlace pidiera diez años de serie. Lo que no
+ * esté en la lista cae al valor por defecto en vez de fallar — un enlace viejo
+ * o mal tipeado tiene que seguir mostrando la página.
+ */
+export function semanasPedidas(valor: string | string[] | undefined): number {
+  const crudo = Array.isArray(valor) ? valor[0] : valor;
+  const n = Number(crudo);
+  return (PERIODOS_SEMANAS as readonly number[]).includes(n)
+    ? n
+    : PERIODO_DEFECTO;
+}
+
 /** Cuántos días de la serie no alcanzan el mínimo, para poder decirlo. */
 export function diasDescartados(puntos: ModelHistoryPoint[]): number {
   return puntos.filter((p) => !esConfiable(p)).length;

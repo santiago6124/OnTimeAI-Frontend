@@ -146,6 +146,34 @@ export type ModelHistory = {
   points: ModelHistoryPoint[];
 };
 
+/**
+ * Una fila de `/metrics/breakdown`: una aerolínea, una hora o una fase,
+ * agregada sobre la ventana pedida.
+ *
+ * `n_days` dice sobre cuántos días se agregó, que es lo que distingue una
+ * aerolínea que vuela todos los días de una que voló dos veces.
+ */
+export type BreakdownRow = {
+  key: string;
+  n_flights: number;
+  n_days: number;
+  n_delayed: number;
+  n_flagged: number;
+  actual_delay_rate: number | null;
+  accuracy: number | null;
+  precision: number | null;
+  recall: number | null;
+  auc: number | null;
+  brier: number | null;
+  ece: number | null;
+};
+
+export type Breakdown = {
+  by: string;
+  days: number;
+  rows: BreakdownRow[];
+};
+
 export type OperationalContext = {
   gdp_origin_delay_min: number | null;
   gdp_destination_delay_min: number | null;
@@ -479,7 +507,10 @@ export const api = {
   summary:       () => get<MetricsSummary>("/metrics/summary"),
   hourly:        () => get<HourlyBucket[]>("/metrics/hourly"),
   model:         () => get<ModelInfo>("/metrics/model"),
-  modelHistory:  (days = 56) => get<ModelHistory>(`/metrics/history?days=${days}`),
+  modelHistory:  (days = 56, segment = "all") =>
+    get<ModelHistory>(`/metrics/history?days=${days}&segment=${encodeURIComponent(segment)}`),
+  modelBreakdown: (by: "carrier" | "hour" | "phase", days = 28) =>
+    get<Breakdown>(`/metrics/breakdown?by=${by}&days=${days}`),
   testCases:     () => get<TestCasesResponse>("/test-cases"),
   // User management (superadmin)
   listUsers:     () => get<ManagedUser[]>("/admin/users"),

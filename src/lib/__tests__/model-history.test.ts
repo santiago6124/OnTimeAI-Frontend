@@ -12,11 +12,13 @@ import type { ModelHistoryPoint } from "@/lib/api";
 import {
   AUC_TEST,
   MINIMO_CONFIABLE,
+  PERIODO_DEFECTO,
   cambiosDeModelo,
   compararPeriodos,
   diasDescartados,
   esConfiable,
   promedioMovil,
+  semanasPedidas,
   tendencia,
 } from "@/lib/model-history";
 
@@ -195,5 +197,34 @@ describe("lo que la pantalla tiene que poder contar", () => {
   it("el AUC de test es el número contra el que se compara el vivo", () => {
     // Si cambia el modelo activo, este número tiene que cambiar con él.
     expect(AUC_TEST).toBe(0.847);
+  });
+});
+
+describe("el período que llega por la URL", () => {
+  it.each([4, 8, 12])("acepta %i semanas", (n) => {
+    expect(semanasPedidas(String(n))).toBe(n);
+  });
+
+  it("cae al valor por defecto cuando no hay parámetro", () => {
+    expect(semanasPedidas(undefined)).toBe(PERIODO_DEFECTO);
+  });
+
+  it.each(["", "0", "-4", "6", "3650", "99999", "ocho", "4.5", "8; DROP"])(
+    "rechaza %j y no falla",
+    (crudo) => {
+      // La lista es cerrada porque el número termina en la query del backend:
+      // un rango abierto dejaría que un enlace pidiera diez años de serie. Y
+      // cae al valor por defecto en vez de romper, para que un enlace viejo
+      // siga mostrando la página.
+      expect(semanasPedidas(crudo)).toBe(PERIODO_DEFECTO);
+    },
+  );
+
+  it("toma el primero si el parámetro viene repetido", () => {
+    expect(semanasPedidas(["12", "4"])).toBe(12);
+  });
+
+  it("un parámetro repetido inválido tampoco rompe", () => {
+    expect(semanasPedidas(["99", "4"])).toBe(PERIODO_DEFECTO);
   });
 });
