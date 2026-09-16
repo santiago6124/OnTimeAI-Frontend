@@ -132,10 +132,10 @@ export default async function ReportsPage() {
                     <>
                       {" "}
                       En esta serie hay{" "}
-                      <strong className="font-medium">
-                        {descartados} de {puntos.length}
-                      </strong>
-                      .
+                      {/* El punto va pegado al cierre: un salto de linea entre
+                          `</strong>` y el punto se renderiza como un espacio, y
+                          sale "3 de 31 ." */}
+                      <strong className="font-medium">{`${descartados} de ${puntos.length}`}</strong>.
                     </>
                   )}
                 </p>
