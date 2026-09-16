@@ -103,9 +103,12 @@ const PODAR = [
   // dashboard completo. El acceso lo esconde LIVE_ENABLED (lib/mobile-env.ts),
   // así que no queda ningún botón apuntando a una ruta que no existe.
   ["src/app/live", "el layout lee cookies() en el servidor"],
-
-  ["src/lib/__tests__", "tests"],
-  ["src/hooks/__tests__", "tests"],
+  // Evolución del modelo (admin). Página de servidor en dos sentidos que un
+  // export no admite: getServerRole() lee cookies(), y searchParams la vuelve
+  // dinámica. Portarla es el patrón vista + wrapper cliente de las demás
+  // páginas; mientras tanto el acceso lo esconde REPORTS_ENABLED, así que en
+  // el teléfono no hay ningún botón apuntando a una ruta que no existe.
+  ["src/app/reports", "getServerRole() lee cookies() y searchParams la hace dinámica"],
 ];
 
 /**
@@ -179,6 +182,24 @@ for (const [ruta, motivo] of PODAR) {
   rmSync(destino, { recursive: true, force: true });
   log(`podado ${ruta} — ${motivo}`);
 }
+
+// Los tests, estén donde estén. Next los type-checkea como parte del build y
+// algunos importan cosas que en .mobile/ no existen o son otras (next.config,
+// route handlers podados). Enumerarlos a mano se desactualiza con cada
+// directorio __tests__ nuevo; por eso se buscan.
+const podarTests = (dir) => {
+  for (const e of readdirSync(dir, { withFileTypes: true })) {
+    if (!e.isDirectory()) continue;
+    const ruta = join(dir, e.name);
+    if (e.name === "__tests__") {
+      rmSync(ruta, { recursive: true, force: true });
+      log(`podado ${ruta.slice(BUILD.length + 1)} — tests`);
+    } else {
+      podarTests(ruta);
+    }
+  }
+};
+podarTests(join(BUILD, "src"));
 
 // ---------------------------------------------------------------------------
 // 3. Rutas movidas y páginas reemplazadas
@@ -302,6 +323,7 @@ writeFileSync(
     "# Generado por scripts/build-mobile.mjs -- no editar a mano.",
     "NEXT_PUBLIC_BUNDLED_APP=1",
     "NEXT_PUBLIC_DISABLE_LIVE=1",
+    "NEXT_PUBLIC_DISABLE_REPORTS=1",
     `NEXT_PUBLIC_API_ORIGIN=${API_ORIGIN}`,
     `NEXT_PUBLIC_APP_ORIGIN=${APP_ORIGIN}`,
     "",
@@ -370,6 +392,12 @@ if (existsSync(join(OUT, "live"))) {
   problemas.push(
     "/live quedó en el bundle: está en PODAR porque su layout lee cookies(). " +
       "Si ahora es compilable, sacalo de PODAR y prendé LIVE_ENABLED.",
+  );
+}
+if (existsSync(join(OUT, "reports"))) {
+  problemas.push(
+    "/reports quedó en el bundle: está en PODAR porque es una página de servidor. " +
+      "Si ahora es compilable, sacalo de PODAR y prendé REPORTS_ENABLED.",
   );
 }
 
