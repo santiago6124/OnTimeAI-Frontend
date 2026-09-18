@@ -69,6 +69,23 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Xcode 26
+        # App Store Connect rechaza en el upload cualquier build hecho con un
+        # SDK anterior a iOS 26 ("SDK version issue", 409). La imagen macos-15
+        # trae varios Xcode 26 instalados pero arranca en 16.4, así que se
+        # elige el más nuevo de la serie 26 a mano. Si la imagen deja de
+        # traerlo, el paso falla acá y no en el upload, veinte minutos después.
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
+          if [ -z "$XCODE" ]; then
+            echo "::error::La imagen no trae ningún Xcode 26; Apple exige el SDK de iOS 26 para subir a App Store Connect."
+            ls -d /Applications/Xcode*.app
+            exit 1
+          fi
+          sudo xcode-select -s "$XCODE"
+          xcodebuild -version
+          xcodebuild -showsdks | grep -i "iphoneos" || true
+
       - name: Node
         uses: actions/setup-node@v4
         with:

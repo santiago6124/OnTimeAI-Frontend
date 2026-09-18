@@ -226,6 +226,13 @@ Después *Product → Archive* y *Distribute App*. El script restaura
 
 ---
 
+### SDK mínimo para subir
+
+App Store Connect rechaza el upload (409 "SDK version issue") de cualquier build
+compilado con un SDK anterior a **iOS 26**. El workflow elige el Xcode 26 más
+nuevo de la imagen antes de compilar. Localmente, hace falta Xcode 26 o
+superior para que un archive de Xcode se pueda subir.
+
 ## 8 · TestFlight
 
 El build tarda entre 10 y 30 minutos en procesarse. Cuando aparece:
