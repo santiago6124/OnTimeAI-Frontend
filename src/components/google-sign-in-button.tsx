@@ -50,6 +50,15 @@ function loadGsiScript(): Promise<void> {
   });
 }
 
+/**
+ * Si el botón de Google se va a dibujar. Quien pone un separador encima ("o
+ * con tu correo") tiene que mirar esto: sin client ID, o en el bundle nativo,
+ * el botón no existe y el separador quedaría anunciando una alternativa que no
+ * está.
+ */
+export const GOOGLE_SIGN_IN_AVAILABLE =
+  Boolean(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID) && !IS_BUNDLED;
+
 export function GoogleSignInButton({
   onCredential,
   disabled = false,

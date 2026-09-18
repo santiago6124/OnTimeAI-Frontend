@@ -1,3 +1,5 @@
+import { LIVE_ENABLED } from "@/lib/mobile-env";
+
 export type Role = "superadmin" | "admin" | "user";
 
 /**
@@ -36,9 +38,14 @@ export function userTypeForProfileId(
   return profile === "airline" ? "b2b" : "b2c";
 }
 
-/** Landing page for each profile: travellers get the lite view, operators the dashboard. */
+/**
+ * Landing page for each profile: travellers get the lite view, operators the
+ * dashboard. In the bundled app /live does not exist (see LIVE_ENABLED), so
+ * travellers land on the dashboard there — a redirect to a missing route would
+ * hydrate into the 404 page right after logging in.
+ */
 export function homePathFor(userType: UserType | null | undefined): string {
-  return userType === "b2c" ? "/live" : "/";
+  return userType === "b2c" && LIVE_ENABLED ? "/live" : "/";
 }
 
 /** Only allow same-origin application paths after authentication. */
