@@ -34,12 +34,30 @@ El workflow además verifica el PNG (1024×1024 y sin canal alpha) antes de firm
 Está confirmado dentro del `.app` de iOS y del APK. No hay que hacer nada a
 mano; si cambia el arte, se reemplaza `assets/icon.png` y listo.
 
-### 🔴 Falta la política de privacidad publicada
+### ✅ Política de privacidad y soporte — resuelto el 2026-09-18
 
-Obligatoria, y Apple verifica que la URL abra sin login. Sin eso no se puede
-enviar. Contenido mínimo: que se recogen usuario y contraseña para autenticar,
-que el token queda en el dispositivo, que no hay analytics ni rastreo, y cómo
-pedir la baja de la cuenta.
+`/privacidad` y `/soporte` son páginas públicas del Next (`src/app/privacidad`,
+`src/app/soporte`; el proxy las deja pasar sin sesión y `proxy.test.ts` lo
+vigila). Lo que dice la política está verificado contra el código: correo (que
+es el usuario), rol, tipo de perfil y preferencias; credenciales en Firebase
+Authentication; sin analytics ni rastreo. **Si cambia qué se guarda, cambia la
+página.**
+
+### ✅ Borrado de cuenta (Guideline 5.1.1 v) — resuelto ocultando el alta
+
+Una app que permite crear cuenta tiene que permitir borrarla desde adentro, y
+ese flujo no existe (no hay `DELETE /users/me`). Para 1.0.0 el bundle de iOS
+**no ofrece el alta**: el login no enlaza a `/signup` cuando `IS_BUNDLED`, la
+cuenta se crea en la web y el borrado se pide por el canal de soporte (así lo
+dice la política). Si algún día se quiere el alta en la app, primero hay que
+implementar el borrado en backend y frontend.
+
+### ✅ Cumplimiento de exportación y solo iPhone
+
+`scripts/ios-store-settings.sh` pone `ITSAppUsesNonExemptEncryption=false` en
+el Info.plist y `TARGETED_DEVICE_FAMILY=1` en el proyecto, en cada build (CI y
+`pnpm cap:ios`), porque `ios/` se regenera. Solo iPhone evita las capturas de
+iPad 13" y un layout más que defender; la app igual se instala en iPad.
 
 ### ✅ Resueltos
 
@@ -99,7 +117,15 @@ La contraseña del `.p12` va en `IOS_CERTIFICATE_PASSWORD`.
 ## 4 · Perfil de provisión
 
 *Profiles → + → App Store Connect* (distribución), asociado al App ID
-`com.ontimeai.app` y al certificado del paso 3.
+`com.ontimeai.app` y al certificado del paso 3. Nombre: **`OnTimeAI App Store`**
+— el workflow firma con el perfil *por nombre* (`IOS_PROFILE_NAME` en
+`ios-release.yml`); si se crea con otro, hay que cambiarlo ahí.
+
+> El proyecto que genera `cap add ios` viene con firma automática e identidad
+> "iPhone Developer". En CI solo hay certificado de distribución, así que el
+> archive y el export van con firma **manual** (`CODE_SIGN_STYLE=Manual`,
+> `Apple Distribution`, este perfil). No hace falta ningún certificado de
+> desarrollo.
 
 ```bash
 base64 -i OnTimeAI_AppStore.mobileprovision | pbcopy   # → IOS_PROVISIONING_PROFILE_BASE64
@@ -117,9 +143,12 @@ Es lo que permite subir el `.ipa` sin la contraseña de tu Apple ID.
 
 *App Store Connect → Users and Access → Integrations → App Store Connect API → +*
 
-- Rol: **App Manager** alcanza para subir builds.
+- Rol: **App Manager** alcanza para subir builds. **Admin** hace falta si la
+  misma clave va a crear el certificado y el perfil por API (pasos 3 y 4 sin
+  pasar por la web).
 - Descargá el `.p8`. **Se descarga una sola vez**; si lo perdés hay que revocar
-  la clave y crear otra.
+  la clave y crear otra. Guardalo en `~/.private_keys/AuthKey_<KEY_ID>.p8`, que
+  es donde `xcrun altool` lo busca.
 
 Tres secrets:
 
@@ -233,9 +262,8 @@ datos reales), y que la interfaz viaja dentro del binario mientras los datos se
 consultan por HTTPS. Eso último es lo que la separa del patrón que rechaza la
 5.6.
 
-**Cumplimiento de exportación.** Solo HTTPS estándar: exento. Fijalo en el
-`Info.plist` con `ITSAppUsesNonExemptEncryption = false` y deja de preguntarlo en
-cada subida.
+**Cumplimiento de exportación.** Solo HTTPS estándar: exento. Ya está fijado en
+cada build por `scripts/ios-store-settings.sh`, así que no lo pregunta.
 
 **Tiempos.** La primera revisión suele tardar entre 24 y 48 horas. Un rechazo
 llega por *Resolution Center* con la guideline citada.
@@ -308,9 +336,9 @@ un archivo corrupto o cambiado se descarta.
 | # | Qué | Dónde | Resultado |
 |---|---|---|---|
 | 1 | Cuenta de desarrollador | developer.apple.com | `IOS_TEAM_ID` |
-| 2 | App ID `com.ontimeai.app` | Identifiers | — |
+| 2 | App ID `com.ontimeai.app` | Identifiers | — (sin capabilities) |
 | 3 | Certificado Apple Distribution | Certificates | `IOS_CERTIFICATE_P12_BASE64` + password |
-| 4 | Perfil App Store Connect | Profiles | `IOS_PROVISIONING_PROFILE_BASE64` |
+| 4 | Perfil App Store Connect `OnTimeAI App Store` | Profiles | `IOS_PROVISIONING_PROFILE_BASE64` |
 | 5 | Clave de API | ASC → Integrations | 3 secrets `APPSTORE_*` |
 | 6 | Registro de la app | ASC → Apps | — |
 | 7 | Build firmado | GitHub Actions | `.ipa` en TestFlight |
