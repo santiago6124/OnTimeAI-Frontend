@@ -15,6 +15,12 @@
 #      el revisor la prueba en iPad. La app sigue instalándose en iPad, en modo
 #      compatibilidad; lo que cambia es que no hay que defender un layout más.
 #
+#   3. `IPHONEOS_DEPLOYMENT_TARGET = 15.0`. Capacitor genera 14.0 y App Store
+#      Connect lo avisa en cada upload (ITMS-90068): desde la primavera de 2027
+#      exige 15.0 o más. Es el mínimo del target App, que es lo que define
+#      MinimumOSVersion en el .ipa; los Pods pueden quedar en 14.0 sin
+#      problema, un framework con mínimo más bajo que la app es válido.
+#
 # Idempotente: correrlo dos veces deja el mismo resultado.
 #
 # Uso:  bash scripts/ios-store-settings.sh
@@ -39,6 +45,7 @@ fi
 
 # El valor viene entre comillas porque tiene una coma; el nuevo no las necesita.
 sed -i '' 's/TARGETED_DEVICE_FAMILY = "1,2";/TARGETED_DEVICE_FAMILY = 1;/g' "$PBXPROJ"
+sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = 14\.0;/IPHONEOS_DEPLOYMENT_TARGET = 15.0;/g' "$PBXPROJ"
 
 # Verificación: las dos cosas tienen que haber quedado, porque un pbxproj con
 # otro formato haría que el sed no encuentre nada y no falle.
@@ -54,5 +61,9 @@ if ! grep -q 'TARGETED_DEVICE_FAMILY = 1;' "$PBXPROJ"; then
   echo "No se encontró TARGETED_DEVICE_FAMILY en $PBXPROJ; ¿cambió el formato del proyecto?" >&2
   exit 1
 fi
+if grep -q 'IPHONEOS_DEPLOYMENT_TARGET = 14\.0;' "$PBXPROJ" || ! grep -q 'IPHONEOS_DEPLOYMENT_TARGET = 15\.0;' "$PBXPROJ"; then
+  echo "IPHONEOS_DEPLOYMENT_TARGET no quedó en 15.0 en $PBXPROJ" >&2
+  exit 1
+fi
 
-echo "OK — Info.plist: cifrado exento; proyecto: solo iPhone."
+echo "OK — Info.plist: cifrado exento; proyecto: solo iPhone, mínimo iOS 15."
