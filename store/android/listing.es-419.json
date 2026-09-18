@@ -1,0 +1,8 @@
+{
+  "language": "es-419",
+  "title": "OnTimeAI",
+  "shortDescription": "Predicción de retrasos de vuelos en Atlanta con machine learning.",
+  "fullDescription": "OnTimeAI predice qué vuelos del aeropuerto Hartsfield-Jackson de Atlanta (ATL) van a llegar con más de 15 minutos de demora, con hasta 4 horas de anticipación.\n\nEs un proyecto de tesis de grado. El modelo está entrenado con cuatro años de vuelos reales y se actualiza cada 15 minutos con datos operativos y meteorológicos en vivo.\n\nQUÉ PODÉS VER\n• Los vuelos del día con su riesgo de retraso: bajo, medio o alto\n• El detalle de cada vuelo: horarios programados y estimados, probabilidad de retraso y qué factores pesaron en la predicción\n• Un mapa con las trayectorias estimadas de los vuelos activos\n• Meteorología en vivo de ATL y de los aeropuertos de origen (METAR de AWC/NOAA)\n• Puntualidad histórica por ruta\n\nPARA QUIÉN\n• Viajeros que quieren saber si su vuelo desde o hacia Atlanta se va a retrasar\n• Personas de operaciones que monitorean el aeropuerto o su flota\n\nREQUIERE CUENTA\nLa app pide crear una cuenta con correo y contraseña. No tiene publicidad, analítica ni rastreo; qué se guarda y por qué está en la política de privacidad.\n\nCubre solo el aeropuerto de Atlanta (ATL). Las predicciones son estimaciones estadísticas y no reemplazan la información oficial de la aerolínea.",
+  "contactEmail": "santiagocarranzazinny@gmail.com",
+  "contactWebsite": "https://ontimeai-frontend-871707213932.us-central1.run.app/soporte"
+}

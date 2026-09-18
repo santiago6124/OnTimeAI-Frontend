@@ -140,6 +140,11 @@ detalle por vuelo, mapa, meteorología en vivo y puntualidad por ruta.
 
 *Crecimiento → Presencia en tienda → Configuración de la ficha principal*
 
+> Los textos de esta sección, el ícono, el gráfico y las capturas los carga
+> `scripts/play-listing.mjs` desde `store/android/` (ver cabecera del script).
+> El JSON `store/android/listing.es-419.json` es lo que se sube; si cambiás un
+> texto acá, cambialo ahí.
+
 ### Nombre de la app — máx 30
 
 Lo que se busca en Play. Puede llevar un descriptor corto.
