@@ -81,15 +81,19 @@ Cloud Run.
   `searchParams` la vuelve dinámica. Su entrada del menú se oculta con
   `REPORTS_ENABLED`. Portarla al bundle es el patrón vista + wrapper cliente
   que usan las demás páginas; está pendiente
-- **iOS — pendiente (2026-09-16)**: el flujo de auth nuevo (Firebase, Google,
-  onboarding, PRs #25–#29) no tiene rama para el bundle. `apiLoginFirebase()`
-  y `apiLoginGoogle()` llaman a `/api/auth/*` relativo, que en el teléfono no
-  existe; `apiSetUserType()` no manda `Authorization`; `apiMe()` no trae
-  `userType`; y el botón de Google necesita `NEXT_PUBLIC_GOOGLE_CLIENT_ID` y un
-  origen `https`, que `capacitor://localhost` no es (hace falta un plugin nativo
-  de Google Sign-In). **El login del bundle compilado desde `main` no funciona
-  hasta resolver esto** — no publicar un OTA ni una release desde `main` antes.
-  el bundle 1.0.1 publicado es anterior a esos cambios, y su login anda
+- **iOS — auth por Firebase (resuelto el 2026-09-18)**: el login y el alta
+  son los mismos que en la web (Firebase se ocupa de las credenciales), con la
+  rama del bundle en `api.ts`: `apiLoginFirebase()` / `apiLoginGoogle()` cambian
+  el ID token contra `${API_ORIGIN}/auth/firebase|google` directo y guardan el
+  JWT en `Preferences` (`nativeExchange`, el mismo patrón que `nativeLogin`);
+  `apiMe()` conserva `userType`; `apiSetUserType()` manda `Authorization`;
+  `homePathFor()` no manda a un viajero a `/live`, que el bundle no trae; y el
+  gate nativo deja ver `/signup` sin sesión, como `proxy.ts`. Verificado con el
+  JS del bundle en Chrome (login → onboarding → dashboard → recarga), y por
+  `curl` que Firebase y el FastAPI aceptan CORS desde `capacitor://localhost`.
+  **Google queda solo en la web**: Google Identity Services no corre en un
+  WebView embebido; en el teléfono hace falta un plugin nativo de Google
+  Sign-In, y el botón (y su separador) se ocultan solos en el bundle
 
 ---
 

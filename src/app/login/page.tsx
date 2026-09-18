@@ -26,7 +26,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/password-input";
 import { AuthShell, AuthDivider } from "@/components/auth-shell";
-import { GoogleSignInButton } from "@/components/google-sign-in-button";
+import {
+  GOOGLE_SIGN_IN_AVAILABLE,
+  GoogleSignInButton,
+} from "@/components/google-sign-in-button";
 import { apiLoginFirebase, apiLoginGoogle } from "@/lib/api";
 import { firebaseAuth, mensajeDeError } from "@/lib/firebase";
 import { homePathFor, safeReturnPath } from "@/lib/auth-types";
@@ -161,7 +164,9 @@ function LoginForm() {
         disabled={isPending}
       />
 
-      <AuthDivider>o con tu correo</AuthDivider>
+      {GOOGLE_SIGN_IN_AVAILABLE && (
+        <AuthDivider>o con tu correo</AuthDivider>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-1.5">
