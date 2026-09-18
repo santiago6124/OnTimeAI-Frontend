@@ -9,6 +9,7 @@
  */
 
 import type { ReactNode } from "react";
+import Link from "next/link";
 
 import { BrandMark } from "@/components/brand-mark";
 
@@ -41,6 +42,14 @@ export function AuthShell({
             {footer}
           </div>
         )}
+
+        {/* Antes de dejar un correo, que se pueda leer qué se hace con él.
+            Las tiendas también lo buscan acá. */}
+        <p className="mt-6 text-center text-xs text-muted-foreground">
+          <Link href="/privacidad" className="underline underline-offset-4">
+            Política de privacidad
+          </Link>
+        </p>
       </div>
     </main>
   );
