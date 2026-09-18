@@ -69,6 +69,23 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Xcode 26
+        # App Store Connect rechaza en el upload cualquier build hecho con un
+        # SDK anterior a iOS 26 ("SDK version issue", 409). La imagen macos-15
+        # trae varios Xcode 26 instalados pero arranca en 16.4, así que se
+        # elige el más nuevo de la serie 26 a mano. Si la imagen deja de
+        # traerlo, el paso falla acá y no en el upload, veinte minutos después.
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
+          if [ -z "$XCODE" ]; then
+            echo "::error::La imagen no trae ningún Xcode 26; Apple exige el SDK de iOS 26 para subir a App Store Connect."
+            ls -d /Applications/Xcode*.app
+            exit 1
+          fi
+          sudo xcode-select -s "$XCODE"
+          xcodebuild -version
+          xcodebuild -showsdks | grep -i "iphoneos" || true
+
       - name: Node
         uses: actions/setup-node@v4
         with:
@@ -233,25 +250,28 @@ jobs:
 
           rm -f "$RUNNER_TEMP/cert.p12"
 
-      - name: Archive
-        # Firma MANUAL. El proyecto que genera `cap add ios` viene con
-        # CODE_SIGN_STYLE=Automatic e identidad "iPhone Developer": en un runner
-        # que solo tiene el certificado de distribución y el perfil de App
-        # Store, la firma automática busca un certificado de desarrollo que no
-        # existe y falla. Acá se le dice exactamente con qué firmar.
+      - name: Firma manual del target App
+        # El proyecto que genera `cap add ios` viene con CODE_SIGN_STYLE=Automatic
+        # e identidad "iPhone Developer": en un runner que solo tiene el
+        # certificado de distribución, la firma automática busca un
+        # certificado de desarrollo que no existe y falla.
+        #
+        # Y NO se puede resolver pasando CODE_SIGN_STYLE / PROVISIONING_PROFILE_
+        # SPECIFIER a xcodebuild: eso los aplica a todos los targets, y los
+        # frameworks de CocoaPods rechazan un perfil ("Version does not support
+        # provisioning profiles"). Va en el pbxproj, solo en App/Release.
         if: steps.firma.outputs.firmado == 'si'
         env:
           TEAM_ID: ${{ secrets.IOS_TEAM_ID }}
-          PROFILE_NAME: ${{ env.IOS_PROFILE_NAME }}
+        run: bash scripts/ios-manual-signing.sh "$TEAM_ID" "$IOS_PROFILE_NAME"
+
+      - name: Archive
+        if: steps.firma.outputs.firmado == 'si'
         run: |
           xcodebuild -workspace ios/App/App.xcworkspace \
             -scheme App -configuration Release \
             -archivePath "$RUNNER_TEMP/App.xcarchive" \
             -destination "generic/platform=iOS" \
-            DEVELOPMENT_TEAM="$TEAM_ID" \
-            CODE_SIGN_STYLE=Manual \
-            CODE_SIGN_IDENTITY="Apple Distribution" \
-            PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" \
             MARKETING_VERSION="${{ inputs.version }}" \
             CURRENT_PROJECT_VERSION="${{ github.run_number }}" \
             archive
