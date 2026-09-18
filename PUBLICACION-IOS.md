@@ -48,9 +48,8 @@ página.**
 Una app que permite crear cuenta tiene que permitir borrarla desde adentro.
 
 - **Desde la app**: *Ajustes → Cuenta → Eliminar cuenta* llama a
-  `DELETE /users/me` (backend PR #67), que borra la fila, las preferencias y la
-  cuenta de Firebase. Hasta que ese PR esté desplegado el botón devuelve un
-  error.
+  `DELETE /users/me` (backend #67, desplegado y verificado en producción el
+  2026-09-18), que borra la fila, las preferencias y la cuenta de Firebase.
 - **Además**, para 1.0.0 el bundle de iOS **no ofrece el alta**: el login no
   enlaza a `/signup` cuando `IS_BUNDLED`; la cuenta se crea en la web y entra
   igual. Cuando el borrado esté en producción y probado desde el bundle, ese
