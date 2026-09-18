@@ -68,9 +68,10 @@ fecha.
 
 Las dos tiendas la exigen cuando la app permite crear cuentas (App Store 5.1.1,
 Play "Account deletion"). *Ajustes → Cuenta → Eliminar cuenta* llama a
-`DELETE /users/me` (backend PR #67), que borra la fila, las preferencias y la
-cuenta de Firebase. Para lo último el service account de Cloud Run necesita
-`roles/firebaseauth.admin`; lo da `~/.ontimeai/configurar-android.sh`.
+`DELETE /users/me` (backend #67, desplegado), que borra la fila, las
+preferencias y la cuenta de Firebase. Verificado en producción el 2026-09-18
+con una cuenta descartable: 204, `/auth/me` pasa a 401 y el correo desaparece
+de Firebase Authentication, con los permisos que el servicio ya tenía.
 
 ### ⚠️ Pendiente — migrar a Capacitor 8
 
@@ -523,8 +524,8 @@ Santiago Carranza · santiagocarranzazinny@gmail.com · teléfono: (completar)
       `/privacidad` y `/soporte`, desde el 2026-09-18 (salen con el deploy)
 - [ ] **El AAB está firmado con el keystore de release** — lo hace el workflow
       con los secrets; el keystore está en `~/.ontimeai/` y falta el backup
-- [ ] **La cuenta se puede eliminar desde la app** — necesita el backend PR #67
-      desplegado; hasta entonces el botón devuelve un error
+- [x] **La cuenta se puede eliminar desde la app** — backend #67 desplegado y
+      probado en producción el 2026-09-18
 - [ ] **Probaste el build desde TestFlight en un teléfono real** — el simulador
       no reproduce ni la firma, ni el teclado, ni el rendimiento del WebView
 
