@@ -8,7 +8,10 @@
  * Necesita un access token con scope androidpublisher en PLAY_ACCESS_TOKEN.
  * En CI lo da google-github-actions/auth por Workload Identity; en la Mac,
  *   gcloud auth print-access-token \
- *     --impersonate-service-account=play-publisher@ontimeai-prod.iam.gserviceaccount.com
+ *     --impersonate-service-account=play-publisher@ontimeai-prod.iam.gserviceaccount.com \
+ *     --scopes=https://www.googleapis.com/auth/androidpublisher
+ * (sin --scopes el token sale con cloud-platform y Play responde
+ * "insufficient authentication scopes").
  *
  * Es la API de edits de Play, en cuatro pasos: abrir una edición, subir el
  * bundle, asignarlo a la pista y confirmar. Nada queda publicado hasta el

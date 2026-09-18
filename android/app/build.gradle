@@ -11,8 +11,14 @@ android {
         // del número de corrida del workflow; el versionName es la versión
         // visible (semver, la misma que iOS). Sin las variables queda 1 / 1.0,
         // que sirve para un build local de debug.
-        versionCode (System.getenv("ONTIMEAI_VERSION_CODE") ?: "1").toInteger()
-        versionName System.getenv("ONTIMEAI_VERSION_NAME") ?: "1.0"
+        //
+        // Con variables intermedias a propósito: `versionCode (x).toInteger()`
+        // Groovy lo lee como `versionCode(x)` y después `.toInteger()` sobre
+        // el resultado, que es null. Así falló el primer build en CI.
+        def versionCodeEnv = System.getenv("ONTIMEAI_VERSION_CODE")
+        def versionNameEnv = System.getenv("ONTIMEAI_VERSION_NAME")
+        versionCode versionCodeEnv ? versionCodeEnv.toInteger() : 1
+        versionName versionNameEnv ?: "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
