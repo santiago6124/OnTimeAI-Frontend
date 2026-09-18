@@ -39,7 +39,9 @@ const nextConfig: NextConfig = {
               "object-src 'none'",
               `script-src 'self' 'unsafe-inline' ${GSI_SCRIPT}`,
               `style-src 'self' 'unsafe-inline' ${GSI_STYLE}`,
-              "img-src 'self' data: blob: https://*.basemaps.cartocdn.com",
+              // Los mapas (flight-radar-map, weather-map) piden sus tiles a Esri.
+              // Sin este origen la web y Android dibujan los vuelos sobre gris.
+              "img-src 'self' data: blob: https://server.arcgisonline.com",
               `connect-src 'self' ${GSI_CONNECT} ${FIREBASE_CONNECT}`,
               `frame-src 'self' ${GSI_FRAME}`,
               "font-src 'self' data:",

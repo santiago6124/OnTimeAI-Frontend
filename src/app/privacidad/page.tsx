@@ -96,6 +96,13 @@ export default function PrivacidadPage() {
           el almacenamiento privado de la app en tu dispositivo, no compartido
           con otras aplicaciones. Cerrar sesión lo elimina.
         </p>
+        <p>
+          La app para iPhone también consulta a nuestro servidor, al abrirse,
+          si hay una versión nueva de su interfaz. En esa consulta envía la
+          versión instalada y un identificador aleatorio que se genera al
+          instalar la app. Ese identificador no está vinculado a tu cuenta, no
+          es un identificador publicitario y no se usa para nada más.
+        </p>
       </section>
 
       <section>
@@ -125,18 +132,20 @@ export default function PrivacidadPage() {
       <section>
         <h2>Cuánto tiempo los conservamos</h2>
         <p>
-          Mientras tu cuenta exista. Si pedís que la borremos, eliminamos tu
-          registro de nuestra base y tu usuario de Firebase Authentication
-          dentro de los 30 días.
+          Mientras tu cuenta exista. Cuando la eliminás, borramos tu registro
+          de nuestra base y tu usuario de Firebase Authentication en el
+          momento; si lo pedís por soporte, dentro de los 30 días.
         </p>
       </section>
 
       <section>
         <h2>Tus derechos</h2>
         <p>
-          Podés pedir en cualquier momento acceder a los datos que tenemos
-          sobre vos, corregirlos o que los borremos por completo, incluida la
-          cuenta. Para hacerlo, abrí una consulta en{" "}
+          Podés eliminar tu cuenta vos mismo desde la app, en{" "}
+          <strong>Ajustes → Cuenta → Eliminar cuenta</strong>: es inmediato y
+          no se puede deshacer. También podés pedir en cualquier momento
+          acceder a los datos que tenemos sobre vos, corregirlos o que los
+          borremos por completo. Para hacerlo, abrí una consulta en{" "}
           <a href={ISSUES_URL} target="_blank" rel="noreferrer">
             el repositorio del proyecto
           </a>{" "}

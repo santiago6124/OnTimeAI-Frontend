@@ -1,7 +1,13 @@
 ext {
     minSdkVersion = 23
-    compileSdkVersion = 35
-    targetSdkVersion = 35
+    // 36 y no 35: Google Play exige targetSdk 36 (Android 16) para apps nuevas
+    // y actualizaciones desde el 31/08/2026. Capacitor 7 documenta 35 como su
+    // versión soportada; la app en Android es un WebView remoto sin código
+    // nativo propio, así que el salto no toca nada que dependa del SDK. La
+    // migración a Capacitor 8 (que trae 36 de fábrica) queda pendiente porque
+    // exige Xcode 26 en CI y rehacer la parte de iOS.
+    compileSdkVersion = 36
+    targetSdkVersion = 36
     androidxActivityVersion = '1.9.2'
     androidxAppCompatVersion = '1.7.0'
     androidxCoordinatorLayoutVersion = '1.2.0'

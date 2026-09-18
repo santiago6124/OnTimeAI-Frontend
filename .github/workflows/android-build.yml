@@ -9,7 +9,8 @@ name: Android Build
 #
 # Dos salidas:
 #   - debug: APK instalable por sideload, para probar en un teléfono propio.
-#   - release: AAB firmado, que es lo que sube a Play Console.
+#   - release: AAB firmado, que es lo que sube a Play Console. Con `subir`
+#     además lo deja en la pista elegida, sin pasar por la consola.
 #
 # El release necesita el keystore en secrets. Sin ellos el job de release se
 # saltea y el de debug igual produce un APK.
@@ -25,6 +26,26 @@ on:
         options:
           - debug
           - release
+      version:
+        description: "Versión visible (semver, ej. 1.0.0). Obligatoria en release; el versionCode sale del número de corrida"
+        required: false
+        default: ""
+      subir:
+        description: "Subir el AAB a Google Play (solo release)"
+        type: boolean
+        default: false
+      pista:
+        description: "Pista de Play a la que va el AAB"
+        type: choice
+        default: internal
+        options:
+          - internal
+          - alpha
+          - production
+      novedades:
+        description: "Novedades de la versión (opcional, va en la ficha de Play)"
+        required: false
+        default: ""
       serverUrl:
         description: "URL que abre la app (vacío = la de capacitor.config.ts)"
         required: false
@@ -37,6 +58,12 @@ concurrency:
   group: android-${{ github.ref }}
   cancel-in-progress: true
 
+# id-token: para que google-github-actions/auth pueda impersonar al service
+# account de Play por Workload Identity. No hay clave JSON en ningún lado.
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   build:
     name: APK/AAB
@@ -45,6 +72,18 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Validar la versión
+        # Play muestra el versionName tal cual; un valor vacío o con formato
+        # raro se descubre recién en la consola. Mejor frenar acá.
+        if: inputs.tipo == 'release'
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::En release, 'version' tiene que ser semver (ej. 1.0.0). Recibí: '$VERSION'"
+            exit 1
+          fi
 
       - name: Node
         uses: actions/setup-node@v4
@@ -101,23 +140,23 @@ jobs:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
         run: |
           if [ -z "$KEYSTORE_BASE64" ]; then
-            echo "::error::Falta el secret ANDROID_KEYSTORE_BASE64."
-            echo "Generalo con:"
-            echo "  keytool -genkey -v -keystore ontimeai.jks -keyalg RSA -keysize 2048 -validity 10000 -alias ontimeai"
-            echo "  base64 -i ontimeai.jks | pbcopy"
-            echo "Y cargá también ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS y ANDROID_KEY_PASSWORD."
+            echo "::error::Falta el secret ANDROID_KEYSTORE_BASE64 (ver PUBLICACION.md § keystore)."
             exit 1
           fi
-          echo "$KEYSTORE_BASE64" | base64 -d > android/app/release.jks
+          echo "$KEYSTORE_BASE64" | base64 -d > android/app/release.keystore
 
       - name: Build release (AAB firmado)
         if: inputs.tipo == 'release'
         env:
-          ONTIMEAI_KEYSTORE_FILE: release.jks
+          ONTIMEAI_KEYSTORE_FILE: release.keystore
           ONTIMEAI_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ONTIMEAI_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ONTIMEAI_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: ./gradlew bundleRelease --no-daemon
+          ONTIMEAI_VERSION_NAME: ${{ inputs.version }}
+          ONTIMEAI_VERSION_CODE: ${{ github.run_number }}
+        run: |
+          ./gradlew bundleRelease --no-daemon
+          echo "Versión ${ONTIMEAI_VERSION_NAME} (${ONTIMEAI_VERSION_CODE})" >> "$GITHUB_STEP_SUMMARY"
         working-directory: android
 
       - name: Publicar artefacto
@@ -129,3 +168,30 @@ jobs:
             android/app/build/outputs/bundle/release/*.aab
           if-no-files-found: error
           retention-days: 30
+
+      - name: Autenticar contra Google Play
+        if: inputs.tipo == 'release' && inputs.subir
+        id: play-auth
+        # Identidad federada distinta de la de deploy: play-publisher no tiene
+        # ningún rol en GCP; sus permisos viven en Play Console (Usuarios y
+        # permisos), y ahí se le dio solo subir a pruebas y editar la ficha.
+        uses: google-github-actions/auth@v2
+        with:
+          project_id: ontimeai-prod
+          workload_identity_provider: projects/871707213932/locations/global/workloadIdentityPools/github/providers/github
+          service_account: play-publisher@ontimeai-prod.iam.gserviceaccount.com
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/androidpublisher
+
+      - name: Subir a Google Play
+        if: inputs.tipo == 'release' && inputs.subir
+        env:
+          PLAY_ACCESS_TOKEN: ${{ steps.play-auth.outputs.access_token }}
+          PISTA: ${{ inputs.pista }}
+          VERSION: ${{ inputs.version }}
+          NOVEDADES: ${{ inputs.novedades }}
+        run: |
+          AAB=$(ls android/app/build/outputs/bundle/release/*.aab | head -1)
+          node scripts/play-upload.mjs --aab "$AAB" --track "$PISTA" \
+            --name "$VERSION (${{ github.run_number }})" --notes "$NOVEDADES"
+          echo "Subido a la pista **$PISTA** de Google Play." >> "$GITHUB_STEP_SUMMARY"
