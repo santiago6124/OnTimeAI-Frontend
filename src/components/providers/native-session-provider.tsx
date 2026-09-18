@@ -31,7 +31,9 @@ import { SessionProvider } from "@/components/providers/session-provider";
  */
 export function NativeSessionGate({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isLoginRoute = pathname?.startsWith("/login") ?? false;
+  // Las mismas rutas que proxy.ts deja ver sin sesión: entrar y registrarse.
+  const isAuthRoute =
+    (pathname?.startsWith("/login") || pathname?.startsWith("/signup")) ?? false;
 
   const [user, setUser] = React.useState<SessionUser | null>(null);
   const [status, setStatus] = React.useState<"resolving" | "ready" | "failed">(
@@ -66,11 +68,11 @@ export function NativeSessionGate({ children }: { children: React.ReactNode }) {
         if (!alive) return;
 
         // Las mismas dos reglas que aplica proxy.ts en la web.
-        if (!session && !isLoginRoute) {
+        if (!session && !isAuthRoute) {
           window.location.replace(appPath("/login"));
           return;
         }
-        if (session && isLoginRoute) {
+        if (session && isAuthRoute) {
           window.location.replace(appPath("/"));
           return;
         }

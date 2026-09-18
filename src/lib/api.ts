@@ -1,4 +1,4 @@
-import { isRole, type SessionUser, type UserType } from "@/lib/auth-types";
+import { isRole, isUserType, type SessionUser, type UserType } from "@/lib/auth-types";
 import { API_ORIGIN, IS_BUNDLED, appPath } from "@/lib/mobile-env";
 
 const SERVER_BASE =
@@ -337,11 +337,18 @@ async function get<T>(path: string, options?: RequestInit): Promise<T> {
 
 /** Usuario de la sesión actual, validado contra el backend. */
 export async function apiMe(): Promise<SessionUser> {
-  const payload = await get<Partial<SessionUser>>("/auth/me");
+  const payload = await get<Partial<SessionUser> & { user_type?: unknown }>("/auth/me");
   if (typeof payload.username !== "string" || !isRole(payload.role)) {
     throw new ApiError(502, "No se pudo validar la sesión");
   }
-  return { username: payload.username, role: payload.role };
+  // `userType` decide el perfil (viajero u operaciones) y si hace falta pasar
+  // por el onboarding. En la web lo lee getVerifiedSession() en el servidor;
+  // en el bundle esta es la única fuente, así que no se puede descartar.
+  return {
+    username: payload.username,
+    role: payload.role,
+    userType: isUserType(payload.user_type) ? payload.user_type : null,
+  };
 }
 
 export async function apiLogin(username: string, password: string) {
@@ -369,6 +376,8 @@ export async function apiLogin(username: string, password: string) {
 }
 
 export async function apiLoginGoogle(idToken: string) {
+  if (IS_BUNDLED) return nativeExchange("/auth/google", idToken);
+
   const res = await fetch("/api/auth/google", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -394,6 +403,8 @@ export async function apiLoginGoogle(idToken: string) {
  * que es el que lleva el rol y el tipo de cuenta.
  */
 export async function apiLoginFirebase(idToken: string) {
+  if (IS_BUNDLED) return nativeExchange("/auth/firebase", idToken);
+
   const res = await fetch("/api/auth/firebase", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -414,9 +425,11 @@ export async function apiLoginFirebase(idToken: string) {
 
 /** Persist the B2B/B2C profile for the signed-in user. */
 export async function apiSetUserType(userType: UserType) {
+  // En la web la cookie viaja sola y el BFF pone el Authorization; en el
+  // bundle no hay BFF, y sin este header el onboarding cobraba un 401.
   const res = await fetch(`${CLIENT_BASE}/users/me`, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...(await getAuthHeaders()) },
     body: JSON.stringify({ user_type: userType }),
     signal: AbortSignal.timeout(10_000),
   });
@@ -464,6 +477,61 @@ async function nativeLogin(
     // Un token que no sirve para leer el propio usuario no es una sesión: si
     // se queda guardado, el arranque siguiente cree que hay sesión y muestra un
     // dashboard vacío en vez del login.
+    await clearToken();
+    throw cause;
+  }
+}
+
+/**
+ * Rama del bundle de `apiLoginGoogle` / `apiLoginFirebase`.
+ *
+ * Hace lo que el route handler hacía del lado del servidor: cambia el ID token
+ * por un JWT propio contra el FastAPI directo, se queda con el token en
+ * almacenamiento nativo en vez de en una cookie HttpOnly, y lee /auth/me para
+ * devolver la misma forma que devuelve el BFF. `isNewUser` se deriva igual que
+ * allá: lo dice el backend, o no hay tipo de cuenta todavía.
+ */
+async function nativeExchange(
+  path: "/auth/google" | "/auth/firebase",
+  idToken: string,
+): Promise<SessionUser & { isNewUser: boolean }> {
+  const { saveToken, clearToken } = await import("@/lib/native/session");
+
+  let res: Response;
+  try {
+    res = await fetch(`${API_ORIGIN}${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id_token: idToken }),
+      signal: AbortSignal.timeout(10_000),
+    });
+  } catch {
+    throw new ApiError(503, "No se pudo conectar con el servidor.");
+  }
+
+  const payload = (await res.json().catch(() => null)) as
+    | { access_token?: string; user_type?: unknown; is_new_user?: boolean; detail?: string }
+    | null;
+  if (!res.ok || !payload?.access_token) {
+    throw new ApiError(
+      res.status || 401,
+      payload?.detail ?? "No se pudo iniciar sesión.",
+    );
+  }
+
+  await saveToken(payload.access_token);
+  try {
+    const user = await apiMe();
+    const userType = isUserType(payload.user_type) ? payload.user_type : user.userType ?? null;
+    return {
+      ...user,
+      userType,
+      isNewUser: payload.is_new_user === true || userType === null,
+    };
+  } catch (cause) {
+    // Igual que en nativeLogin: un token con el que no se puede leer el propio
+    // usuario no es una sesión, y guardado haría que el próximo arranque crea
+    // que sí la hay.
     await clearToken();
     throw cause;
   }
