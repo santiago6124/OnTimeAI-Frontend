@@ -126,9 +126,13 @@ La contraseña del `.p12` va en `IOS_CERTIFICATE_PASSWORD`.
 
 > El proyecto que genera `cap add ios` viene con firma automática e identidad
 > "iPhone Developer". En CI solo hay certificado de distribución, así que el
-> archive y el export van con firma **manual** (`CODE_SIGN_STYLE=Manual`,
-> `Apple Distribution`, este perfil). No hace falta ningún certificado de
-> desarrollo.
+> archive y el export van con firma **manual** (`Apple Distribution` + este
+> perfil). No hace falta ningún certificado de desarrollo.
+>
+> Los ajustes los escribe `scripts/ios-manual-signing.sh` en el `pbxproj`,
+> **solo en App/Release**. No se pasan a `xcodebuild` por línea de comandos:
+> eso los aplicaría también a los frameworks de CocoaPods, que rechazan un
+> perfil de provisión y tiran el archive (así falló la corrida del 2026-09-18).
 
 ```bash
 base64 -i OnTimeAI_AppStore.mobileprovision | pbcopy   # → IOS_PROVISIONING_PROFILE_BASE64
