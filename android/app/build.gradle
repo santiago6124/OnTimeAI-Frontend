@@ -7,8 +7,12 @@ android {
         applicationId "com.ontimeai.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        // Play rechaza un AAB con un versionCode ya usado, así que CI lo saca
+        // del número de corrida del workflow; el versionName es la versión
+        // visible (semver, la misma que iOS). Sin las variables queda 1 / 1.0,
+        // que sirve para un build local de debug.
+        versionCode (System.getenv("ONTIMEAI_VERSION_CODE") ?: "1").toInteger()
+        versionName System.getenv("ONTIMEAI_VERSION_NAME") ?: "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -33,6 +37,10 @@ android {
             def keystoreFile = System.getenv("ONTIMEAI_KEYSTORE_FILE")
             if (keystoreFile) {
                 storeFile file(keystoreFile)
+                // El keystore se generó con OpenSSL (no había JDK en la Mac),
+                // así que es PKCS12 y no JKS. Java igual abre un JKS con este
+                // tipo, por si algún día se regenera con keytool.
+                storeType "PKCS12"
                 storePassword System.getenv("ONTIMEAI_KEYSTORE_PASSWORD")
                 keyAlias System.getenv("ONTIMEAI_KEY_ALIAS")
                 keyPassword System.getenv("ONTIMEAI_KEY_PASSWORD")

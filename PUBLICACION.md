@@ -15,8 +15,8 @@ cómo se compila cada plataforma, en [`MOBILE_APP.md`](MOBILE_APP.md).
 
 ## 00 · Antes de subir nada
 
-Medido el 2026-09-06. El primero ya está resuelto; los otros dos siguen
-abiertos y hay que resolverlos antes de enviar.
+Medido el 2026-09-06; los tres quedaron resueltos el 2026-09-18. Se dejan
+escritos porque explican decisiones que siguen en el código.
 
 ### ✅ iOS — el login ya funciona *(resuelto 2026-09-06)*
 
@@ -36,33 +36,50 @@ trajo los 477 vuelos del día.
 > un origen nuevo en `api.py`, acordate de actualizar también la variable en
 > Cloud Run, o el cambio no va a tener efecto en producción.
 
-### 🔴 Web + Android — los mapas se ven sin fondo
+### ✅ Web + Android — los mapas se ven sin fondo *(resuelto 2026-09-18)*
 
-Las capas base salen de `server.arcgisonline.com`, pero la CSP que sirve Cloud
-Run solo permite `img-src … https://*.basemaps.cartocdn.com`. Los tiles quedan
-bloqueados y el mapa dibuja los vuelos sobre un vacío gris.
+Las capas base salen de `server.arcgisonline.com`, pero la CSP que servía Cloud
+Run solo permitía `img-src … https://*.basemaps.cartocdn.com` (un origen que ya
+no usaba nadie). `next.config.ts` ahora permite Esri, y
+`src/__tests__/csp.test.ts` lo exige. En iOS empaquetado nunca pasó, porque un
+export estático no emite cabeceras.
 
-En iOS empaquetado no pasa, porque un export estático no emite cabeceras.
+### ✅ Android — keystore de release *(resuelto 2026-09-18)*
 
-Es una línea en `next.config.ts`: agregar `https://server.arcgisonline.com` a
-`img-src`. Importa acá porque Android abre ese mismo sitio, así que un revisor de
-Play ve la pantalla de mapa rota.
+Generado con OpenSSL (no hay JDK en la Mac): PKCS12, RSA 4096, alias `upload`,
+válido hasta 2056. Vive en `~/.ontimeai/android-upload.p12` con su contraseña
+al lado en `android-upload.password`. **Hacele backup en un gestor de
+contraseñas**: como la app usa Play App Signing, perder esta clave se arregla
+pidiendo un reset a Google, pero es un trámite de días.
 
-### 🔴 Android — no existe el keystore de release
+Los secrets `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`,
+`ANDROID_KEY_ALIAS` y `ANDROID_KEY_PASSWORD` los carga
+`~/.ontimeai/configurar-android.sh` (un solo uso).
 
-Play Console rechaza un AAB firmado con la clave de debug.
+### ✅ Política de privacidad *(resuelto 2026-09-18)*
 
-```bash
-keytool -genkey -v -keystore ontimeai.jks -keyalg RSA -keysize 2048 \
-  -validity 10000 -alias ontimeai
-base64 -i ontimeai.jks | pbcopy   # → secret ANDROID_KEYSTORE_BASE64
-```
+`/privacidad` (y `/soporte`), públicas (`PUBLIC_ROUTES` de `src/proxy.ts`,
+vigilado por `proxy.test.ts`) y dentro del bundle de iOS. Enlazadas desde
+login, alta y Ajustes. El texto sale de lo que la app hace de verdad; si cambia
+algo de eso (analytics, permisos, otro proveedor), se cambia la página y su
+fecha.
 
-Guardalo **fuera del repo y con backup**: perderlo significa no poder volver a
-actualizar la app publicada.
+### ✅ Baja de cuenta desde la app *(2026-09-18)*
 
-Después cargá en GitHub los secrets `ANDROID_KEYSTORE_BASE64`,
-`ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` y `ANDROID_KEY_PASSWORD`.
+Las dos tiendas la exigen cuando la app permite crear cuentas (App Store 5.1.1,
+Play "Account deletion"). *Ajustes → Cuenta → Eliminar cuenta* llama a
+`DELETE /users/me` (backend PR #67), que borra la fila, las preferencias y la
+cuenta de Firebase. Para lo último el service account de Cloud Run necesita
+`roles/firebaseauth.admin`; lo da `~/.ontimeai/configurar-android.sh`.
+
+### ⚠️ Pendiente — migrar a Capacitor 8
+
+Play exige `targetSdk 36` desde el 31/08/2026. Capacitor 7 soporta oficialmente
+35; el proyecto compila con 36 igual (`android/variables.gradle`, AGP 8.9.3)
+porque en Android es un WebView remoto sin código nativo propio. La migración a
+Capacitor 8 —que trae 36 de fábrica— exige Xcode 26 en CI (`macos-26`), Node 22,
+el plugin de OTA en su versión 8 y volver a verificar iOS. Conviene hacerla
+después de la primera publicación, no antes.
 
 ---
 
@@ -75,7 +92,7 @@ Vale para las dos tiendas.
 | Bundle ID / applicationId | `com.ontimeai.app` | ← del repo · **permanente** |
 | Nombre en el dispositivo | `OnTimeAI` | ← del repo |
 | Origen del backend | `ontimeai-backend-871707213932.us-central1.run.app` | ← default de `build-mobile.mjs` |
-| minSdk / target SDK (Android) | `23` / `35` | ← del repo |
+| minSdk / target SDK (Android) | `23` / `36` | ← del repo |
 
 ### Versión que subís — `versionName` / `MARKETING_VERSION`
 
@@ -85,10 +102,11 @@ Es la que ve el usuario. Subila en cada release que quieras diferenciar.
   tres números (`1.0.0`, no `1.0`): el servidor de OTA la usa de base y exige
   ese formato. Los bundles OTA van `1.0.1`, `1.0.2`…; la siguiente release
   nativa sube el minor (`1.1.0`).
-- **Android**: `versionName` en `android/app/build.gradle` (hoy `1.0`).
+- **Android**: la fija el input `version` de *Android Build* (semver, igual
+  que iOS). Sin el input, un build local queda en `1.0`.
 
 ```
-
+1.0.0 — primera versión en las dos tiendas
 ```
 
 ### Build — `versionCode` / `CURRENT_PROJECT_VERSION`
@@ -98,10 +116,11 @@ dos tiendas rechazan un build repetido.
 
 - **iOS**: lo pone el workflow solo — es el número del run de Actions. No hay
   que tocarlo; anotá acá el que salió.
-- **Android**: `versionCode` en `android/app/build.gradle` (hoy `1`), a mano.
+- **Android**: también el número del run de *Android Build*. Un build local
+  queda en `1`, que Play no acepta.
 
 ```
-
+iOS: (run de iOS Release)   Android: (run de Android Build)
 ```
 
 ### Qué cambia en esta versión
@@ -110,7 +129,8 @@ Sirve para las dos: va en *Novedades* de Play y en *What's New* de App Store.
 Escribilo desde el lado del usuario, no del commit. Máx. 500 caracteres en Play.
 
 ```
-Primera versión.
+Primera versión: predicción de retrasos para los vuelos del día en Atlanta,
+detalle por vuelo, mapa, meteorología en vivo y puntualidad por ruta.
 ```
 
 ---
@@ -124,7 +144,7 @@ Primera versión.
 Lo que se busca en Play. Puede llevar un descriptor corto.
 
 ```
-
+OnTimeAI
 ```
 
 ### Descripción breve — máx 80
@@ -132,7 +152,7 @@ Lo que se busca en Play. Puede llevar un descriptor corto.
 El texto que aparece antes de tocar "Más información". Es lo que más se lee.
 
 ```
-
+Predicción de retrasos de vuelos en Atlanta con machine learning.
 ```
 
 ### Descripción completa — máx 4000
@@ -142,7 +162,25 @@ que es un trabajo académico, para que nadie la instale esperando una app públi
 de vuelos.
 
 ```
+OnTimeAI predice qué vuelos del aeropuerto Hartsfield-Jackson de Atlanta (ATL) van a llegar con más de 15 minutos de demora, con hasta 4 horas de anticipación.
 
+Es un proyecto de tesis de grado. El modelo está entrenado con cuatro años de vuelos reales y se actualiza cada 15 minutos con datos operativos y meteorológicos en vivo.
+
+QUÉ PODÉS VER
+• Los vuelos del día con su riesgo de retraso: bajo, medio o alto
+• El detalle de cada vuelo: horarios programados y estimados, probabilidad de retraso y qué factores pesaron en la predicción
+• Un mapa con las trayectorias estimadas de los vuelos activos
+• Meteorología en vivo de ATL y de los aeropuertos de origen (METAR de AWC/NOAA)
+• Puntualidad histórica por ruta
+
+PARA QUIÉN
+• Viajeros que quieren saber si su vuelo desde o hacia Atlanta se va a retrasar
+• Personas de operaciones que monitorean el aeropuerto o su flota
+
+REQUIERE CUENTA
+La app pide crear una cuenta con correo y contraseña. No tiene publicidad, analítica ni rastreo; qué se guarda y por qué está en la política de privacidad.
+
+Cubre solo el aeropuerto de Atlanta (ATL). Las predicciones son estimaciones estadísticas y no reemplazan la información oficial de la aerolínea.
 ```
 
 ### Categoría y etiquetas
@@ -151,7 +189,7 @@ Sugerido: `Viajes y guías`, o `Productividad` si preferís marcarla como
 herramienta interna.
 
 ```
-
+Viajes y guías. Sin etiquetas.
 ```
 
 ### Email de contacto
@@ -159,18 +197,16 @@ herramienta interna.
 Público en la ficha. Play lo exige.
 
 ```
-
+santiagocarranzazinny@gmail.com — el mismo de la cuenta de desarrollador y de /privacidad
 ```
 
 ### URL de política de privacidad
 
 **Obligatoria** en las dos tiendas, y tiene que estar publicada y accesible
-**sin login** antes de enviar. Si no tenés una, hay que escribirla: qué datos se
-recogen (usuario y contraseña para autenticar), dónde se guardan y a quién se le
-mandan.
+**sin login** antes de enviar.
 
 ```
-
+https://ontimeai-frontend-871707213932.us-central1.run.app/privacidad
 ```
 
 ### Gráficos
@@ -182,7 +218,9 @@ mandan.
 Sacalas de un dispositivo o simulador **ya logueado**, mostrando datos reales.
 
 ```
-(dónde están los archivos / qué falta)
+store/android/icon-512.png · store/android/feature-1024x500.png
+store/android/screenshots/01-live … 06-rutas (1170×2340)
+Se regeneran con `node scripts/store-assets.mjs` (ver cabecera del script).
 ```
 
 ---
@@ -201,10 +239,18 @@ El cuestionario más largo. Lo que corresponde declarar con el código de hoy:
 - **No** se recoge ubicación, contactos, cámara ni archivos
 - El único permiso del manifiesto es `INTERNET`
 - Los datos se transmiten cifrados (HTTPS)
-- El usuario puede pedir la baja de su cuenta
+- La baja existe dentro de la app (Ajustes → Cuenta) y por correo (/privacidad)
 
 ```
-(notas / decisiones que tomaste en el cuestionario)
+Recoge datos: Sí.
+  Información personal → Dirección de correo electrónico: obligatoria, no se
+  comparte, se usa para "Funcionalidad de la app" y "Gestión de la cuenta".
+  Información personal → ID de usuario: ídem (el usuario es el correo).
+  Ningún otro tipo (ni ubicación, ni actividad, ni identificadores del
+  dispositivo: el id aleatorio del chequeo OTA es solo de iOS).
+Se cifra en tránsito: Sí.
+Se puede pedir la eliminación: Sí — en la app y en
+  https://ontimeai-frontend-871707213932.us-central1.run.app/privacidad
 ```
 
 ### Clasificación de contenido
@@ -214,7 +260,7 @@ por usuarios: sale "apta para todos". Ojo con la pregunta de *interacción entre
 usuarios* — la respuesta es no.
 
 ```
-
+Categoría: "Utilidad, productividad, comunicación u otros". Todo No.
 ```
 
 ### Público objetivo
@@ -223,7 +269,7 @@ Elegí solo rangos de **18+**. Marcar público infantil dispara Families Policy 
 un montón de requisitos extra que no querés.
 
 ```
-
+Solo "18 años o más". No atrae a menores sin querer: No.
 ```
 
 ### App de acceso restringido
@@ -232,7 +278,9 @@ Play pregunta si el contenido está detrás de un login. Acá **sí**: hay que d
 credenciales de prueba, igual que a Apple. Usá las mismas de la sección 06.
 
 ```
-
+"Toda la funcionalidad o parte está restringida" → Agregar instrucciones:
+  usuario y contraseña de ~/.ontimeai/revisor-tiendas.txt.
+  Nota: "Crear una cuenta también funciona (pide verificar el correo)."
 ```
 
 ### Track de publicación
@@ -242,7 +290,10 @@ un período de prueba cerrada antes de producción para cuentas nuevas de
 desarrollador.
 
 ```
-
+1. internal — lo sube el workflow (subir: true, pista: internal).
+2. alpha (prueba cerrada) — 12 testers opt-in durante 14 días, requisito de
+   Play para cuentas personales nuevas. Es el camino crítico del calendario.
+3. production — recién después de "Solicitar acceso a producción".
 ```
 
 ---
@@ -290,7 +341,7 @@ QUÉ HACE
 • Detalle de cada vuelo: horario programado y estimado, aeronave, ruta y nivel de riesgo.
 • Mapa de rutas y vista del clima en el aeropuerto.
 • Dos perfiles: aerolínea, con métricas operativas por ruta y hora; y pasajero, con lo necesario para seguir un vuelo.
-• Panel de evolución del modelo: cuántas predicciones acertó y cómo se compara con los retrasos reales.
+• Puntualidad histórica por ruta: qué porcentaje de cada ruta llegó a horario y con cuánta demora promedio.
 
 QUÉ ES
 
@@ -345,7 +396,8 @@ de TestFlight con la cuenta demo. Solo iPhone: el binario declara TARGETED_DEVIC
 ```
 
 ```
-(dónde están / qué falta)
+store/ios/screenshots/02-dashboard … 06-rutas (1320×2868, iPhone 6,9").
+Sin /live: el bundle de iOS no la incluye. Sin iPad: el listado es solo iPhone.
 ```
 
 ---
@@ -410,7 +462,9 @@ producto, y evita exponer el panel de usuarios y las pantallas internas de
 veía herramientas internas.
 
 ```
-
+store.reviewer@ontimeai.app — rol user, perfil operaciones ("aerolínea", el
+que más pantallas muestra), correo verificado en Firebase a mano (el dominio
+no recibe correo). Creada el 2026-09-18. Sirve para las dos tiendas.
 ```
 
 ### Contraseña de demostración
@@ -418,7 +472,7 @@ veía herramientas internas.
 Verificá que entra **desde la app compilada**, no solo desde la web.
 
 ```
-
+En ~/.ontimeai/revisor-tiendas.txt. No va en este archivo.
 ```
 
 ### Notas para la revisión
@@ -448,7 +502,7 @@ Nombre, apellido, teléfono y email por si el revisor necesita escribirte.
 Contestá rápido: una consulta sin respuesta se convierte en rechazo.
 
 ```
-
+Santiago Carranza · santiagocarranzazinny@gmail.com · teléfono: (completar)
 ```
 
 ---
@@ -461,14 +515,16 @@ Contestá rápido: una consulta sin respuesta se convierte en rechazo.
 - [ ] **Recorriste la app entera con la cuenta demo** — con el rol que le vas a
       dar al revisor, no con el tuyo; ningún botón puede llevar a una pantalla
       vacía o a un error
-- [ ] **Los mapas muestran el fondo** — si se ven grises, falta el arreglo de la
-      CSP; en iOS empaquetado funcionan, en Android no
+- [x] **Los mapas muestran el fondo** — CSP arreglada el 2026-09-18 y cubierta
+      por test
 - [ ] **El `.ipa` no tiene `server.url`** — lo verifica solo `ios-release.yml`;
       un shell apuntando a una URL es lo que Apple suspende
-- [ ] **La política de privacidad está publicada y abre sin login** — las dos
-      tiendas la verifican automáticamente
-- [ ] **El AAB está firmado con el keystore de release** — no con la clave de
-      debug, y el keystore tiene backup fuera del repo
+- [x] **La política de privacidad está publicada y abre sin login** —
+      `/privacidad` y `/soporte`, desde el 2026-09-18 (salen con el deploy)
+- [ ] **El AAB está firmado con el keystore de release** — lo hace el workflow
+      con los secrets; el keystore está en `~/.ontimeai/` y falta el backup
+- [ ] **La cuenta se puede eliminar desde la app** — necesita el backend PR #67
+      desplegado; hasta entonces el botón devuelve un error
 - [ ] **Probaste el build desde TestFlight en un teléfono real** — el simulador
       no reproduce ni la firma, ni el teclado, ni el rendimiento del WebView
 
@@ -478,7 +534,7 @@ Contestá rápido: una consulta sin respuesta se convierte en rechazo.
 
 | | Dónde | Qué produce |
 |---|---|---|
-| Android | *Actions → Android Build → Run workflow*, tipo `release` | AAB firmado |
+| Android | *Actions → Android Build → Run workflow*, tipo `release`, `version`, y `subir` para dejarlo en una pista de Play | AAB firmado (y subido) |
 | iOS | *Actions → iOS Release (TestFlight)* | `.ipa` firmado |
 | OTA iOS | *Actions → iOS OTA* | bundle sin pasar por review, al bucket propio |
 

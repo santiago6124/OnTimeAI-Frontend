@@ -43,14 +43,18 @@ es el usuario), rol, tipo de perfil y preferencias; credenciales en Firebase
 Authentication; sin analytics ni rastreo. **Si cambia qué se guarda, cambia la
 página.**
 
-### ✅ Borrado de cuenta (Guideline 5.1.1 v) — resuelto ocultando el alta
+### ✅ Borrado de cuenta (Guideline 5.1.1 v) — dos capas
 
-Una app que permite crear cuenta tiene que permitir borrarla desde adentro, y
-ese flujo no existe (no hay `DELETE /users/me`). Para 1.0.0 el bundle de iOS
-**no ofrece el alta**: el login no enlaza a `/signup` cuando `IS_BUNDLED`, la
-cuenta se crea en la web y el borrado se pide por el canal de soporte (así lo
-dice la política). Si algún día se quiere el alta en la app, primero hay que
-implementar el borrado en backend y frontend.
+Una app que permite crear cuenta tiene que permitir borrarla desde adentro.
+
+- **Desde la app**: *Ajustes → Cuenta → Eliminar cuenta* llama a
+  `DELETE /users/me` (backend PR #67), que borra la fila, las preferencias y la
+  cuenta de Firebase. Hasta que ese PR esté desplegado el botón devuelve un
+  error.
+- **Además**, para 1.0.0 el bundle de iOS **no ofrece el alta**: el login no
+  enlaza a `/signup` cuando `IS_BUNDLED`; la cuenta se crea en la web y entra
+  igual. Cuando el borrado esté en producción y probado desde el bundle, ese
+  ocultamiento se puede sacar.
 
 ### ✅ Cumplimiento de exportación y solo iPhone
 

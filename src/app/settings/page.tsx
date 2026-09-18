@@ -1,13 +1,25 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 
 import { AppShell } from "@/components/app-shell";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Check } from "lucide-react";
 import { useTheme } from "next-themes";
-import { api, apiSetUserType } from "@/lib/api";
+import { api, apiDeleteAccount, apiSetUserType } from "@/lib/api";
+import { appPath } from "@/lib/mobile-env";
 import {
   PALETTES,
   usePalette,
@@ -61,6 +73,25 @@ export default function SettingsPage() {
   function handleSetTheme(t: string) {
     setTheme(t);
     api.updatePreferences({ theme: t }).catch(() => {});
+  }
+
+  const [deleteError, setDeleteError] = useState("");
+  const [deleting, startDeleting] = useTransition();
+
+  function handleDeleteAccount() {
+    setDeleteError("");
+    startDeleting(async () => {
+      try {
+        await apiDeleteAccount();
+        // La sesión ya no existe de ningún lado; el login es el único lugar
+        // con sentido. replace, para que "atrás" no vuelva a una cuenta muerta.
+        window.location.replace(appPath("/login"));
+      } catch (cause) {
+        setDeleteError(
+          cause instanceof Error ? cause.message : "No se pudo eliminar la cuenta.",
+        );
+      }
+    });
   }
   const { palette, setPalette } = usePalette();
 
@@ -194,6 +225,57 @@ export default function SettingsPage() {
         {/* GET /admin/db-stats exige superadmin en el backend (_require_superadmin). */}
         {user?.role === "superadmin" ? <SystemHealthCard /> : null}
 
+        {/* Las tiendas exigen que la baja exista dentro de la app (App Store
+            5.1.1, Play "Account deletion"), no solo por correo. Va última:
+            es lo que menos se usa y lo que más cuesta deshacer. */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Cuenta</CardTitle>
+            <CardDescription>
+              Estás como <span className="font-medium text-foreground">{user?.username}</span>.
+              Qué guardamos y por qué está en la{" "}
+              <Link href="/privacidad" className="underline underline-offset-4">
+                política de privacidad
+              </Link>
+              .
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <Dialog>
+              <DialogTrigger
+                render={<Button variant="destructive" disabled={deleting} />}
+              >
+                {deleting ? "Eliminando…" : "Eliminar cuenta"}
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>¿Eliminar tu cuenta?</DialogTitle>
+                  <DialogDescription>
+                    Se borran tu correo, tu perfil y tus preferencias. Es
+                    inmediato y no se puede deshacer; para volver vas a tener
+                    que crear una cuenta nueva.
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                  <DialogClose render={<Button variant="outline" />}>
+                    Cancelar
+                  </DialogClose>
+                  <DialogClose
+                    render={<Button variant="destructive" />}
+                    onClick={handleDeleteAccount}
+                  >
+                    Sí, eliminar
+                  </DialogClose>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+            {deleteError && (
+              <p role="alert" className="text-sm text-destructive">
+                {deleteError}
+              </p>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </AppShell>
   );

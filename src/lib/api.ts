@@ -537,6 +537,25 @@ async function nativeExchange(
   }
 }
 
+/**
+ * Baja de la propia cuenta. Las tiendas la exigen dentro de la app (App Store
+ * 5.1.1, Play "Account deletion"): el backend borra la fila y la cuenta de
+ * Firebase, y acá se cierra la sesión local para que no quede un token de
+ * alguien que ya no existe. Un 404 cuenta como éxito: la cuenta ya no está.
+ */
+export async function apiDeleteAccount() {
+  const res = await fetch(`${CLIENT_BASE}/users/me`, {
+    method: "DELETE",
+    headers: await getAuthHeaders(),
+    signal: AbortSignal.timeout(15_000),
+  });
+  if (!res.ok && res.status !== 404) {
+    const payload = (await res.json().catch(() => null)) as { detail?: string } | null;
+    throw new ApiError(res.status, payload?.detail ?? "No se pudo eliminar la cuenta.");
+  }
+  await apiLogout().catch(() => undefined);
+}
+
 export async function apiLogout() {
   if (IS_BUNDLED) {
     const { clearToken } = await import("@/lib/native/session");

@@ -68,7 +68,8 @@ export default function SoportePage() {
             se reenvíe.
           </li>
           <li>
-            <strong>Querés borrar tu cuenta</strong>: pedilo por el canal de
+            <strong>Querés borrar tu cuenta</strong>: desde la app, en
+            Ajustes → Cuenta → Eliminar cuenta. O pedilo por el canal de
             soporte indicando el correo con el que te registraste. La
             eliminamos, con todos tus datos, dentro de los 30 días. El detalle
             está en la <a href="/privacidad">política de privacidad</a>.

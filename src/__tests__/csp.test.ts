@@ -41,6 +41,12 @@ describe("Content-Security-Policy", () => {
     expect(connectSrc).toContain(origen);
   });
 
+  it("deja cargar los tiles de Esri que usan los mapas", async () => {
+    // Estuvo bloqueado hasta el 18/09: los vuelos se dibujaban sobre gris.
+    const imgSrc = (await directivas()).get("img-src") ?? [];
+    expect(imgSrc).toContain("https://server.arcgisonline.com");
+  });
+
   it("sigue cargando el script de Google Identity Services", async () => {
     const scriptSrc = (await directivas()).get("script-src") ?? [];
     expect(scriptSrc).toContain("https://accounts.google.com/gsi/client");

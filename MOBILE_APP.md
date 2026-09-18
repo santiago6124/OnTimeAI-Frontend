@@ -143,7 +143,12 @@ pnpm cap:android            # sync + abrir Android Studio
 En la nube: *Actions* → **Android Build** → *Run workflow* → `debug` o `release`.
 
 - `debug` → APK instalable por sideload.
-- `release` → AAB firmado para Play Console. Necesita los secrets del keystore.
+- `release` → AAB firmado para Play Console. Necesita los secrets del keystore
+  y el input `version` (semver); el `versionCode` es el número del run.
+- `release` + `subir` → además lo deja en la pista de Play elegida (`internal`,
+  `alpha` o `production`) con `scripts/play-upload.mjs`. La identidad es el
+  service account `play-publisher` por Workload Identity: no hay clave JSON.
+  Sus permisos se dan en Play Console (*Usuarios y permisos*), no en GCP.
 
 ### iOS
 
@@ -213,7 +218,7 @@ Si algún día Android pasa a servir sus assets desde el binario, su origen es
 
 | Secret | Para qué | Estado |
 |---|---|---|
-| `ANDROID_KEYSTORE_BASE64` + `_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD` | Firmar el AAB de release | Falta crear el keystore |
+| `ANDROID_KEYSTORE_BASE64` + `_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD` | Firmar el AAB de release | Keystore en `~/.ontimeai/`; los carga `configurar-android.sh` |
 | `IOS_CERTIFICATE_P12_BASE64` + `_PASSWORD` | Firmar el `.ipa` | Falta exportarlo de la cuenta Apple |
 | `IOS_PROVISIONING_PROFILE_BASE64`, `IOS_TEAM_ID` | Perfil y equipo | Falta |
 | `APPSTORE_API_KEY_ID`, `_ISSUER_ID`, `_PRIVATE_KEY` | Subir a TestFlight | Falta |
@@ -225,14 +230,14 @@ Sin ninguno de estos, `android-build.yml` igual produce un APK debug y
 
 ### Keystore de Android
 
-```bash
-keytool -genkey -v -keystore ontimeai.jks -keyalg RSA -keysize 2048 \
-  -validity 10000 -alias ontimeai
-base64 -i ontimeai.jks | pbcopy     # → ANDROID_KEYSTORE_BASE64
-```
+Generado el 2026-09-18 con OpenSSL (no hay JDK en la Mac): PKCS12, RSA 4096,
+alias `upload`, válido hasta 2056, en `~/.ontimeai/android-upload.p12` con la
+contraseña al lado. `build.gradle` lo abre con `storeType "PKCS12"`, que en
+Java también lee un JKS por si se regenera con `keytool`.
 
-**Guardalo fuera del repo y con backup.** Perderlo significa no poder volver a
-actualizar la app publicada en Play.
+**Hacele backup fuera de la Mac.** Como la app usa Play App Signing, esta es
+la clave de *subida*: perderla se arregla pidiendo un reset a Google, pero es
+un trámite de días.
 
 ---
 
