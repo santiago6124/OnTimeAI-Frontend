@@ -21,7 +21,14 @@
  * Si algún día hay un entorno de staging, acá va la lectura de `process.env`.
  */
 import { initializeApp, getApps, type FirebaseApp } from "firebase/app";
-import { getAuth, type Auth } from "firebase/auth";
+import {
+  getAuth,
+  indexedDBLocalPersistence,
+  initializeAuth,
+  type Auth,
+} from "firebase/auth";
+
+import { IS_BUNDLED } from "@/lib/mobile-env";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAb3Hj4N3Sm_jaVTncToOYmcvLPABR4vQE",
@@ -42,12 +49,42 @@ function app(): FirebaseApp {
   return existentes.length > 0 ? existentes[0] : initializeApp(firebaseConfig);
 }
 
+/**
+ * Instancia de Auth del bundle nativo, creada una sola vez: `initializeAuth`
+ * lanza si se llama dos veces sobre la misma app.
+ */
+let authNativa: Auth | undefined;
+
 export function firebaseAuth(): Auth {
-  const auth = getAuth(app());
+  const auth = IS_BUNDLED ? authDelBundle() : getAuth(app());
   // Los correos de verificación y de recuperación salen en el idioma del
   // navegador; sin esto llegan en inglés aunque la app esté en español.
   auth.useDeviceLanguage();
   return auth;
+}
+
+/**
+ * En el bundle de iOS NO se puede usar `getAuth()`.
+ *
+ * `getAuth()` configura el *popup/redirect resolver*, y en un user agent de
+ * iOS ese resolver se inicializa de forma proactiva: carga un iframe de
+ * `authDomain` (`ontimeai-prod.firebaseapp.com/__/auth/iframe`) y espera el
+ * saludo del otro lado. Desde `capacitor://localhost` —un origen que no es un
+ * dominio autorizado y que el iframe no reconoce— ese saludo no llega nunca,
+ * y como TODAS las operaciones de Auth se encolan detrás de la inicialización,
+ * `signInWithEmailAndPassword` queda pendiente para siempre: sin error, sin
+ * timeout, el botón en "Ingresando…". Así se encontró el 2026-09-18 en el
+ * simulador, y así lo hubiera visto el revisor de Apple.
+ *
+ * `initializeAuth` sin `popupRedirectResolver` no arma ese iframe. No se
+ * pierde nada: el bundle no usa popups ni redirects (Google queda solo en la
+ * web). La persistencia en IndexedDB es la misma que elige `getAuth()`.
+ */
+function authDelBundle(): Auth {
+  if (!authNativa) {
+    authNativa = initializeAuth(app(), { persistence: indexedDBLocalPersistence });
+  }
+  return authNativa;
 }
 
 /**
