@@ -69,9 +69,12 @@ fecha.
 Las dos tiendas la exigen cuando la app permite crear cuentas (App Store 5.1.1,
 Play "Account deletion"). *Ajustes → Cuenta → Eliminar cuenta* llama a
 `DELETE /users/me` (backend #67, desplegado), que borra la fila, las
-preferencias y la cuenta de Firebase. Verificado en producción el 2026-09-18
+preferencias y la cuenta de Firebase. Para lo último el service account de
+Cloud Run (`871707213932-compute@…`) tiene `roles/firebaseauth.admin` desde el
+2026-09-18; sin ese rol la fila se borra igual pero la cuenta de Firebase
+queda (probado: se quitó el rol y dejó de borrarla). Verificado en producción
 con una cuenta descartable: 204, `/auth/me` pasa a 401 y el correo desaparece
-de Firebase Authentication, con los permisos que el servicio ya tenía.
+de Firebase Authentication.
 
 ### ⚠️ Pendiente — migrar a Capacitor 8
 
