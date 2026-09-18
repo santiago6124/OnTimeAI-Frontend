@@ -109,7 +109,11 @@ export function FlightRadarMap({
 
   return (
     <div
-      className={cn("relative overflow-hidden rounded-lg border bg-[#0b1220]", className)}
+      // `isolate`: las capas de Leaflet van con z-index 400–1000 y los overlays
+      // de acá con z-[400]. Sin un contexto de apilamiento propio, todo eso
+      // compite en el de la raíz y le gana al menú lateral (z-50): en el
+      // teléfono el mapa se dibujaba por encima del drawer abierto.
+      className={cn("relative isolate overflow-hidden rounded-lg border bg-[#0b1220]", className)}
       style={{ height }}
     >
       <MapContainer
