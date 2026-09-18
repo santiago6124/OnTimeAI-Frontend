@@ -24,13 +24,13 @@ restaurar() {
 }
 trap restaurar EXIT
 
-echo "==> 1/5 bundle web empaquetado"
+echo "==> 1/6 bundle web empaquetado"
 node scripts/build-mobile.mjs
 
-echo "==> 2/5 config de iOS (sin server.url)"
+echo "==> 2/6 config de iOS (sin server.url)"
 cp capacitor.config.ios.ts capacitor.config.ts
 
-echo "==> 3/5 cap sync ios"
+echo "==> 3/6 cap sync ios"
 npx cap sync ios
 
 # `ios/` no se versiona: se regenera con `cap add ios`, y con ella vuelven los
@@ -38,13 +38,16 @@ npx cap sync ios
 # Este paso los reemplaza por los de la app, generados desde assets/, que SÍ
 # está versionado. Sin esto, cada build limpio saldría con el ícono del
 # framework — lo primero que ve quien revisa la app.
-echo "==> 4/5 íconos y splash desde assets/"
+echo "==> 4/6 íconos y splash desde assets/"
 npx @capacitor/assets generate --ios \
   --iconBackgroundColor '#0a0a0a' --iconBackgroundColorDark '#0a0a0a' \
   --splashBackgroundColor '#0a0a0a' --splashBackgroundColorDark '#0a0a0a'
 
-echo "==> 5/5 router de export estático"
+echo "==> 5/6 router de export estático"
 bash scripts/ios-patch-router.sh
+
+echo "==> 6/6 ajustes de tienda (cifrado exento, solo iPhone)"
+bash scripts/ios-store-settings.sh
 
 echo
 echo "Listo. El proyecto quedó en ios/ y capacitor.config.ts sin tocar."

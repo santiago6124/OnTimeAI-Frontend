@@ -110,7 +110,7 @@ Sirve para las dos: va en *Novedades* de Play y en *What's New* de App Store.
 Escribilo desde el lado del usuario, no del commit. Máx. 500 caracteres en Play.
 
 ```
-
+Primera versión.
 ```
 
 ---
@@ -256,7 +256,7 @@ desarrollador.
 Único en toda la App Store. Si "OnTimeAI" está tomado, hay que cambiarlo acá.
 
 ```
-
+OnTimeAI
 ```
 
 ### Subtítulo — máx 30
@@ -264,7 +264,7 @@ desarrollador.
 Se lee debajo del nombre en los resultados. No repitas el nombre acá.
 
 ```
-
+Predicción de retrasos en ATL
 ```
 
 ### Palabras clave — máx 100
@@ -273,7 +273,7 @@ Separadas por comas, **sin espacios** después de la coma (cuentan). No repitas
 palabras que ya están en el nombre o el subtítulo.
 
 ```
-
+vuelos,aeropuerto,atlanta,demora,delay,machine learning,aerolínea,pasajero,clima,tesis
 ```
 
 ### Descripción — máx 4000
@@ -282,7 +282,25 @@ Podés reutilizar la de Play. Dejá explícito que requiere cuenta y que es un
 proyecto académico.
 
 ```
+OnTimeAI predice la probabilidad de que un vuelo que sale del aeropuerto de Atlanta (ATL) llegue con retraso, usando un modelo de aprendizaje automático entrenado con datos públicos de operaciones aéreas y de clima.
 
+QUÉ HACE
+
+• Lista de vuelos programados de ATL con su probabilidad de retraso, actualizada cada 15 minutos.
+• Detalle de cada vuelo: horario programado y estimado, aeronave, ruta y nivel de riesgo.
+• Mapa de rutas y vista del clima en el aeropuerto.
+• Dos perfiles: aerolínea, con métricas operativas por ruta y hora; y pasajero, con lo necesario para seguir un vuelo.
+• Panel de evolución del modelo: cuántas predicciones acertó y cómo se compara con los retrasos reales.
+
+QUÉ ES
+
+Un trabajo final de carrera. No es un producto comercial: no hay publicidad, no se vende nada y no se comercializan datos. El código es abierto.
+
+QUÉ NECESITÁS
+
+Una cuenta. La app funciona con sesión iniciada; la cuenta se crea con correo y contraseña desde la web del proyecto, y el mismo acceso sirve en el teléfono.
+
+Las predicciones son estimaciones estadísticas y pueden equivocarse. No reemplazan la información oficial de tu aerolínea ni del aeropuerto.
 ```
 
 ### Texto promocional — máx 170
@@ -291,7 +309,7 @@ El único campo que podés cambiar **sin** pasar por review. Útil para avisos
 temporales.
 
 ```
-
+Trabajo de tesis: predicciones de retraso para los vuelos que salen de Atlanta, actualizadas cada 15 minutos con datos reales.
 ```
 
 ### Categoría
@@ -300,7 +318,8 @@ Primaria y secundaria. Sugerido: `Travel` como primaria, `Productivity` como
 secundaria.
 
 ```
-
+Primaria: Travel
+Secundaria: Productivity
 ```
 
 ### URL de soporte
@@ -309,7 +328,9 @@ secundaria.
 README del repo si es público.
 
 ```
+https://ontimeai-frontend-871707213932.us-central1.run.app/soporte
 
+(y la de privacidad: https://ontimeai-frontend-871707213932.us-central1.run.app/privacidad)
 ```
 
 ### Capturas
@@ -317,8 +338,10 @@ README del repo si es público.
 Obligatorias las de **iPhone 6.9"** (`1320×2868` o `1290×2796`). Si el listado
 incluye iPad, también las de 13".
 
-```bash
-xcrun simctl io booted screenshot captura.png
+```
+iPhone 6.9" (1320×2868), generadas en el simulador de iPhone 17 Pro Max desde el build
+de TestFlight con la cuenta demo. Solo iPhone: el binario declara TARGETED_DEVICE_FAMILY=1
+(scripts/ios-store-settings.sh), así que iPad no aparece en el listado y no pide capturas.
 ```
 
 ```
@@ -340,7 +363,13 @@ Con el código de hoy, lo honesto es declarar:
 - Marcá *"No, no recopilamos datos con fines de seguimiento"*
 
 ```
-(qué declaraste exactamente)
+Contact Info → Email Address: sí. Vinculado a la identidad. Uso: App Functionality. No para rastreo.
+Identifiers → User ID: sí (la cuenta). Vinculado a la identidad. Uso: App Functionality. No para rastreo.
+Nada más. "¿Usan datos para rastrear?": No.
+
+Motivo: la tabla `users` guarda correo (= usuario), rol, tipo de perfil y preferencias
+visuales. Las credenciales las administra Firebase Authentication. No hay SDK de
+analítica, publicidad ni crash reporting en el árbol.
 ```
 
 ### Cumplimiento de exportación
@@ -350,7 +379,8 @@ una vez y conviene fijarlo en el `Info.plist` con
 `ITSAppUsesNonExemptEncryption = false` para que no lo pregunte en cada subida.
 
 ```
-
+Exento (solo HTTPS estándar). ITSAppUsesNonExemptEncryption=false lo pone
+scripts/ios-store-settings.sh en cada build, así que no lo pregunta al subir.
 ```
 
 ### Clasificación por edad
@@ -359,7 +389,7 @@ Cuestionario propio de Apple, separado del de Play. Mismas respuestas: sin
 contenido sensible.
 
 ```
-
+4+. Sin contenido sensible en ninguna categoría del cuestionario.
 ```
 
 ---
@@ -402,7 +432,14 @@ solo consulta datos por HTTPS — es lo que la separa de un webview a una URL, e
 patrón que rechaza la Guideline 5.6.
 
 ```
+OnTimeAI es un trabajo final de carrera universitario. Predice la probabilidad de retraso de los vuelos que salen del aeropuerto de Atlanta (ATL) con un modelo de machine learning entrenado con datos públicos de operaciones y clima, y muestra vuelos reales actualizados cada 15 minutos.
 
+La interfaz viaja dentro del binario; la app solo consulta datos por HTTPS a nuestro backend. No es un contenedor web apuntando a una URL.
+
+Toda la app requiere sesión. Ingresá con la cuenta de demostración indicada arriba (correo y contraseña en la pantalla "Ingresar"). La cuenta tiene el perfil "aerolínea", que muestra todas las pantallas del producto. El alta de cuentas se hace desde la web del proyecto; la app no la ofrece.
+
+Política de privacidad: https://ontimeai-frontend-871707213932.us-central1.run.app/privacidad
+Soporte: https://ontimeai-frontend-871707213932.us-central1.run.app/soporte
 ```
 
 ### Contacto

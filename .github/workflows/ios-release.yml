@@ -41,6 +41,12 @@ concurrency:
   group: ios-release
   cancel-in-progress: false
 
+env:
+  # Nombre del perfil de provisión tal como figura en developer.apple.com →
+  # Profiles. Es lo que el archive y el export le piden a Xcode por nombre;
+  # si el perfil se recrea con otro, hay que cambiarlo acá.
+  IOS_PROFILE_NAME: OnTimeAI App Store
+
 jobs:
   build:
     name: .ipa firmado
@@ -184,6 +190,11 @@ jobs:
         # directorio. Es código nativo — no se puede arreglar por OTA.
         run: bash scripts/ios-patch-router.sh
 
+      - name: Ajustes de tienda
+        # Cifrado exento (ITSAppUsesNonExemptEncryption) y solo iPhone. Van
+        # acá y no en el repo porque ios/ se regenera en cada build.
+        run: bash scripts/ios-store-settings.sh
+
       - name: Preflight de firma
         id: firma
         env:
@@ -223,15 +234,24 @@ jobs:
           rm -f "$RUNNER_TEMP/cert.p12"
 
       - name: Archive
+        # Firma MANUAL. El proyecto que genera `cap add ios` viene con
+        # CODE_SIGN_STYLE=Automatic e identidad "iPhone Developer": en un runner
+        # que solo tiene el certificado de distribución y el perfil de App
+        # Store, la firma automática busca un certificado de desarrollo que no
+        # existe y falla. Acá se le dice exactamente con qué firmar.
         if: steps.firma.outputs.firmado == 'si'
         env:
           TEAM_ID: ${{ secrets.IOS_TEAM_ID }}
+          PROFILE_NAME: ${{ env.IOS_PROFILE_NAME }}
         run: |
           xcodebuild -workspace ios/App/App.xcworkspace \
             -scheme App -configuration Release \
             -archivePath "$RUNNER_TEMP/App.xcarchive" \
             -destination "generic/platform=iOS" \
             DEVELOPMENT_TEAM="$TEAM_ID" \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY="Apple Distribution" \
+            PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" \
             MARKETING_VERSION="${{ inputs.version }}" \
             CURRENT_PROJECT_VERSION="${{ github.run_number }}" \
             archive
@@ -240,6 +260,7 @@ jobs:
         if: steps.firma.outputs.firmado == 'si'
         env:
           TEAM_ID: ${{ secrets.IOS_TEAM_ID }}
+          PROFILE_NAME: ${{ env.IOS_PROFILE_NAME }}
         run: |
           cat > "$RUNNER_TEMP/export.plist" <<PLIST
           <?xml version="1.0" encoding="UTF-8"?>
@@ -247,6 +268,11 @@ jobs:
           <plist version="1.0"><dict>
             <key>method</key><string>app-store-connect</string>
             <key>teamID</key><string>$TEAM_ID</string>
+            <key>signingStyle</key><string>manual</string>
+            <key>signingCertificate</key><string>Apple Distribution</string>
+            <key>provisioningProfiles</key><dict>
+              <key>com.ontimeai.app</key><string>$PROFILE_NAME</string>
+            </dict>
             <key>uploadSymbols</key><true/>
           </dict></plist>
           PLIST

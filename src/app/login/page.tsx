@@ -33,6 +33,7 @@ import {
 import { apiLoginFirebase, apiLoginGoogle } from "@/lib/api";
 import { firebaseAuth, mensajeDeError } from "@/lib/firebase";
 import { homePathFor, safeReturnPath } from "@/lib/auth-types";
+import { IS_BUNDLED } from "@/lib/mobile-env";
 
 function LoginForm() {
   const searchParams = useSearchParams();
@@ -237,16 +238,22 @@ export default function LoginPage() {
   return (
     <AuthShell
       title="Ingresar"
+      // En el bundle de iOS no se ofrece el alta. Guideline 5.1.1(v): una app
+      // que permite crear cuenta tiene que permitir borrarla desde adentro, y
+      // ese flujo todavía no existe. La cuenta se crea en la web, con el
+      // mismo correo, y entra acá igual.
       footer={
-        <>
-          ¿No tenés cuenta?{" "}
-          <Link
-            href="/signup"
-            className="font-medium text-foreground underline underline-offset-4"
-          >
-            Registrate
-          </Link>
-        </>
+        IS_BUNDLED ? undefined : (
+          <>
+            ¿No tenés cuenta?{" "}
+            <Link
+              href="/signup"
+              className="font-medium text-foreground underline underline-offset-4"
+            >
+              Registrate
+            </Link>
+          </>
+        )
       }
     >
       <Suspense
