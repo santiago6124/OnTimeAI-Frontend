@@ -3,10 +3,14 @@ import type { NextRequest } from "next/server";
 import { AUTH_COOKIE_NAME, AUTH_MAX_AGE_SECONDS } from "@/lib/auth-types";
 
 /**
- * Modo Lite: vista pública de solo lectura, accesible con o sin sesión (issue #1).
- * El resto de la app es Modo Pro y exige autenticación.
+ * Rutas accesibles con o sin sesión. El resto de la app es Modo Pro y exige
+ * autenticación.
+ *
+ * - `/live`: Modo Lite, vista pública de solo lectura (issue #1).
+ * - `/privacidad` y `/soporte`: las dos tiendas exigen que abran sin login, y
+ *   Apple lo verifica antes de aceptar el envío a revisión.
  */
-const PUBLIC_ROUTES = ["/live"];
+const PUBLIC_ROUTES = ["/live", "/privacidad", "/soporte"];
 
 function hardenCookie(response: NextResponse, token: string | undefined) {
   if (!token) return response;
