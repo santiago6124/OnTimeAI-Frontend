@@ -124,7 +124,7 @@ dos tiendas rechazan un build repetido.
   queda en `1`, que Play no acepta.
 
 ```
-iOS: (run de iOS Release)   Android: (run de Android Build)
+iOS: (run de iOS Release)   Android: 5 (run #5, 2026-09-18, en internal)
 ```
 
 ### Qué cambia en esta versión
@@ -299,9 +299,12 @@ un período de prueba cerrada antes de producción para cuentas nuevas de
 desarrollador.
 
 ```
-1. internal — lo sube el workflow (subir: true, pista: internal).
+1. internal — ✅ 2026-09-18: 1.0.0 (5), AAB del run #5 de Android Build,
+   subido con scripts/play-upload.mjs. La ficha (textos, ícono, gráfico y 6
+   capturas) cargada con scripts/play-listing.mjs el mismo día.
 2. alpha (prueba cerrada) — 12 testers opt-in durante 14 días, requisito de
    Play para cuentas personales nuevas. Es el camino crítico del calendario.
+   Promover desde la consola o con play-upload.mjs --track alpha.
 3. production — recién después de "Solicitar acceso a producción".
 ```
 
@@ -530,8 +533,9 @@ Santiago Carranza · santiagocarranzazinny@gmail.com · teléfono: (completar)
       un shell apuntando a una URL es lo que Apple suspende
 - [x] **La política de privacidad está publicada y abre sin login** —
       `/privacidad` y `/soporte`, desde el 2026-09-18 (salen con el deploy)
-- [ ] **El AAB está firmado con el keystore de release** — lo hace el workflow
-      con los secrets; el keystore está en `~/.ontimeai/` y falta el backup
+- [x] **El AAB está firmado con el keystore de release** — verificado en el
+      run #5 (huella SHA-256 del certificado = la del keystore local). Falta
+      el backup del keystore fuera de la Mac
 - [x] **La cuenta se puede eliminar desde la app** — backend #67 desplegado y
       probado en producción el 2026-09-18
 - [ ] **Probaste el build desde TestFlight en un teléfono real** — el simulador
