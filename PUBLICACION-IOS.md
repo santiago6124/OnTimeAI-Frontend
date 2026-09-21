@@ -309,6 +309,16 @@ checksum, aplicación, `notifyAppReady`, rollback). Detalle en `MOBILE_APP.md` �
 
 Lo que tiene que cumplirse:
 
+0. **Que el canal `production` no esté DETRÁS del binario que subís.** Un
+   bundle publicado antes de un fix nativo-web (como el del login por
+   Firebase) tiene una versión mayor que la nativa (`1.0.1 > 1.0.0`), así que
+   el servidor se lo ofrece igual, el teléfono lo baja en el primer arranque
+   y desde el segundo corre código viejo: el bug vuelve, y el revisor de
+   Apple lo ve en su segundo arranque. Pasó el 2026-09-21 con 1.0.1 (del
+   16/9) sobre el build 5 (del 18/9). **Antes de enviar a revisión, publicá
+   al canal `production` un bundle desde el mismo commit del binario**
+   (`accion: publicar`, versión nueva), o dejá el canal en `none` si todavía
+   no hay ninguno.
 1. **Que el binario instalado se haya compilado con `ota: true`.** Si el OTA
    está apagado en la app que la gente tiene, publicar un bundle no le llega a
    nadie. El `.ipa` de la tienda va siempre con `ota: true`.
