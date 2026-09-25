@@ -160,6 +160,17 @@
  * el viewport es `viewport-fit: cover` y el WebView ocupa la pantalla completa
  * —notch y barra de gestos incluidos—, así que el contenido queda debajo de
  * ellos si nadie lo separa. */
+/* CUIDADO: estas dos reglas estan fuera de toda @layer, y las utilidades de
+ * Tailwind viven en `@layer utilities`. En la cascada el CSS sin capa le gana a
+ * cualquier capa, asi que `.safe-top` le gana a `pt-6`, `p-4` o cualquier otra
+ * utilidad de padding vertical puesta en el mismo elemento — y en escritorio
+ * `env(safe-area-inset-top)` vale 0, o sea que el espaciado desaparece sin que
+ * nada falle ni avise.
+ *
+ * Por eso no van nunca en el mismo elemento que una utilidad de padding del
+ * mismo lado. El patron es un contenedor con la clase de area segura y un hijo
+ * con el espaciado: ver `app-nav.tsx` y `app-shell.tsx`, que se armaron asi
+ * despues de que la barra apareciera pegada al borde superior. */
 .safe-top { padding-top: env(safe-area-inset-top); }
 .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
 

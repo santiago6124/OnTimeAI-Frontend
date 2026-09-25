@@ -28,9 +28,13 @@ export function AppShell({
   }, [title]);
 
   return (
-    <div className="flex min-h-svh flex-col">
+    // `safe-bottom` sube al contenedor, que no lleva `padding-bottom` propio.
+    // Estaba en el mismo elemento que `pb-10` y lo anulaba —mismo choque de
+    // capas que `safe-top` en app-nav—, así que el contenido terminaba pegado
+    // al borde inferior en vez de tener aire para respirar al hacer scroll.
+    <div className="safe-bottom flex min-h-svh flex-col">
       <AppNav />
-      <main className="safe-bottom mx-auto flex w-full min-w-0 max-w-7xl flex-1 flex-col gap-4 px-4 pb-10 md:px-6">
+      <main className="mx-auto flex w-full min-w-0 max-w-7xl flex-1 flex-col gap-4 px-4 pb-10 md:px-6">
         {children}
       </main>
     </div>
