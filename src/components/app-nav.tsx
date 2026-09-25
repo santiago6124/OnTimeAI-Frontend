@@ -120,87 +120,103 @@ export function AppNav() {
   }
 
   return (
-    <div className="safe-top sticky top-0 z-40 flex justify-center bg-background px-4 pt-6 pb-4">
-      <nav
-        aria-label="Navegación principal"
-        // `overflow-x-auto` es lo que salva al teléfono: con perfil de
-        // operaciones y rol de superadmin son siete entradas más el reloj, y
-        // eso no entra en 390 px de ancho. Sin scroll las últimas quedarían
-        // fuera de alcance.
-        className="flex max-w-full items-center gap-1 overflow-x-auto rounded-full border bg-background p-2 shadow-sm"
-      >
-        {/* El dibujo es blanco sobre transparente, así que sobre la píldora
-            clara desaparecería; `brightness-0` lo lleva a negro sin tocar la
-            transparencia, igual que en `brand-mark.tsx`.
+    // `safe-top` y el espaciado van en elementos distintos a propósito. Los dos
+    // escriben `padding-top`, pero `.safe-top` está definida fuera de toda capa
+    // en globals.css y las utilidades de Tailwind viven en `@layer utilities`:
+    // el CSS sin capa le gana a cualquier capa, así que puestas juntas
+    // `env(safe-area-inset-top)` —que en escritorio vale 0— pisaba el `pt-6` y
+    // la barra quedaba pegada al borde. Ver la nota en globals.css.
+    <div className="safe-top sticky top-0 z-40 bg-background">
+      <div className="flex justify-center px-4 pt-6 pb-4">
+        <nav
+          aria-label="Navegación principal"
+          // `overflow-x-auto` es lo que salva al teléfono: con perfil de
+          // operaciones y rol de superadmin son siete entradas más el reloj, y
+          // eso no entra en 390 px de ancho. Sin scroll las últimas quedarían
+          // fuera de alcance.
+          className="flex max-w-full items-center gap-1 overflow-x-auto rounded-full border bg-background p-2 shadow-sm"
+        >
+          {/* El dibujo es blanco sobre transparente, así que sobre la píldora
+              clara desaparecería; `brightness-0` lo lleva a negro sin tocar la
+              transparencia, igual que en `brand-mark.tsx`.
 
-            Va `/icon.png` (73 KB) y no `/logopagina.png` (1,3 MB, la misma
-            figura a 1024 px): el navbar es lo primero que se pinta en todas
-            las pantallas.
+              Va `/icon.png` (73 KB) y no `/logopagina.png` (1,3 MB, la misma
+              figura a 1024 px): el navbar es lo primero que se pinta en todas
+              las pantallas.
 
-            eslint-disable-next-line @next/next/no-img-element --
-            `next/image` mandaría el icono al optimizador en tiempo de
-            ejecución para dibujarlo a 40 px: no compensa. */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/icon.png"
-          alt="OnTimeAI"
-          width={40}
-          height={40}
-          className="mr-1 size-10 shrink-0 rounded-full object-cover brightness-0"
-        />
+              eslint-disable-next-line @next/next/no-img-element --
+              `next/image` mandaría el icono al optimizador en tiempo de
+              ejecución para dibujarlo a 40 px: no compensa. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/icon.png"
+            alt="OnTimeAI"
+            width={40}
+            height={40}
+            className="mr-1 size-10 shrink-0 rounded-full object-cover brightness-0"
+          />
 
-        {entradas.map((item) => {
-          const Icon = item.icon;
-          const activo =
-            item.href === "/"
-              ? pathname === "/"
-              : pathname.startsWith(item.href);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              aria-current={activo ? "page" : undefined}
-              className={cn(
-                "flex h-10 shrink-0 items-center gap-2 rounded-full px-3 text-sm font-medium whitespace-nowrap transition-colors",
-                activo
-                  ? "bg-accent text-accent-foreground"
-                  : "text-muted-foreground hover:bg-accent/60 hover:text-foreground",
-              )}
+          {entradas.map((item) => {
+            const Icon = item.icon;
+            const activo =
+              item.href === "/"
+                ? pathname === "/"
+                : pathname.startsWith(item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={activo ? "page" : undefined}
+                className={cn(
+                  "flex h-10 shrink-0 items-center gap-2 rounded-full px-3 text-sm font-medium whitespace-nowrap transition-colors",
+                  activo
+                    ? "bg-accent text-accent-foreground"
+                    : "text-muted-foreground hover:bg-accent/60 hover:text-foreground",
+                )}
+              >
+                <Icon className="size-4 shrink-0" />
+                {item.label}
+              </Link>
+            );
+          })}
+
+          <UtcClock />
+
+          {/* "Cerrar sesión" al final y separado: es la única acción irreversible
+              de la fila y no conviene que quede a un píxel de un enlace de
+              navegación.
+
+              Sin texto hace falta el tooltip. El `aria-label` no alcanza por sí
+              solo: una puerta con una flecha no dice qué hace a quien no la tiene
+              asociada de antes, y hace falta que el nombre sea visible al
+              enfocar, no solo anunciado por el lector de pantalla. */}
+          {/* `data-vertical:self-center` y no `self-center` a secas: el primitivo
+              trae `data-vertical:self-stretch`, y twMerge solo dedupea cuando el
+              modificador coincide. Sin el prefijo sobreviven las dos y gana la
+              del primitivo por especificidad, que con una altura fija no estira
+              nada pero sí alinea la línea contra el borde de arriba. */}
+          <Separator
+            orientation="vertical"
+            className="mx-2 h-6 shrink-0 data-vertical:self-center"
+          />
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button
+                  variant="destructive"
+                  size="icon-lg"
+                  onClick={cerrarSesion}
+                  aria-label="Cerrar sesión"
+                  className="shrink-0 rounded-full"
+                />
+              }
             >
-              <Icon className="size-4 shrink-0" />
-              {item.label}
-            </Link>
-          );
-        })}
-
-        <UtcClock />
-
-        {/* "Cerrar sesión" al final y separado: es la única acción irreversible
-            de la fila y no conviene que quede a un píxel de un enlace de
-            navegación.
-
-            Sin texto hace falta el tooltip. El `aria-label` no alcanza por sí
-            solo: una puerta con una flecha no dice qué hace a quien no la tiene
-            asociada de antes, y hace falta que el nombre sea visible al
-            enfocar, no solo anunciado por el lector de pantalla. */}
-        <Separator orientation="vertical" className="mx-2 h-6 shrink-0" />
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <Button
-                variant="destructive"
-                size="icon-lg"
-                onClick={cerrarSesion}
-                aria-label="Cerrar sesión"
-                className="shrink-0 rounded-full"
-              />
-            }
-          >
-            <LogOut />
-          </TooltipTrigger>
-          <TooltipContent>Cerrar sesión</TooltipContent>
-        </Tooltip>
-      </nav>
+              <LogOut />
+            </TooltipTrigger>
+            <TooltipContent>Cerrar sesión</TooltipContent>
+          </Tooltip>
+        </nav>
+      </div>
     </div>
   );
 }
