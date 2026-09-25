@@ -26,12 +26,12 @@ export default async function LivePage() {
       {/* KPI strip */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="rounded-lg border bg-card p-4">
-          <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Vuelos activos</p>
+          <p className="text-xs text-muted-foreground mb-1">Vuelos activos</p>
           <p className="text-2xl font-bold tabular-nums">{flights.length}</p>
           <p className="text-xs text-muted-foreground mt-0.5">{fmtTime(lastUpdated)}</p>
         </div>
         <div className="rounded-lg border border-red-200 dark:border-red-900/50 bg-red-500/5 p-4">
-          <p className="text-xs text-red-600 dark:text-red-400 uppercase tracking-wide mb-1 flex items-center gap-1">
+          <p className="text-xs text-red-600 dark:text-red-400 mb-1 flex items-center gap-1">
             <AlertTriangle className="size-3" /> Riesgo alto
           </p>
           <p className="text-2xl font-bold tabular-nums text-red-600 dark:text-red-400">{highRisk}</p>
@@ -40,7 +40,7 @@ export default async function LivePage() {
           </p>
         </div>
         <div className="rounded-lg border border-amber-200 dark:border-amber-900/50 bg-amber-500/5 p-4">
-          <p className="text-xs text-amber-600 dark:text-amber-400 uppercase tracking-wide mb-1 flex items-center gap-1">
+          <p className="text-xs text-amber-600 dark:text-amber-400 mb-1 flex items-center gap-1">
             <Clock className="size-3" /> Riesgo medio
           </p>
           <p className="text-2xl font-bold tabular-nums text-amber-600 dark:text-amber-400">{mediumRisk}</p>
@@ -49,7 +49,7 @@ export default async function LivePage() {
           </p>
         </div>
         <div className="rounded-lg border border-emerald-200 dark:border-emerald-900/50 bg-emerald-500/5 p-4">
-          <p className="text-xs text-emerald-600 dark:text-emerald-400 uppercase tracking-wide mb-1 flex items-center gap-1">
+          <p className="text-xs text-emerald-600 dark:text-emerald-400 mb-1 flex items-center gap-1">
             <CheckCircle2 className="size-3" /> Bajo riesgo
           </p>
           <p className="text-2xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400">{lowRisk}</p>

@@ -34,7 +34,7 @@ export function WeatherErrorCard({
       </CardHeader>
       <CardContent>
         <div className="space-y-1">
-          <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
+          <div className="text-[11px] text-muted-foreground">
             Detalle técnico
           </div>
           <code className="block break-all rounded bg-muted px-2 py-1.5 font-mono text-[11px] text-muted-foreground">

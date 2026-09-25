@@ -1,8 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "@/components/providers/theme-provider";
-import { PaletteProvider } from "@/components/providers/palette-provider";
 import { ProfileProvider } from "@/components/providers/profile-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
@@ -61,7 +59,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: "cover",
-  themeColor: "#0a0a0a",
+  themeColor: "#ffffff",
 };
 
 export default function RootLayout({
@@ -74,23 +72,14 @@ export default function RootLayout({
       className={`${sans.variable} ${mono.variable} h-full antialiased`}
     >
       <body className="min-h-full bg-background text-foreground">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <NativeSessionGate>
-            <PaletteProvider>
-              <ProfileProvider>
-                <TooltipProvider>
-                  {children}
-                  <Toaster richColors position="top-right" />
-                </TooltipProvider>
-              </ProfileProvider>
-            </PaletteProvider>
-          </NativeSessionGate>
-        </ThemeProvider>
+        <NativeSessionGate>
+          <ProfileProvider>
+            <TooltipProvider>
+              {children}
+              <Toaster richColors position="top-right" />
+            </TooltipProvider>
+          </ProfileProvider>
+        </NativeSessionGate>
       </body>
     </html>
   );

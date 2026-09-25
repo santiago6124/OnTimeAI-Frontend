@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "@/components/providers/theme-provider";
-import { PaletteProvider } from "@/components/providers/palette-provider";
 import { ProfileProvider } from "@/components/providers/profile-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
@@ -41,23 +39,14 @@ export default async function RootLayout({
       className={`${sans.variable} ${mono.variable} h-full antialiased`}
     >
       <body className="min-h-full bg-background text-foreground">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <SessionProvider user={user}>
-            <PaletteProvider>
-              <ProfileProvider>
-                <TooltipProvider>
-                  {children}
-                  <Toaster richColors position="top-right" />
-                </TooltipProvider>
-              </ProfileProvider>
-            </PaletteProvider>
-          </SessionProvider>
-        </ThemeProvider>
+        <SessionProvider user={user}>
+          <ProfileProvider>
+            <TooltipProvider>
+              {children}
+              <Toaster richColors position="top-right" />
+            </TooltipProvider>
+          </ProfileProvider>
+        </SessionProvider>
       </body>
     </html>
   );

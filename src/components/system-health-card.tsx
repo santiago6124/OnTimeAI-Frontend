@@ -146,7 +146,7 @@ function StorageBar({ sizeMb }: { sizeMb: number }) {
       <div className="flex items-baseline justify-between gap-2">
         <span className="text-xs text-muted-foreground">Tamaño de la base</span>
         <span className="flex items-baseline gap-2">
-          <span className="font-mono text-sm font-semibold tabular-nums">
+          <span className="text-sm font-semibold tabular-nums">
             {sizeMb.toFixed(1)} MB
           </span>
           <span className="text-[11px] text-muted-foreground">
@@ -216,7 +216,7 @@ function TableCounts({ counts }: { counts: Record<string, number> }) {
           <p className="truncate text-[11px] text-muted-foreground">
             {TABLE_LABELS[table] ?? table}
           </p>
-          <p className="font-mono text-sm font-semibold tabular-nums">
+          <p className="text-sm font-semibold tabular-nums">
             {n.toLocaleString("es-AR")}
           </p>
         </div>
@@ -235,7 +235,7 @@ function CostEstimate({ sizeMb }: { sizeMb: number }) {
   return (
     <p className="text-[11px] text-muted-foreground">
       Almacenamiento en GCS:{" "}
-      <span className="font-mono">USD {storageUsd.toFixed(2)}</span>/mes
+      <span className="tabular-nums">USD {storageUsd.toFixed(2)}</span>/mes
       {" · "}
       No incluye cómputo de Cloud Run, que depende del tráfico.
     </p>

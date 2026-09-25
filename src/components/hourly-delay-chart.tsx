@@ -41,7 +41,7 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
             <span className="inline-block size-2 rounded-full" style={{ background: p.color }} />
             {p.name}
           </span>
-          <span className="font-mono font-medium">{p.value}</span>
+          <span className="font-medium tabular-nums">{p.value}</span>
         </div>
       ))}
     </div>

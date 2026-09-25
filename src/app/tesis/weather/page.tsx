@@ -74,7 +74,7 @@ export default function TesisWeatherPage() {
             . Abrí DevTools → Network para ver la request.
           </p>
           {data?.fetchedAt ? (
-            <p className="font-mono text-[11px] text-muted-foreground">
+            <p className="text-[11px] tabular-nums text-muted-foreground">
               Última actualización:{" "}
               {new Date(data.fetchedAt).toLocaleString("es-AR", {
                 dateStyle: "short",
@@ -107,16 +107,16 @@ export default function TesisWeatherPage() {
                   <CardContent className="space-y-3">
                     <div className="grid grid-cols-3 gap-2">
                       <div className="rounded-md border bg-muted/30 p-2">
-                        <div className="flex items-center gap-1 text-[10px] uppercase tracking-wide text-muted-foreground"><Thermometer className="size-4" />Temp</div>
-                        <div className="mt-1 font-mono text-sm">{atlStation.temperatureF === null ? "—" : `${atlStation.temperatureF}°F`}</div>
+                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground"><Thermometer className="size-4" />Temp</div>
+                        <div className="mt-1 text-sm tabular-nums">{atlStation.temperatureF === null ? "—" : `${atlStation.temperatureF}°F`}</div>
                       </div>
                       <div className="rounded-md border bg-muted/30 p-2">
-                        <div className="flex items-center gap-1 text-[10px] uppercase tracking-wide text-muted-foreground"><Wind className="size-4" />Viento</div>
-                        <div className="mt-1 font-mono text-sm">{atlStation.windKt === null ? "—" : `${atlStation.windKt} kt`}</div>
+                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground"><Wind className="size-4" />Viento</div>
+                        <div className="mt-1 text-sm tabular-nums">{atlStation.windKt === null ? "—" : `${atlStation.windKt} kt`}</div>
                       </div>
                       <div className="rounded-md border bg-muted/30 p-2">
-                        <div className="flex items-center gap-1 text-[10px] uppercase tracking-wide text-muted-foreground"><Eye className="size-4" />Visibilidad</div>
-                        <div className="mt-1 font-mono text-sm">{atlStation.visibilitySm === null ? "—" : `${atlStation.visibilitySm} SM`}</div>
+                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground"><Eye className="size-4" />Visibilidad</div>
+                        <div className="mt-1 text-sm tabular-nums">{atlStation.visibilitySm === null ? "—" : `${atlStation.visibilitySm} SM`}</div>
                       </div>
                     </div>
                     <div className="space-y-1">

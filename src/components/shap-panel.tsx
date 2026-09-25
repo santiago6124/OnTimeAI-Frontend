@@ -69,7 +69,7 @@ export function ShapPanel({
           <>
             {mainCopy && !technical ? (
               <div className="rounded-lg border bg-muted/40 px-3 py-2.5">
-                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                <p className="text-[11px] text-muted-foreground">
                   Causa principal
                 </p>
                 <p className="mt-0.5 text-sm">{mainCopy.sentence}</p>
@@ -121,7 +121,7 @@ function FactorGroup({
 }) {
   return (
     <div className="space-y-2.5">
-      <p className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+      <p className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
         {icon}
         {heading}
       </p>
@@ -166,7 +166,7 @@ function ShapRow({
         </span>
         <span
           className={cn(
-            "shrink-0 font-mono tabular-nums",
+            "shrink-0 tabular-nums",
             isPositive ? "text-risk-high" : "text-risk-low",
           )}
         >
@@ -182,7 +182,7 @@ function ShapRow({
         </p>
       ) : factor.value && factor.value !== "NaN" ? (
         <div className="text-[10px] text-muted-foreground">
-          Valor observado: <span className="font-mono">{factor.value}</span>
+          Valor observado: <span className="tabular-nums">{factor.value}</span>
         </div>
       ) : null}
 
