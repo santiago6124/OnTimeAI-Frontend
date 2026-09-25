@@ -10,7 +10,7 @@
  * Lo que se ve en pantalla es este archivo, uno solo, para las dos.
  */
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowDownRight, ArrowUpRight, Clock, Plane, TriangleAlert, TrendingUp } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, Plane, TrendingUp } from "lucide-react";
 import { fmtProba, fmtTime, type MetricsSummary } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -20,7 +20,6 @@ type MetricProps = {
   delta?: string;
   trend?: "up" | "down" | "neutral";
   icon: React.ComponentType<{ className?: string }>;
-  tone?: "default" | "warning" | "danger";
 };
 
 function MetricCard({
@@ -29,25 +28,17 @@ function MetricCard({
   delta,
   trend = "neutral",
   icon: Icon,
-  tone = "default",
 }: MetricProps) {
   return (
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center justify-between text-sm font-medium text-muted-foreground">
           <span>{label}</span>
-          <Icon
-            className={cn(
-              "size-4",
-              tone === "warning" && "text-risk-medium",
-              tone === "danger" && "text-risk-high",
-              tone === "default" && "text-muted-foreground",
-            )}
-          />
+          <Icon className="size-4 text-muted-foreground" />
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-1.5">
-        <div className="text-2xl font-semibold tabular-nums tracking-tight">
+        <div className="text-3xl font-semibold tabular-nums tracking-tight">
           {value}
         </div>
         {delta ? (
@@ -74,9 +65,9 @@ function MetricCard({
 
 export function MetricCardsSkeleton() {
   return (
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      {Array.from({ length: 4 }).map((_, i) => (
-        <Card key={i} className="relative overflow-hidden">
+    <>
+      {Array.from({ length: 2 }).map((_, i) => (
+        <Card key={i}>
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <div className="h-3 w-28 animate-pulse rounded bg-muted" />
@@ -84,26 +75,24 @@ export function MetricCardsSkeleton() {
             </div>
           </CardHeader>
           <CardContent className="space-y-1.5">
-            <div className="h-8 w-20 animate-pulse rounded bg-muted" />
+            <div className="h-9 w-20 animate-pulse rounded bg-muted" />
             <div className="h-3 w-36 animate-pulse rounded bg-muted" />
           </CardContent>
         </Card>
       ))}
-    </div>
+    </>
   );
 }
 
 export function MetricCardsView({ data: m }: { data: MetricsSummary | null }) {
   if (!m) {
     return (
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <>
         {[
           { label: "Vuelos del día", icon: Plane },
           { label: "Prob. retraso promedio", icon: TrendingUp },
-          { label: "Puntualidad estimada", icon: Clock },
-          { label: "Vuelos riesgo alto", icon: TriangleAlert },
         ].map(({ label, icon: Icon }) => (
-          <Card key={label} className="relative overflow-hidden">
+          <Card key={label}>
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center justify-between text-sm font-medium text-muted-foreground">
                 <span>{label}</span>
@@ -111,12 +100,12 @@ export function MetricCardsView({ data: m }: { data: MetricsSummary | null }) {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-1.5">
-              <div className="text-2xl font-semibold tabular-nums tracking-tight text-muted-foreground">—</div>
+              <div className="text-3xl font-semibold tabular-nums tracking-tight text-muted-foreground">—</div>
               <div className="text-xs text-muted-foreground">Sin datos disponibles</div>
             </CardContent>
           </Card>
         ))}
-      </div>
+      </>
     );
   }
 
@@ -129,15 +118,11 @@ export function MetricCardsView({ data: m }: { data: MetricsSummary | null }) {
   const lastTick = m.last_tick_utc ? fmtTime(m.last_tick_utc) + " UTC" : "—";
 
   return (
-    <div className="space-y-3">
-    <p className="text-xs tabular-nums text-muted-foreground">
-      Última predicción: {lastTick}
-    </p>
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    <>
       <MetricCard
         label="Vuelos del día"
         value={String(total)}
-        delta={`modelo ${m.model_version}`}
+        delta={`Última predicción: ${lastTick}`}
         trend="neutral"
         icon={Plane}
       />
@@ -148,22 +133,6 @@ export function MetricCardsView({ data: m }: { data: MetricsSummary | null }) {
         trend={onTime > 0.85 ? "down" : "up"}
         icon={TrendingUp}
       />
-      <MetricCard
-        label="Puntualidad estimada"
-        value={`${Math.round(onTime * 100)}%`}
-        delta={onTime >= 0.85 ? "dentro de rango" : "por debajo del objetivo"}
-        trend={onTime >= 0.85 ? "down" : "up"}
-        icon={Clock}
-        tone={onTime < 0.80 ? "warning" : "default"}
-      />
-      <MetricCard
-        label="Vuelos riesgo alto"
-        value={String(high)}
-        delta={`${med} medios · ${low} bajos`}
-        icon={TriangleAlert}
-        tone={high > 10 ? "danger" : "warning"}
-      />
-    </div>
-    </div>
+    </>
   );
 }
