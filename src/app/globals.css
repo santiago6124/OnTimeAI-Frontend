@@ -97,6 +97,16 @@
 
   --radius: 0.625rem;
 
+  /* Espacio vertical que se lleva el navbar fijo, más el aire de abajo.
+   *
+   * Sale de sumar lo que mide: 12px de separación con el borde + 8px de padding
+   * de la píldora + 40px de alto de sus items + 8px de padding + 12px de aire
+   * antes del contenido. La barra está fuera del flujo, así que nada reserva
+   * ese lugar solo: lo pone `app-shell` como padding superior del contenido.
+   * Vive acá, y no escrito a mano en los dos archivos, porque si cambia el alto
+   * de la píldora tienen que moverse juntos. */
+  --nav-offset: 5rem;
+
   /* Riesgo de retraso.
    *
    * Es el unico color semantico que queda, y se queda porque es el unico lugar

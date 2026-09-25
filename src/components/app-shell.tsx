@@ -34,7 +34,12 @@ export function AppShell({
     // al borde inferior en vez de tener aire para respirar al hacer scroll.
     <div className="safe-bottom flex min-h-svh flex-col">
       <AppNav />
-      <main className="mx-auto flex w-full min-w-0 max-w-7xl flex-1 flex-col gap-4 px-4 pb-10 md:px-6">
+      {/* El navbar es `fixed`, así que no reserva su lugar: este padding es
+          el que hace que el contenido arranque despejado. De ahí en adelante
+          pasa por debajo de la píldora al hacer scroll, que es la gracia.
+          `env()` va sumado acá y no con la clase `safe-top`, que anularía el
+          cálculo entero —ver la nota de capas en globals.css—. */}
+      <main className="mx-auto flex w-full min-w-0 max-w-7xl flex-1 flex-col gap-4 px-4 pt-[calc(var(--nav-offset)_+_env(safe-area-inset-top))] pb-10 md:px-6">
         {children}
       </main>
     </div>

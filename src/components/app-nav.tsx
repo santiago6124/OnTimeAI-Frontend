@@ -120,21 +120,32 @@ export function AppNav() {
   }
 
   return (
+    // `fixed` y no `sticky`: es lo que saca la barra del flujo. Mientras estaba
+    // en el flujo ocupaba altura propia dentro de una banda opaca, así que el
+    // contenido no podía pasarle por debajo —quedaba tapado por la banda— y la
+    // página se leía como un bloque aparte que arrancaba más abajo. Fuera del
+    // flujo, la píldora flota y el contenido le pasa por detrás al hacer
+    // scroll. El hueco inicial lo pone `--nav-offset` desde `app-shell`.
+    //
+    // `pointer-events-none` en el contenedor y `auto` en la píldora: el
+    // contenedor ocupa todo el ancho y sin esto se comería los clics de lo que
+    // quedara debajo, a los costados de la píldora.
+    //
     // `safe-top` y el espaciado van en elementos distintos a propósito. Los dos
     // escriben `padding-top`, pero `.safe-top` está definida fuera de toda capa
     // en globals.css y las utilidades de Tailwind viven en `@layer utilities`:
     // el CSS sin capa le gana a cualquier capa, así que puestas juntas
-    // `env(safe-area-inset-top)` —que en escritorio vale 0— pisaba el `pt-6` y
+    // `env(safe-area-inset-top)` —que en escritorio vale 0— pisaba el padding y
     // la barra quedaba pegada al borde. Ver la nota en globals.css.
-    <div className="safe-top sticky top-0 z-40 bg-background">
-      <div className="flex justify-center px-4 pt-6 pb-4">
+    <div className="safe-top pointer-events-none fixed inset-x-0 top-0 z-40">
+      <div className="flex justify-center px-4 pt-3">
         <nav
           aria-label="Navegación principal"
           // `overflow-x-auto` es lo que salva al teléfono: con perfil de
           // operaciones y rol de superadmin son siete entradas más el reloj, y
           // eso no entra en 390 px de ancho. Sin scroll las últimas quedarían
           // fuera de alcance.
-          className="flex max-w-full items-center gap-1 overflow-x-auto rounded-full border bg-background p-2 shadow-sm"
+          className="pointer-events-auto flex max-w-full items-center gap-1 overflow-x-auto rounded-full border bg-background p-2 shadow-sm"
         >
           {/* El dibujo es blanco sobre transparente, así que sobre la píldora
               clara desaparecería; `brightness-0` lo lleva a negro sin tocar la
