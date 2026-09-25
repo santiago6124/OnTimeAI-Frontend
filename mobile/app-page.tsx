@@ -4,7 +4,6 @@ import { AppShell } from "@/components/app-shell";
 import { MetricCards } from "@/components/metric-cards";
 import { OperationalImpactCards } from "@/components/operational-impact-cards";
 import { FlightsTable } from "@/components/flights-table";
-import { WeatherCard } from "@/components/weather-card";
 import { HourlyDelayChart } from "@/components/hourly-delay-chart";
 import { ModelBadge } from "@/components/model-badge";
 import { useSession } from "@/components/providers/session-provider";
@@ -30,7 +29,7 @@ export default function DashboardPage() {
 
   return (
     <AppShell title="Dashboard operacional">
-      <div className="space-y-4">
+      <div className="space-y-6">
         <header className="flex flex-col gap-1">
           <h1 className="text-2xl font-semibold tracking-tight">
             Vuelos del día
@@ -40,21 +39,23 @@ export default function DashboardPage() {
           </p>
         </header>
 
-        <MetricCards />
-
-        <OperationalImpactCards />
-
-        <div className="grid gap-4 lg:grid-cols-3">
-          <div className="lg:col-span-2">
-            <HourlyDelayChart />
-          </div>
-          <div className="flex flex-col gap-4">
-            {(role === "admin" || role === "superadmin") && <ModelBadge />}
-            <WeatherCard />
-          </div>
+        {/* Las tres tarjetas van en una sola grilla, y por eso las dos vistas
+            devuelven fragmentos en vez de dibujar cada una la suya. Acá los
+            componentes traen sus datos al montar, así que las tarjetas son
+            hijas directas de la grilla sin más. */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <MetricCards />
+          <OperationalImpactCards />
         </div>
 
+        {/* A todo el ancho: es lo único de la pantalla que se lee de un
+            vistazo, y antes compartía la fila con el clima. */}
+        <HourlyDelayChart />
+
         <FlightsTable />
+
+        {/* Al final: es ficha técnica del modelo, no dato operativo. */}
+        {(role === "admin" || role === "superadmin") && <ModelBadge />}
       </div>
     </AppShell>
   );

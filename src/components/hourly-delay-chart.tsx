@@ -7,7 +7,7 @@ import { api, type HourlyBucket } from "@/lib/api";
 
 function ChartSkeleton() {
   return (
-    <div className="h-[220px] w-full">
+    <div className="h-[300px] w-full">
       <div className="flex h-full items-end gap-1 px-4 pb-6">
         {Array.from({ length: 18 }).map((_, i) => (
           <div
@@ -97,11 +97,11 @@ export function HourlyDelayChart({ initialData }: { initialData?: HourlyBucket[]
         {loading ? (
           <ChartSkeleton />
         ) : data.length === 0 ? (
-          <div className="flex h-[220px] items-center justify-center text-sm text-muted-foreground">
+          <div className="flex h-[300px] items-center justify-center text-sm text-muted-foreground">
             Sin datos de predicciones para el día de hoy.
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height={220}>
+          <ResponsiveContainer width="100%" height={300}>
             <BarChart data={chartData} barSize={18} barGap={0}>
               <CartesianGrid vertical={false} strokeDasharray="3 3" />
               <XAxis
