@@ -18,8 +18,8 @@ const PAGINA = readFileSync(
   join(process.cwd(), "src", "app", "reports", "page.tsx"),
   "utf8",
 );
-const SIDEBAR = readFileSync(
-  join(process.cwd(), "src", "components", "app-sidebar.tsx"),
+const NAVBAR = readFileSync(
+  join(process.cwd(), "src", "components", "app-nav.tsx"),
   "utf8",
 );
 
@@ -48,17 +48,23 @@ describe("la página se protege sola", () => {
 
 describe("el menú no la muestra a quien no puede entrar", () => {
   it("la entrada depende del rol y no del perfil", () => {
-    expect(SIDEBAR).toContain("ADMIN_NAV");
-    expect(SIDEBAR).toMatch(/role === "admin" \|\| role === "superadmin"/);
+    expect(NAVBAR).toContain("NAV_ADMIN");
+    expect(NAVBAR).toMatch(/rol === "admin" \|\| rol === "superadmin"/);
   });
 
   it("no quedó colgada de las listas por perfil", () => {
-    // Que siga en AIRLINE_NAV la escondería de un admin con perfil de viajero,
-    // que es exactamente el bug que esto arregla.
-    const airline = SIDEBAR.slice(
-      SIDEBAR.indexOf("const AIRLINE_NAV"),
-      SIDEBAR.indexOf("const ADMIN_NAV"),
+    // Que siga en la lista de operaciones la escondería de un admin con perfil
+    // de viajero, que es exactamente el bug que esto arregla. Y que esté en la
+    // de viajero se la mostraría a cualquiera.
+    const operaciones = NAVBAR.slice(
+      NAVBAR.indexOf("const NAV_OPERACIONES"),
+      NAVBAR.indexOf("const NAV_VIAJERO"),
     );
-    expect(airline).not.toContain("/reports");
+    const viajero = NAVBAR.slice(
+      NAVBAR.indexOf("const NAV_VIAJERO"),
+      NAVBAR.indexOf("const NAV_ADMIN"),
+    );
+    expect(operaciones).not.toContain("/reports");
+    expect(viajero).not.toContain("/reports");
   });
 });

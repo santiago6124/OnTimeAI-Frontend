@@ -1,15 +1,16 @@
 "use client"
 
-import { useTheme } from "next-themes"
 import { Toaster as Sonner, type ToasterProps } from "sonner"
 import { CircleCheckIcon, InfoIcon, TriangleAlertIcon, OctagonXIcon, Loader2Icon } from "lucide-react"
 
 const Toaster = ({ ...props }: ToasterProps) => {
-  const { theme = "system" } = useTheme()
-
   return (
     <Sonner
-      theme={theme as ToasterProps["theme"]}
+      // La app tiene un unico tema claro, asi que el toast va fijo. Con
+      // `useTheme` de next-themes esto caia en "system" y los toasts salian
+      // oscuros sobre una app clara apenas el sistema operativo estuviera
+      // en modo noche.
+      theme="light"
       className="toaster group"
       icons={{
         success: (

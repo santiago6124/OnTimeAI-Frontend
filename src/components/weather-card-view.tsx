@@ -149,7 +149,7 @@ export function WeatherCardView({
 
             {/* METAR */}
             <div className="space-y-1">
-              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">METAR</div>
+              <div className="text-[10px] text-muted-foreground">METAR</div>
               <code className="block rounded bg-muted px-2 py-1.5 font-mono text-[11px] leading-relaxed text-muted-foreground">
                 {buildMetar(data)}
               </code>
@@ -192,14 +192,14 @@ function WeatherStat({
       alert ? "border-risk-high/30 bg-risk-high/5" : "bg-muted/30",
     )}>
       <div className={cn(
-        "flex items-center gap-1 text-[10px] uppercase tracking-wide",
+        "flex items-center gap-1 text-[10px]",
         alert ? "text-risk-high" : "text-muted-foreground",
       )}>
         {icon}
         {label}
       </div>
       <div className={cn(
-        "mt-1 font-mono text-sm font-medium",
+        "mt-1 text-sm font-medium tabular-nums",
         alert && "text-risk-high",
       )}>
         {value}

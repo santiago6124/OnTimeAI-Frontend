@@ -144,7 +144,7 @@ export function LiteFlightsTable({ initialFlights }: { initialFlights: Flight[] 
         ) : (
           <div className="divide-y">
             {/* Header */}
-            <div className="grid grid-cols-[1fr_1.5fr_1fr_120px] sm:grid-cols-[80px_1fr_1.5fr_1fr_120px] gap-3 px-4 py-2 bg-muted/40 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            <div className="grid grid-cols-[1fr_1.5fr_1fr_120px] sm:grid-cols-[80px_1fr_1.5fr_1fr_120px] gap-3 px-4 py-2 bg-muted/40 text-xs font-medium text-muted-foreground">
               <span className="hidden sm:block">Vuelo</span>
               <span>Ruta</span>
               <span className="hidden sm:block">Salida UTC</span>
@@ -166,7 +166,7 @@ export function LiteFlightsTable({ initialFlights }: { initialFlights: Flight[] 
                 <span className="hidden sm:block text-xs text-muted-foreground">{fmtTime(f.scheduled_out_utc)}</span>
                 <span><RiskBadge risk={f.risk} /></span>
                 <div className="flex flex-col items-end gap-1">
-                  <span className="font-mono text-sm font-semibold">{fmtProba(f.delay_probability)}</span>
+                  <span className="text-sm font-semibold tabular-nums">{fmtProba(f.delay_probability)}</span>
                   <div className="w-16 h-1 rounded-full bg-muted overflow-hidden">
                     <div
                       className={cn("h-full rounded-full transition-all", RISK_BAR[f.risk])}

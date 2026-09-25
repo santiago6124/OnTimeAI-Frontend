@@ -11,7 +11,7 @@ export function ModelBadgeView({ info }: { info: ModelInfo | null }) {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        <CardTitle className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
           <Activity className="size-4" />
           Modelo activo
         </CardTitle>
@@ -26,11 +26,11 @@ export function ModelBadgeView({ info }: { info: ModelInfo | null }) {
         {info?.live_auc != null && (
           <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
             <span className="text-muted-foreground">AUC live</span>
-            <span className="font-mono font-medium">{info.live_auc.toFixed(3)}</span>
+            <span className="font-medium tabular-nums">{info.live_auc.toFixed(3)}</span>
             <span className="text-muted-foreground">Brier</span>
-            <span className="font-mono font-medium">{info.live_brier?.toFixed(3)}</span>
+            <span className="font-medium tabular-nums">{info.live_brier?.toFixed(3)}</span>
             <span className="text-muted-foreground">Actuals</span>
-            <span className="font-mono font-medium">{info.n_actuals?.toLocaleString()}</span>
+            <span className="font-medium tabular-nums">{info.n_actuals?.toLocaleString()}</span>
           </div>
         )}
       </CardContent>

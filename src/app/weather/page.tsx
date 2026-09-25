@@ -62,7 +62,7 @@ export default function WeatherPage() {
             )}
           </div>
           {data?.fetchedAt && (
-            <p className="font-mono text-[11px] text-muted-foreground">
+            <p className="text-[11px] tabular-nums text-muted-foreground">
               Última actualización:{" "}
               {new Date(data.fetchedAt).toLocaleString("es-AR", {
                 dateStyle: "short",
@@ -96,22 +96,22 @@ export default function WeatherPage() {
                   <CardContent className="space-y-3">
                     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                       <div className="rounded-md border bg-muted/30 p-3">
-                        <div className="flex items-center gap-1 text-xs uppercase tracking-wide text-muted-foreground">
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
                           <Thermometer className="size-3.5" />Temp
                         </div>
-                        <div className="mt-1 font-mono text-sm">{atlStation.temperatureF === null ? "—" : `${atlStation.temperatureF}°F`}</div>
+                        <div className="mt-1 text-sm tabular-nums">{atlStation.temperatureF === null ? "—" : `${atlStation.temperatureF}°F`}</div>
                       </div>
                       <div className="rounded-md border bg-muted/30 p-3">
-                        <div className="flex items-center gap-1 text-xs uppercase tracking-wide text-muted-foreground">
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
                           <Wind className="size-3.5" />Viento
                         </div>
-                        <div className="mt-1 font-mono text-sm">{atlStation.windKt === null ? "—" : `${atlStation.windKt} kt`}</div>
+                        <div className="mt-1 text-sm tabular-nums">{atlStation.windKt === null ? "—" : `${atlStation.windKt} kt`}</div>
                       </div>
                       <div className="col-span-2 rounded-md border bg-muted/30 p-3 sm:col-span-1">
-                        <div className="flex items-center gap-1 text-xs uppercase tracking-wide text-muted-foreground">
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
                           <Eye className="size-3.5" />Visibilidad
                         </div>
-                        <div className="mt-1 font-mono text-sm">{atlStation.visibilitySm === null ? "—" : `${atlStation.visibilitySm} SM`}</div>
+                        <div className="mt-1 text-sm tabular-nums">{atlStation.visibilitySm === null ? "—" : `${atlStation.visibilitySm} SM`}</div>
                       </div>
                     </div>
                     <div className="space-y-1">

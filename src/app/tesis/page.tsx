@@ -104,7 +104,7 @@ export default function TesisPage() {
                     <CardDescription>{e.description}</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                    <div className="text-[11px] text-muted-foreground">
                       {e.status}
                     </div>
                   </CardContent>

@@ -2,12 +2,13 @@
  * La marca, centrada, para las pantallas que están fuera del dashboard.
  *
  * Usa `/icon.png` y no `/logopagina.png`, que es la misma figura en 1024px y
- * 1,4 MB: acá pesaría veinte veces más para verse a 48px. La barra lateral
- * sigue con la suya porque ya está cargada cuando aparece.
+ * 1,4 MB: acá pesaría veinte veces más para verse a 48px. El navbar usa el mismo,
+ * por el mismo motivo.
  *
- * El dibujo es blanco sobre transparente, así que en tema claro desaparecería.
- * `brightness-0` lo lleva a negro cuando el fondo es claro; en oscuro se deja
- * como está. La transparencia no se toca, así que no aparece ningún recuadro.
+ * El dibujo es blanco sobre transparente, así que sobre el fondo claro
+ * desaparecería. `brightness-0` lo lleva a negro sin tocar la transparencia,
+ * así que no aparece ningún recuadro. Antes esto convivía con
+ * `dark:brightness-100`; con un solo tema esa variante ya no se dispara nunca.
  */
 export function BrandMark({ showName = true }: { showName?: boolean }) {
   return (
@@ -15,14 +16,14 @@ export function BrandMark({ showName = true }: { showName?: boolean }) {
       {/* eslint-disable-next-line @next/next/no-img-element --
           `next/image` haria pasar el icono por el optimizador en tiempo de
           ejecucion, justo en la primera pantalla que carga alguien que todavia
-          no inicio sesion. Son 73 KB para un dibujo de 48px: no compensa. La
-          barra lateral usa `<img>` por lo mismo. */}
+          no inicio sesion. Son 73 KB para un dibujo de 48px: no compensa. El
+          navbar usa `<img>` por lo mismo. */}
       <img
         src="/icon.png"
         alt={showName ? "" : "OnTimeAI"}
         width={48}
         height={48}
-        className="size-12 brightness-0 dark:brightness-100"
+        className="size-12 brightness-0"
       />
       {/* La figura sola no dice el nombre, y el login es la primera pantalla
           que ve alguien que todavía no sabe dónde está. Se apaga donde el

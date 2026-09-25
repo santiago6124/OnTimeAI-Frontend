@@ -32,9 +32,9 @@ function MetricCard({
   tone = "default",
 }: MetricProps) {
   return (
-    <Card className="relative overflow-hidden">
+    <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="flex items-center justify-between text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        <CardTitle className="flex items-center justify-between text-sm font-medium text-muted-foreground">
           <span>{label}</span>
           <Icon
             className={cn(
@@ -47,7 +47,7 @@ function MetricCard({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-1.5">
-        <div className="font-mono text-2xl font-semibold tracking-tight">
+        <div className="text-2xl font-semibold tabular-nums tracking-tight">
           {value}
         </div>
         {delta ? (
@@ -67,15 +67,6 @@ function MetricCard({
             {delta}
           </div>
         ) : null}
-        {/* Accent bar based on tone */}
-        <div
-          className={cn(
-            "absolute bottom-0 left-0 h-0.5 w-full",
-            tone === "danger" && "bg-risk-high/40",
-            tone === "warning" && "bg-risk-medium/40",
-            tone === "default" && "bg-primary/20",
-          )}
-        />
       </CardContent>
     </Card>
   );
@@ -114,13 +105,13 @@ export function MetricCardsView({ data: m }: { data: MetricsSummary | null }) {
         ].map(({ label, icon: Icon }) => (
           <Card key={label} className="relative overflow-hidden">
             <CardHeader className="pb-2">
-              <CardTitle className="flex items-center justify-between text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              <CardTitle className="flex items-center justify-between text-sm font-medium text-muted-foreground">
                 <span>{label}</span>
                 <Icon className="size-4" />
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-1.5">
-              <div className="font-mono text-2xl font-semibold tracking-tight text-muted-foreground">—</div>
+              <div className="text-2xl font-semibold tabular-nums tracking-tight text-muted-foreground">—</div>
               <div className="text-xs text-muted-foreground">Sin datos disponibles</div>
             </CardContent>
           </Card>
@@ -139,7 +130,7 @@ export function MetricCardsView({ data: m }: { data: MetricsSummary | null }) {
 
   return (
     <div className="space-y-3">
-    <p className="text-[11px] font-mono text-muted-foreground">
+    <p className="text-xs tabular-nums text-muted-foreground">
       Última predicción: {lastTick}
     </p>
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
