@@ -53,20 +53,20 @@ function Tooltip({ active, payload }: { active?: boolean; payload?: { payload: F
       <dl className="mt-1 space-y-0.5 text-muted-foreground">
         <div className="flex gap-4">
           <dt>Antes de salir</dt>
-          <dd className="ml-auto font-mono text-foreground tabular-nums">
+          <dd className="ml-auto text-foreground tabular-nums">
             {f.antes === null ? "—" : f.antes.toFixed(3)}
           </dd>
         </div>
         <div className="flex gap-4">
           <dt>En vuelo</dt>
-          <dd className="ml-auto font-mono text-foreground tabular-nums">
+          <dd className="ml-auto text-foreground tabular-nums">
             {f.enVuelo === null ? "—" : f.enVuelo.toFixed(3)}
           </dd>
         </div>
         {brecha !== null && (
           <div className="flex gap-4 border-t border-border pt-1">
             <dt>Ventaja de esperar</dt>
-            <dd className="ml-auto font-mono text-foreground tabular-nums">
+            <dd className="ml-auto text-foreground tabular-nums">
               {brecha > 0 ? "+" : ""}
               {brecha.toFixed(3)}
             </dd>

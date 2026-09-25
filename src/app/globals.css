@@ -52,170 +52,84 @@
 }
 
 /* ============================================================
-   Base (light) tokens — operations palette default
+   Tokens — shadcn `neutral`, un solo tema claro
+   ============================================================
+
+   Son los valores de fabrica de shadcn, sin retocar. El proyecto traia un
+   primario azul (`oklch(0.55 0.18 250)`) aplicado a botones, focus rings y al
+   item activo de la navegacion: eso solo ya hacia que la app se leyera como
+   una plantilla de administracion cualquiera. En shadcn el primario es casi
+   negro y el color aparece unicamente donde significa algo — aca, el riesgo de
+   un vuelo y las series de los graficos.
+
+   Se fue el bloque `.dark` y se fueron las cinco paletas intercambiables
+   (`tower`, `ocean`, `forest`, `sunset`, `mono`). Un selector de color hacia
+   imposible afinar nada, porque cada ajuste tenia que verse bien en cinco
+   tonos a la vez.
+
+   `@custom-variant dark` de mas arriba se queda, y es lo que vuelve seguro
+   borrar el tema oscuro: ata el prefijo `dark:` a una clase que ya nadie
+   aplica, asi que las variantes que siguen dentro de `components/ui` quedan
+   inertes —y siguen ahi para que un `shadcn add` futuro no choque—. Sin esa
+   linea, `dark:` volveria a `prefers-color-scheme` y los primitivos se
+   pondrian oscuros contra estos tokens claros en cuanto alguien tuviera el
+   sistema en modo noche.
    ============================================================ */
 :root {
-  --background: oklch(0.99 0.004 240);
-  --foreground: oklch(0.18 0.02 250);
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.18 0.02 250);
+  --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.18 0.02 250);
-  --primary: oklch(0.55 0.18 250);
-  --primary-foreground: oklch(0.99 0 0);
-  --secondary: oklch(0.96 0.01 240);
-  --secondary-foreground: oklch(0.22 0.03 250);
-  --muted: oklch(0.96 0.01 240);
-  --muted-foreground: oklch(0.52 0.02 250);
-  --accent: oklch(0.95 0.03 240);
-  --accent-foreground: oklch(0.22 0.05 250);
-  --destructive: oklch(0.62 0.23 27);
-  --border: oklch(0.9 0.01 240);
-  --input: oklch(0.92 0.01 240);
-  --ring: oklch(0.62 0.15 250);
-
-  --risk-low: oklch(0.7 0.16 145);
-  --risk-medium: oklch(0.78 0.17 80);
-  --risk-high: oklch(0.62 0.24 27);
-
-  --chart-1: oklch(0.6 0.2 250);
-  --chart-2: oklch(0.7 0.17 200);
-  --chart-3: oklch(0.75 0.17 140);
-  --chart-4: oklch(0.78 0.18 70);
-  --chart-5: oklch(0.65 0.22 20);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
 
   --radius: 0.625rem;
 
-  --sidebar: oklch(0.98 0.005 240);
-  --sidebar-foreground: oklch(0.22 0.02 250);
-  --sidebar-primary: oklch(0.55 0.18 250);
-  --sidebar-primary-foreground: oklch(0.99 0 0);
-  --sidebar-accent: oklch(0.95 0.02 240);
-  --sidebar-accent-foreground: oklch(0.22 0.03 250);
-  --sidebar-border: oklch(0.9 0.01 240);
-  --sidebar-ring: oklch(0.62 0.15 250);
-}
+  /* Riesgo de retraso.
+   *
+   * Es el unico color semantico que queda, y se queda porque es el unico lugar
+   * donde la pantalla dice algo con el color y no con el texto.
+   *
+   * Los valores anteriores estaban calculados contra el fondo oscuro y sobre
+   * blanco daban 2.51:1 el verde y 2.04:1 el ambar — por debajo incluso del
+   * minimo para graficos. `text-risk-*` se usa en texto chico (los badges de
+   * riesgo, el detalle de un caso de prueba, el estado del harvester), asi que
+   * hacen falta 4.5:1. Estos son los pasos 700 de Tailwind, medidos sobre
+   * `--background` blanco: verde 4.94:1, ambar 5.05:1, rojo 6.42:1.
+   *
+   * El ambar va en hue 49 y no en 80: a la claridad que exige el contraste, el
+   * amarillo se vuelve oliva y deja de leerse como advertencia. */
+  --risk-low: oklch(0.527 0.154 150.069);
+  --risk-medium: oklch(0.555 0.163 48.998);
+  --risk-high: oklch(0.505 0.213 27.518);
 
-/* ============================================================
-   Dark (default) — Operations / Control Tower vibe
-   ============================================================ */
-.dark {
-  --background: oklch(0.14 0.02 250);
-  --foreground: oklch(0.96 0.01 240);
-  --card: oklch(0.19 0.025 250);
-  --card-foreground: oklch(0.96 0.01 240);
-  --popover: oklch(0.19 0.025 250);
-  --popover-foreground: oklch(0.96 0.01 240);
-  --primary: oklch(0.72 0.17 250);
-  --primary-foreground: oklch(0.14 0.02 250);
-  --secondary: oklch(0.26 0.03 250);
-  --secondary-foreground: oklch(0.96 0.01 240);
-  --muted: oklch(0.24 0.02 250);
-  --muted-foreground: oklch(0.7 0.02 240);
-  --accent: oklch(0.28 0.05 250);
-  --accent-foreground: oklch(0.96 0.01 240);
-  --destructive: oklch(0.7 0.2 22);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.62 0.18 250);
+  /* Las cinco series de graficos de fabrica de shadcn. */
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
 
-  --risk-low: oklch(0.75 0.18 145);
-  --risk-medium: oklch(0.82 0.18 80);
-  --risk-high: oklch(0.7 0.23 22);
-
-  --chart-1: oklch(0.7 0.2 250);
-  --chart-2: oklch(0.75 0.17 200);
-  --chart-3: oklch(0.78 0.18 140);
-  --chart-4: oklch(0.82 0.18 70);
-  --chart-5: oklch(0.72 0.22 20);
-
-  --sidebar: oklch(0.16 0.02 250);
-  --sidebar-foreground: oklch(0.96 0.01 240);
-  --sidebar-primary: oklch(0.72 0.17 250);
-  --sidebar-primary-foreground: oklch(0.14 0.02 250);
-  --sidebar-accent: oklch(0.24 0.03 250);
-  --sidebar-accent-foreground: oklch(0.96 0.01 240);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.62 0.18 250);
-}
-
-/* ============================================================
-   Color palettes — switched via data-palette on <html>
-   Each palette overrides the accent hue (primary + ring + sidebar-primary).
-   ============================================================ */
-html[data-palette="tower"] {
-  --primary: oklch(0.62 0.2 70);
-  --ring: oklch(0.7 0.18 70);
-  --sidebar-primary: oklch(0.62 0.2 70);
-  --sidebar-ring: oklch(0.7 0.18 70);
-}
-html[data-palette="tower"].dark {
-  --primary: oklch(0.78 0.17 70);
-  --primary-foreground: oklch(0.16 0.02 70);
-  --ring: oklch(0.7 0.18 70);
-  --sidebar-primary: oklch(0.78 0.17 70);
-  --sidebar-primary-foreground: oklch(0.16 0.02 70);
-  --sidebar-ring: oklch(0.7 0.18 70);
-}
-
-html[data-palette="ocean"] {
-  --primary: oklch(0.58 0.14 210);
-  --ring: oklch(0.7 0.14 210);
-  --sidebar-primary: oklch(0.58 0.14 210);
-  --sidebar-ring: oklch(0.7 0.14 210);
-}
-html[data-palette="ocean"].dark {
-  --primary: oklch(0.75 0.13 210);
-  --primary-foreground: oklch(0.14 0.03 210);
-  --ring: oklch(0.7 0.14 210);
-  --sidebar-primary: oklch(0.75 0.13 210);
-  --sidebar-primary-foreground: oklch(0.14 0.03 210);
-  --sidebar-ring: oklch(0.7 0.14 210);
-}
-
-html[data-palette="forest"] {
-  --primary: oklch(0.55 0.14 150);
-  --ring: oklch(0.68 0.14 150);
-  --sidebar-primary: oklch(0.55 0.14 150);
-  --sidebar-ring: oklch(0.68 0.14 150);
-}
-html[data-palette="forest"].dark {
-  --primary: oklch(0.75 0.15 150);
-  --primary-foreground: oklch(0.14 0.03 150);
-  --ring: oklch(0.68 0.14 150);
-  --sidebar-primary: oklch(0.75 0.15 150);
-  --sidebar-primary-foreground: oklch(0.14 0.03 150);
-  --sidebar-ring: oklch(0.68 0.14 150);
-}
-
-html[data-palette="sunset"] {
-  --primary: oklch(0.6 0.22 20);
-  --ring: oklch(0.7 0.2 20);
-  --sidebar-primary: oklch(0.6 0.22 20);
-  --sidebar-ring: oklch(0.7 0.2 20);
-}
-html[data-palette="sunset"].dark {
-  --primary: oklch(0.75 0.2 20);
-  --primary-foreground: oklch(0.16 0.04 20);
-  --ring: oklch(0.7 0.2 20);
-  --sidebar-primary: oklch(0.75 0.2 20);
-  --sidebar-primary-foreground: oklch(0.16 0.04 20);
-  --sidebar-ring: oklch(0.7 0.2 20);
-}
-
-html[data-palette="mono"] {
-  --primary: oklch(0.3 0 0);
-  --ring: oklch(0.55 0 0);
-  --sidebar-primary: oklch(0.3 0 0);
-  --sidebar-ring: oklch(0.55 0 0);
-}
-html[data-palette="mono"].dark {
-  --primary: oklch(0.9 0 0);
-  --primary-foreground: oklch(0.15 0 0);
-  --ring: oklch(0.55 0 0);
-  --sidebar-primary: oklch(0.9 0 0);
-  --sidebar-primary-foreground: oklch(0.15 0 0);
-  --sidebar-ring: oklch(0.55 0 0);
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
 }
 
 @layer base {

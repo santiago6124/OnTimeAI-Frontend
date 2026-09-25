@@ -50,16 +50,16 @@ export function PredictionEvolution({
             <CardTitle className="text-sm font-medium">Ciclo seleccionado</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
-            <CycleValue label="Momento" value={`${fmtTime(selected.predicted_at_utc)} UTC`} mono />
+            <CycleValue label="Momento" value={`${fmtTime(selected.predicted_at_utc)} UTC`} numero />
             <CycleValue label="Fase" value={PHASE_LABELS[selected.prediction_phase]} />
-            <CycleValue label="Probabilidad base calibrada" value={fmtProba(selected.base_probability)} mono />
-            <CycleValue label="Probabilidad final" value={fmtProba(selected.delay_probability)} mono emphasis />
+            <CycleValue label="Probabilidad base calibrada" value={fmtProba(selected.base_probability)} numero />
+            <CycleValue label="Probabilidad final" value={fmtProba(selected.delay_probability)} numero emphasis />
             <CycleValue
               label="Ajuste operativo"
               value={`${selected.operational_adjustment >= 0 ? "+" : ""}${(
                 selected.operational_adjustment * 100
               ).toFixed(1)} pp`}
-              mono
+              numero
             />
             <CycleValue
               label="Cambio vs. ciclo anterior"
@@ -68,12 +68,12 @@ export function PredictionEvolution({
                   ? "Primer ciclo"
                   : `${delta >= 0 ? "+" : ""}${(delta * 100).toFixed(1)} pp`
               }
-              mono={delta !== null}
+              numero={delta !== null}
             />
             <CycleValue
               label="Umbral usado"
               value={selected.threshold_used === null ? "No registrado" : fmtProba(selected.threshold_used)}
-              mono={selected.threshold_used !== null}
+              numero={selected.threshold_used !== null}
             />
             <CycleValue
               label="Estrategia de umbral"
@@ -91,18 +91,25 @@ export function PredictionEvolution({
 function CycleValue({
   label,
   value,
-  mono = false,
+  numero = false,
   emphasis = false,
 }: {
   label: string;
   value: string;
-  mono?: boolean;
+  /**
+   * Los valores de esta tarjeta son todos cifras —horarios, probabilidades,
+   * puntos porcentuales—, nunca identificadores. Antes iban en la familia
+   * monoespaciada, que es la de los códigos; lo que hace falta acá es que los
+   * dígitos se alineen en columna, y eso lo da `tabular-nums` sin cambiar de
+   * familia tipográfica.
+   */
+  numero?: boolean;
   emphasis?: boolean;
 }) {
   return (
     <div className="flex items-start justify-between gap-3 border-b border-border/70 pb-2 last:border-0 last:pb-0">
       <span className="text-xs text-muted-foreground">{label}</span>
-      <span className={`${mono ? "font-mono" : ""} ${emphasis ? "font-semibold" : ""} text-right text-xs`}>
+      <span className={`${numero ? "tabular-nums" : ""} ${emphasis ? "font-semibold" : ""} text-right text-xs`}>
         {value}
       </span>
     </div>

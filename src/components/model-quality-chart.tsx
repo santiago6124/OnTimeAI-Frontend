@@ -84,19 +84,19 @@ function Tooltip({ active, payload }: { active?: boolean; payload?: { payload: F
       <dl className="mt-1 space-y-0.5 text-muted-foreground">
         <div className="flex gap-3">
           <dt>Día</dt>
-          <dd className="ml-auto font-mono text-foreground tabular-nums">
+          <dd className="ml-auto text-foreground tabular-nums">
             {fila.diario === null ? "—" : fila.diario.toFixed(3)}
           </dd>
         </div>
         <div className="flex gap-3">
           <dt>Promedio {VENTANA_DIAS}d</dt>
-          <dd className="ml-auto font-mono text-foreground tabular-nums">
+          <dd className="ml-auto text-foreground tabular-nums">
             {fila.media === null ? "—" : fila.media.toFixed(3)}
           </dd>
         </div>
         <div className="flex gap-3">
           <dt>Vuelos</dt>
-          <dd className="ml-auto font-mono text-foreground tabular-nums">
+          <dd className="ml-auto text-foreground tabular-nums">
             {fila.n_flights}
           </dd>
         </div>

@@ -40,7 +40,7 @@ function Delta({ metrica, delta }: { metrica: Metrica; delta: number | null }) {
   return (
     <span className={`flex items-center gap-1 text-xs ${COLOR[dir]}`}>
       <Icono className="h-3.5 w-3.5" aria-hidden="true" />
-      <span className="font-mono tabular-nums">
+      <span className="tabular-nums">
         {signo}
         {delta!.toFixed(3)}
       </span>
@@ -64,7 +64,7 @@ function Cifra({
     <Card>
       <CardContent className="space-y-1">
         <p className="text-xs font-medium text-muted-foreground">{etiqueta}</p>
-        <p className="font-mono text-2xl font-semibold tabular-nums">{valor}</p>
+        <p className="text-2xl font-semibold tabular-nums">{valor}</p>
         {children}
         <p className="pt-1 text-xs leading-snug text-muted-foreground">
           {explicacion}

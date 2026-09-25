@@ -88,10 +88,10 @@ export function RoutesTable({ routes, loading, selectedRoute, onRouteSelect }: R
                           <span className="font-mono text-sm">{r.route}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="text-right font-mono text-sm">{r.total_flights}</TableCell>
+                      <TableCell className="text-right text-sm tabular-nums">{r.total_flights}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex flex-col items-end gap-1">
-                          <span className={cn("font-mono text-sm font-medium", rateText)}>
+                          <span className={cn("text-sm font-medium tabular-nums", rateText)}>
                             {Math.round(r.on_time_rate * 100)}%
                           </span>
                           <div className="h-1 w-16 overflow-hidden rounded-full bg-muted">
@@ -102,7 +102,7 @@ export function RoutesTable({ routes, loading, selectedRoute, onRouteSelect }: R
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="text-right font-mono text-sm text-muted-foreground">
+                      <TableCell className="text-right text-sm tabular-nums text-muted-foreground">
                         {Math.round(r.avg_delay_min)} min
                       </TableCell>
                     </TableRow>

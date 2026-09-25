@@ -66,7 +66,7 @@ function ShapChart({ factors }: { factors: ShapFactor[] }) {
         return (
           <div key={f.feature} className="grid grid-cols-[1fr_auto] gap-x-2 items-center text-xs">
             <span className="text-muted-foreground truncate leading-tight">{f.label}</span>
-            <span className={`font-mono font-semibold tabular-nums ${positive ? "text-red-500" : "text-blue-500"}`}>
+            <span className={`font-semibold tabular-nums ${positive ? "text-red-500" : "text-blue-500"}`}>
               {positive ? "+" : "−"}{(f.contribution * 100).toFixed(1)}%
             </span>
             {/* bar track */}
@@ -150,7 +150,7 @@ function CP01Card({ data }: { data: CP01Result | null }) {
 
         {top3.length > 0 && (
           <div>
-            <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">
+            <p className="text-xs font-medium text-muted-foreground mb-2">
               Factores principales (SHAP)
             </p>
             <ShapChart factors={top3} />

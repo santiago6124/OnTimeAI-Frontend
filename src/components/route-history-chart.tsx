@@ -50,9 +50,9 @@ export function RouteHistoryChart({ origin, dest }: { origin: string; dest: stri
           </CardTitle>
           {avg !== null && (
             <span className={
-              avg >= 0.75 ? "text-xs font-mono text-risk-low"
-              : avg >= 0.6 ? "text-xs font-mono text-risk-medium"
-              : "text-xs font-mono text-risk-high"
+              avg >= 0.75 ? "text-xs tabular-nums text-risk-low"
+              : avg >= 0.6 ? "text-xs tabular-nums text-risk-medium"
+              : "text-xs tabular-nums text-risk-high"
             }>
               Prom. {Math.round(avg * 100)}%
             </span>

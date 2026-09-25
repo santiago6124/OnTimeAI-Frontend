@@ -98,7 +98,7 @@ export function PredictionHistoryChart({
         {header}
         <CardContent>
           <div className="flex flex-col items-center justify-center gap-2 py-6">
-            <div className="font-mono text-4xl font-bold" style={{ color }}>
+            <div className="text-4xl font-bold tabular-nums" style={{ color }}>
               {latestProba}%
             </div>
             <div className="text-xs text-muted-foreground">{data[0].fullTime}</div>
@@ -200,7 +200,7 @@ export function PredictionHistoryChart({
               <span className="block text-[10px] text-muted-foreground">
                 Ciclo {index + 1}
               </span>
-              <span className="block font-mono font-semibold" style={{ color: riskColor(cycle.proba) }}>
+              <span className="block font-semibold tabular-nums" style={{ color: riskColor(cycle.proba) }}>
                 {cycle.proba}%
               </span>
               <span className="block text-[10px] text-muted-foreground">{cycle.time} UTC</span>
