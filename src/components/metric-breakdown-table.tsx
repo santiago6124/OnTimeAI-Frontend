@@ -24,7 +24,7 @@ function Num({ v, pct = true }: { v: number | null; pct?: boolean }) {
     return <span className="text-muted-foreground">—</span>;
   }
   return (
-    <span className="font-mono tabular-nums">
+    <span className="tabular-nums">
       {pct ? `${Math.round(v * 100)}%` : v.toFixed(3)}
     </span>
   );
@@ -78,7 +78,7 @@ export function MetricBreakdownTable({
                     </span>
                   )}
                 </TableCell>
-                <TableCell className="text-right font-mono tabular-nums">
+                <TableCell className="text-right tabular-nums">
                   {f.n_flights}
                 </TableCell>
                 <TableCell className="text-right">

@@ -357,7 +357,7 @@ function FlightRow({ flight }: { flight: Flight }) {
         </div>
       </TableCell>
       <TableCell className="hidden md:table-cell">
-        <div className="flex flex-col gap-0.5 font-mono text-sm">
+        <div className="flex flex-col gap-0.5 text-sm tabular-nums">
           <span>{fmtTime(flight.scheduled_out_utc)}</span>
           {flight.estimated_out_utc && flight.estimated_out_utc !== flight.scheduled_out_utc ? (
             <span className="text-[10px] leading-none text-risk-medium">Est: {fmtTime(flight.estimated_out_utc)}</span>
@@ -368,7 +368,7 @@ function FlightRow({ flight }: { flight: Flight }) {
         </div>
       </TableCell>
       <TableCell className="hidden md:table-cell">
-        <div className="flex flex-col gap-0.5 font-mono text-sm">
+        <div className="flex flex-col gap-0.5 text-sm tabular-nums">
           <span>{fmtTime(flight.scheduled_in_utc)}</span>
           {flight.estimated_in_utc && flight.estimated_in_utc !== flight.scheduled_in_utc ? (
             <span className="text-[10px] leading-none text-muted-foreground">Est: {fmtTime(flight.estimated_in_utc)}</span>
@@ -396,7 +396,7 @@ function FlightRow({ flight }: { flight: Flight }) {
       </TableCell>
       <TableCell><RiskBadge risk={flight.risk} /></TableCell>
       <TableCell className={cn(
-        "text-right font-mono text-sm font-medium",
+        "text-right text-sm font-medium tabular-nums",
         flight.delay_probability >= 0.35 && "text-risk-high",
         flight.delay_probability >= 0.15 && flight.delay_probability < 0.35 && "text-risk-medium",
         flight.delay_probability < 0.15 && "text-risk-low",

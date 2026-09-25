@@ -179,7 +179,7 @@ function FlightTable({ flights }: { flights: Flight[] }) {
     <div className="overflow-x-auto rounded-lg border">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b bg-muted/40 text-[11px] uppercase tracking-wide text-muted-foreground">
+          <tr className="border-b bg-muted/40 text-[11px] text-muted-foreground">
             <th className="py-2 pl-4 pr-3 text-left">Vuelo</th>
             <th className="px-3 py-2 text-left">Ruta</th>
             <th className="px-3 py-2 text-left">Salida UTC</th>
@@ -284,7 +284,7 @@ export function VerificacionView({
               },
             ].map((s) => (
               <div key={s.label} className="rounded-lg border p-4">
-                <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                <div className="text-[11px] text-muted-foreground">
                   {s.label}
                 </div>
                 <div className="mt-1 text-2xl font-bold tabular-nums">{s.value}</div>

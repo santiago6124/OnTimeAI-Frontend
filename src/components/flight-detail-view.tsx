@@ -147,8 +147,8 @@ export function FlightDetailView({
               <Separator />
               <KV label="Nivel de riesgo" value={<RiskBadge risk={flight.risk} />} />
               <Separator />
-              <KV label="Aeronave" value={flight.aircraft_type || "—"} mono />
-              <KV label="Última predicción" value={fmtTime(flight.predicted_at_utc)} mono />
+              <KV label="Aeronave" value={flight.aircraft_type || "—"} variante="codigo" />
+              <KV label="Última predicción" value={fmtTime(flight.predicted_at_utc)} variante="numero" />
               <Separator />
               <KV
                 label="Resultado real"
@@ -187,7 +187,7 @@ function RouteEndpoint({
 
   return (
     <div className={`flex min-w-48 flex-col gap-2 ${align === "right" ? "md:items-end md:text-right" : ""}`}>
-      <div className="text-xs uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div className="text-xs text-muted-foreground">{label}</div>
       <span className="font-mono text-3xl font-semibold">{code}</span>
       <div className={`grid gap-1 ${align === "right" ? "md:justify-items-end" : ""}`}>
         <RouteTime label="Programada" value={scheduledTime} />
@@ -206,24 +206,38 @@ function RouteTime({
   label: string; value: string; className?: string;
 }) {
   return (
-    <div className={`flex items-baseline gap-2 font-mono text-sm ${className ?? "text-muted-foreground"}`}>
-      <span className="w-20 text-[10px] uppercase tracking-wide">{label}</span>
+    <div className={`flex items-baseline gap-2 text-sm tabular-nums ${className ?? "text-muted-foreground"}`}>
+      <span className="w-20 text-[10px]">{label}</span>
       <span className="text-base text-foreground">{fmtTime(value)}</span>
     </div>
   );
 }
 
 function KV({
-  label, value, emphasis = false, mono = false,
+  label, value, emphasis = false, variante,
 }: {
-  label: string; value: React.ReactNode; emphasis?: boolean; mono?: boolean;
+  label: string;
+  value: React.ReactNode;
+  emphasis?: boolean;
+  /**
+   * La bandera anterior ponía la familia monoespaciada en dos casos que no son
+   * lo mismo: el tipo de aeronave —un código, B739— y la hora de la última
+   * predicción —una cifra—. Al código le sirve esa familia; a la hora solo le
+   * hace falta que los dígitos ocupen lo mismo para no bailar entre renders.
+   */
+  variante?: "codigo" | "numero";
 }) {
+  const clases = [
+    emphasis ? "text-lg font-semibold tabular-nums" : "text-sm",
+    variante === "codigo" ? "font-mono" : "",
+    variante === "numero" ? "tabular-nums" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
   return (
     <div className="flex items-center justify-between gap-3">
       <span className="text-xs text-muted-foreground">{label}</span>
-      <span className={emphasis ? "font-mono text-lg font-semibold" : mono ? "font-mono text-sm" : "text-sm"}>
-        {value}
-      </span>
+      <span className={clases}>{value}</span>
     </div>
   );
 }

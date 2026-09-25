@@ -86,7 +86,7 @@ function ImpactCard({
   return (
     <Card className="relative overflow-hidden">
       <CardHeader className="pb-2">
-        <CardTitle className="flex items-center justify-between gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        <CardTitle className="flex items-center justify-between gap-2 text-xs font-medium text-muted-foreground">
           <span className="flex items-center gap-1.5">
             {label}
             <Tooltip>
@@ -105,7 +105,7 @@ function ImpactCard({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-1.5">
-        <div className="font-mono text-2xl font-semibold tracking-tight tabular-nums">
+        <div className="text-2xl font-semibold tracking-tight tabular-nums">
           {value}
         </div>
         <div className="text-xs text-muted-foreground">{detail}</div>

@@ -62,7 +62,7 @@ export default async function LiveLayout({ children }: { children: ReactNode }) 
       {/* Hero */}
       <div className="border-b bg-muted/30">
         <div className="max-w-6xl mx-auto px-4 py-8">
-          <p className="text-xs font-medium text-primary uppercase tracking-widest mb-2">
+          <p className="text-xs font-medium text-primary mb-2">
             Hartsfield-Jackson Atlanta International Airport
           </p>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mb-2">
