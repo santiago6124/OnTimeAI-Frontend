@@ -9,9 +9,26 @@ import { FlightsTable } from "@/components/flights-table";
 import { HourlyDelayChart } from "@/components/hourly-delay-chart";
 import { ModelBadge } from "@/components/model-badge";
 import { getServerRole } from "@/lib/server-auth";
+import { getServerProfile } from "@/lib/server-profile";
+import { HomeViajero } from "@/components/viajero/home-viajero";
 
 export default async function DashboardPage() {
-  const role = await getServerRole();
+  const [role, profile] = await Promise.all([
+    getServerRole(),
+    getServerProfile(),
+  ]);
+
+  // El perfil se resuelve en el servidor, no con `useProfile()`, porque de eso
+  // depende qué árbol se dibuja y los dos árboles traen sus datos durante el
+  // render. Decidirlo en el cliente obligaría a montar los dos.
+  if (profile === "passenger") {
+    return (
+      <AppShell title="Mi vuelo">
+        <HomeViajero />
+      </AppShell>
+    );
+  }
+
   return (
     <AppShell title="Dashboard operacional">
       <div className="space-y-6">

@@ -20,6 +20,7 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  Bookmark,
   CloudSun,
   LayoutDashboard,
   LogOut,
@@ -56,10 +57,12 @@ const NAV_OPERACIONES: Entrada[] = [
   { href: "/weather", label: "Meteorología", icon: CloudSun },
 ];
 
+// El viajero no navega el aeropuerto: busca su vuelo, mira los que guardó y
+// se fija si hay mal tiempo. Nada de tablas de 769 filas ni de rutas.
 const NAV_VIAJERO: Entrada[] = [
-  { href: "/", label: "Inicio", icon: LayoutDashboard },
-  { href: "/flights", label: "Buscar vuelo", icon: Plane },
-  { href: "/weather", label: "Meteorología", icon: CloudSun },
+  { href: "/", label: "Mi vuelo", icon: Plane },
+  { href: "/mis-vuelos", label: "Mis vuelos", icon: Bookmark },
+  { href: "/alertas", label: "Alertas", icon: CloudSun },
 ];
 
 /**
