@@ -13,7 +13,6 @@ vi.mock("@/lib/mobile-env", () => ({
   IS_BUNDLED: true,
   API_ORIGIN: API,
   APP_ORIGIN: "https://app.test",
-  LIVE_ENABLED: false,
   REPORTS_ENABLED: false,
   appPath: (p: string) => p,
 }));
@@ -153,11 +152,5 @@ describe("después del login, en el bundle", () => {
     expect(llamadas[0].init.method).toBe("PATCH");
     expect(header(llamadas[0], "Authorization")).toBe("Bearer jwt-1");
     expect(JSON.parse(String(llamadas[0].init.body))).toEqual({ user_type: "b2c" });
-  });
-
-  it("homePathFor no manda a un viajero a /live, que el bundle no trae", async () => {
-    const { homePathFor } = await import("@/lib/auth-types");
-    expect(homePathFor("b2c")).toBe("/");
-    expect(homePathFor("b2b")).toBe("/");
   });
 });

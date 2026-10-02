@@ -32,7 +32,7 @@ import {
 } from "@/components/google-sign-in-button";
 import { apiLoginFirebase, apiLoginGoogle } from "@/lib/api";
 import { firebaseAuth, mensajeDeError } from "@/lib/firebase";
-import { homePathFor, safeReturnPath } from "@/lib/auth-types";
+import { safeReturnPath } from "@/lib/auth-types";
 import { IS_BUNDLED } from "@/lib/mobile-env";
 
 function LoginForm() {
@@ -84,7 +84,7 @@ function LoginForm() {
         window.location.replace(
           requestedPath
             ? safeReturnPath(requestedPath)
-            : homePathFor(session.userType),
+            : "/",
         );
       } catch (cause) {
         setError(mensajeDeError(cause));
@@ -146,7 +146,7 @@ function LoginForm() {
         window.location.replace(
           requestedPath
             ? safeReturnPath(requestedPath)
-            : homePathFor(session.userType),
+            : "/",
         );
       } catch (cause) {
         setError(

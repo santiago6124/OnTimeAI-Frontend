@@ -18,7 +18,6 @@
  * Las capturas salen de la web y no del simulador porque Android muestra
  * exactamente esa web, y el bundle de iOS es el mismo Next exportado. Lo que
  * difiere entre plataformas es qué pantallas existen: /live no entra en el
- * bundle de iOS (LIVE_ENABLED), así que no se captura para esa ficha.
  *
  * El overlay de desarrollo de Next (el globo "N issues") se oculta antes de
  * cada captura; en un `next start` de producción no existe.
@@ -45,7 +44,6 @@ const TARGETS = {
 
 /** Orden de la ficha: primero lo que vende, después lo que explica. */
 const SCREENS = [
-  { name: "01-live", path: "/live", ios: false, settle: 6000 },
   { name: "02-dashboard", path: "/", settle: 5000 },
   { name: "03-vuelos", path: "/flights", settle: 5000 },
   { name: "04-vuelo", path: "__detalle__", settle: 5000 },

@@ -36,7 +36,7 @@ import {
 import { apiLoginGoogle } from "@/lib/api";
 import { firebaseAuth, mensajeDeError } from "@/lib/firebase";
 import { cn } from "@/lib/utils";
-import { homePathFor, safeReturnPath } from "@/lib/auth-types";
+import { safeReturnPath } from "@/lib/auth-types";
 
 /**
  * Firebase acepta desde 6. Diez es decisión nuestra: la cuenta da acceso a
@@ -107,7 +107,7 @@ function SignupForm() {
         window.location.replace(
           requestedPath
             ? safeReturnPath(requestedPath)
-            : homePathFor(session.userType),
+            : "/",
         );
       } catch (cause) {
         setError(
