@@ -232,6 +232,29 @@ export type ManagedUser = {
   created_at: string;
 };
 
+/** Un vuelo guardado. `archived` cuando el pipeline ya lo purgó. */
+export type SavedFlight = Partial<Flight> & {
+  fa_flight_id: string;
+  saved_at_utc: string;
+  archived: boolean;
+  ident_iata?: string | null;
+  dest?: string | null;
+};
+
+export type WeatherSeverity = "alto" | "medio" | "bajo";
+
+export type WeatherAlert = {
+  airport_code: string;
+  valid_utc: string;
+  severity: WeatherSeverity;
+  reasons: string[];
+  visibility_miles: number | null;
+  wind_knots: number | null;
+  gust_knots: number | null;
+  temperature_c: number | null;
+  wx_codes: string | null;
+};
+
 export type UserPreferences = {
   theme: string;
   palette: string;
@@ -613,6 +636,21 @@ export const api = {
   getPreferences:    () => get<UserPreferences>("/users/me/preferences"),
   updatePreferences: (prefs: Partial<UserPreferences>) =>
     get<{ ok: boolean }>("/users/me/preferences", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(prefs) }),
+
+  // Modo viajero
+  savedFlights: () => get<SavedFlight[]>("/users/me/flights"),
+  saveFlight: (faFlightId: string) =>
+    get<{ ok: boolean }>("/users/me/flights", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fa_flight_id: faFlightId }),
+    }),
+  unsaveFlight: (faFlightId: string) =>
+    get<{ ok: boolean }>(`/users/me/flights/${encodeURIComponent(faFlightId)}`, {
+      method: "DELETE",
+    }),
+  weatherAlerts: (severity: "high" | "medium" | "all" = "high") =>
+    get<WeatherAlert[]>(`/weather/alerts?severity=${severity}`),
 };
 
 // Helpers

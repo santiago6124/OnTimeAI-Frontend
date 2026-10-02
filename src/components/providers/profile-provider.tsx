@@ -23,23 +23,44 @@ export const PROFILES: Array<{
   },
 ];
 
+/**
+ * El override va en una COOKIE y no en `localStorage`.
+ *
+ * La home es un Server Component y decide qué árbol dibujar según el perfil.
+ * El servidor no ve `localStorage`, así que con el almacenamiento anterior la
+ * barra de navegación respetaba el override y el contenido no: dos piezas de
+ * la misma pantalla discrepando sobre quién sos.
+ *
+ * No lleva `HttpOnly` a propósito: lo escribe el navegador. Tampoco es un
+ * secreto —dice qué vista mirás— y el servidor nunca lo usa para autorizar
+ * nada, solo para elegir maqueta.
+ */
 const STORAGE_KEY = "ontimeai-profile";
 const DEFAULT_PROFILE: ProfileId = "airline";
 const listeners = new Set<() => void>();
 
 function subscribe(listener: () => void) {
   listeners.add(listener);
-  window.addEventListener("storage", listener);
   return () => {
     listeners.delete(listener);
-    window.removeEventListener("storage", listener);
   };
 }
 
 /** Local override, only meaningful for roles allowed to switch views. */
 function getStoredProfile(): ProfileId | null {
-  const stored = window.localStorage.getItem(STORAGE_KEY);
-  return stored === "passenger" || stored === "airline" ? stored : null;
+  const match = document.cookie.match(
+    new RegExp(`(?:^|;\\s*)${STORAGE_KEY}=(airline|passenger)(?:;|$)`),
+  );
+  return (match?.[1] as ProfileId | undefined) ?? null;
+}
+
+function writeCookie(value: ProfileId | null) {
+  // Un año para el override y fecha pasada para borrarlo: así se comporta
+  // igual en todos los navegadores sin depender de `max-age=0`.
+  const caduca = value
+    ? `max-age=${60 * 60 * 24 * 365}`
+    : "expires=Thu, 01 Jan 1970 00:00:00 GMT";
+  document.cookie = `${STORAGE_KEY}=${value ?? ""}; path=/; ${caduca}; samesite=lax`;
 }
 
 type ProfileContextValue = {
@@ -85,12 +106,11 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     // al perfil de la cuenta. Un admin que abriera el desplegable una vez
     // quedaba con la vista congelada en ese navegador para siempre, y cambiar
     // el perfil en Ajustes no hacia nada visible.
-    if (next === null) {
-      window.localStorage.removeItem(STORAGE_KEY);
-    } else {
-      window.localStorage.setItem(STORAGE_KEY, next);
-    }
+    writeCookie(next);
     listeners.forEach((listener) => listener());
+    // La home la dibuja el servidor según esta cookie, así que hay que pedirle
+    // el árbol nuevo. Sin esto cambia el menú y el contenido se queda igual.
+    window.location.reload();
   }, [canSelectProfile]);
 
   const value = React.useMemo(
