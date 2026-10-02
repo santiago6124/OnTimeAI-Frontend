@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Building2, UserRound } from "lucide-react";
+import { Check, Building2, UserRound, RotateCcw } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,7 +17,7 @@ import {
 } from "@/components/providers/profile-provider";
 
 export function ProfileSwitcher() {
-  const { profile, setProfile } = useProfile();
+  const { profile, setProfile, overridden, accountProfile } = useProfile();
   const current = PROFILES.find((p) => p.id === profile)!;
   const Icon = profile === "airline" ? Building2 : UserRound;
 
@@ -46,13 +46,38 @@ export function ProfileSwitcher() {
                     {p.description}
                   </div>
                 </div>
-                {profile === p.id ? (
+                {overridden && profile === p.id ? (
                   <Check className="size-4 opacity-70 mt-0.5" />
                 ) : null}
               </DropdownMenuItem>
             );
           })}
         </DropdownMenuGroup>
+
+        {/* Sin esta opcion el override era un camino de ida: el desplegable
+            solo ofrecia los dos perfiles, y lo guardado le gana al de la
+            cuenta. Quien lo abriera una vez quedaba con la vista congelada en
+            ese navegador, y cambiar el perfil en Ajustes no hacia nada. */}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onSelect={() => setProfile(null)}
+          className="flex items-start gap-3 py-2"
+        >
+          <RotateCcw className="size-4 mt-0.5 shrink-0" />
+          <div className="flex-1">
+            <div className="text-sm font-medium">Seguir mi cuenta</div>
+            <div className="text-xs text-muted-foreground">
+              {accountProfile === "airline"
+                ? "Tu cuenta está en Operaciones"
+                : accountProfile === "passenger"
+                  ? "Tu cuenta está en Viajero"
+                  : "Usa el perfil guardado en tu cuenta"}
+            </div>
+          </div>
+          {!overridden ? (
+            <Check className="size-4 opacity-70 mt-0.5" />
+          ) : null}
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

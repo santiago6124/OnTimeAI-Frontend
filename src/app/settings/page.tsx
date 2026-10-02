@@ -21,6 +21,7 @@ import { apiDeleteAccount, apiSetUserType } from "@/lib/api";
 import { appPath } from "@/lib/mobile-env";
 import { cn } from "@/lib/utils";
 import { ProfileSwitcher } from "@/components/profile-switcher";
+import { useProfile } from "@/components/providers/profile-provider";
 import { SystemHealthCard } from "@/components/system-health-card";
 import { useSession } from "@/components/providers/session-provider";
 import { type UserType } from "@/lib/auth-types";
@@ -40,6 +41,7 @@ const ACCOUNT_PROFILES: { value: UserType; label: string; description: string }[
 
 export default function SettingsPage() {
   const { user } = useSession();
+  const { setProfile, overridden } = useProfile();
   const [userType, setUserType] = useState<UserType | null | undefined>(
     user?.userType,
   );
@@ -53,6 +55,11 @@ export default function SettingsPage() {
     startSavingProfile(async () => {
       try {
         await apiSetUserType(next);
+        // Se borra el override local ANTES de recargar. Si quedara, le ganaria
+        // al perfil recien elegido y el cambio no se veria: es exactamente el
+        // sintoma por el que se reporto esto —cambiar de Operaciones a Viajero
+        // y seguir viendo lo mismo—.
+        setProfile(null);
         // The sidebar and landing route read this from the server session.
         window.location.reload();
       } catch (cause) {
@@ -138,7 +145,17 @@ export default function SettingsPage() {
             <CardHeader>
               <CardTitle className="text-base">Cambiar de vista</CardTitle>
               <CardDescription>
-                Cambio temporal solo en este navegador, para demos. No modifica el perfil de tu cuenta.
+                Cambio temporal solo en este navegador, para demos. No modifica
+                el perfil de tu cuenta.
+                {overridden ? (
+                  <>
+                    {" "}
+                    <span className="font-medium text-foreground">
+                      Ahora mismo hay una vista fijada acá, y tiene prioridad
+                      sobre el perfil de arriba.
+                    </span>
+                  </>
+                ) : null}
               </CardDescription>
             </CardHeader>
             <CardContent>
