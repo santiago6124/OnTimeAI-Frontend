@@ -97,12 +97,6 @@ const PODAR = [
   ["src/app/api", "route handlers dinámicos"],
   ["src/proxy.ts", "Proxy no existe en un export estático"],
   ["src/lib/server-auth.ts", "lee cookies() en el servidor"],
-  // La vista Lite. Su layout llama a getVerifiedSession(), que lee la cookie
-  // con next/headers, y cookies() no existe en un export. Es además una
-  // superficie pública pensada para compartir por web: la app ya trae el
-  // dashboard completo. El acceso lo esconde LIVE_ENABLED (lib/mobile-env.ts),
-  // así que no queda ningún botón apuntando a una ruta que no existe.
-  ["src/app/live", "el layout lee cookies() en el servidor"],
   // Evolución del modelo (admin). Página de servidor en dos sentidos que un
   // export no admite: getServerRole() lee cookies(), y searchParams la vuelve
   // dinámica. Portarla es el patrón vista + wrapper cliente de las demás
@@ -322,7 +316,6 @@ writeFileSync(
   [
     "# Generado por scripts/build-mobile.mjs -- no editar a mano.",
     "NEXT_PUBLIC_BUNDLED_APP=1",
-    "NEXT_PUBLIC_DISABLE_LIVE=1",
     "NEXT_PUBLIC_DISABLE_REPORTS=1",
     `NEXT_PUBLIC_API_ORIGIN=${API_ORIGIN}`,
     `NEXT_PUBLIC_APP_ORIGIN=${APP_ORIGIN}`,
@@ -385,15 +378,7 @@ for (const ruta of [
   if (!existsSync(join(OUT, ruta))) problemas.push(`falta ${ruta} en out/`);
 }
 
-// Y que lo excluido siga excluido: si /live volviera al bundle, entraría con su
-// layout leyendo cookies() y el build habría fallado antes — pero si alguien lo
-// hace compilable, tiene que decidirlo a propósito y no que se cuele.
-if (existsSync(join(OUT, "live"))) {
-  problemas.push(
-    "/live quedó en el bundle: está en PODAR porque su layout lee cookies(). " +
-      "Si ahora es compilable, sacalo de PODAR y prendé LIVE_ENABLED.",
-  );
-}
+// Y que lo excluido siga excluido.
 if (existsSync(join(OUT, "reports"))) {
   problemas.push(
     "/reports quedó en el bundle: está en PODAR porque es una página de servidor. " +

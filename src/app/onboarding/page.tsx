@@ -17,7 +17,7 @@ import { useSearchParams } from "next/navigation";
 import { ArrowRight, LayoutDashboard, Plane } from "lucide-react";
 import { BrandMark } from "@/components/brand-mark";
 import { apiSetUserType } from "@/lib/api";
-import { homePathFor, safeReturnPath, type UserType } from "@/lib/auth-types";
+import { safeReturnPath, type UserType } from "@/lib/auth-types";
 
 const PROFILES: {
   value: UserType;
@@ -75,7 +75,7 @@ function ProfilePicker() {
             : new Promise((listo) => setTimeout(listo, DESPEGUE_MS)),
         ]);
         window.location.replace(
-          requestedPath ? safeReturnPath(requestedPath) : homePathFor(userType),
+          requestedPath ? safeReturnPath(requestedPath) : "/",
         );
       } catch (cause) {
         setDespegando(null);

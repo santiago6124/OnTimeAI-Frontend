@@ -14,7 +14,6 @@ import { proxy } from "../proxy";
 const PUBLICAS = [
   ["/privacidad", "App Store Connect y Play: URL de política de privacidad"],
   ["/soporte", "App Store Connect: URL de soporte"],
-  ["/live", "Modo Lite (issue #1)"],
 ] as const;
 
 function pedir(pathname: string) {

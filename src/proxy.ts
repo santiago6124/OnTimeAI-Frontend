@@ -10,7 +10,7 @@ import { AUTH_COOKIE_NAME, AUTH_MAX_AGE_SECONDS } from "@/lib/auth-types";
  * - `/privacidad` y `/soporte`: las dos tiendas exigen que abran sin login, y
  *   Apple lo verifica antes de aceptar el envío a revisión.
  */
-const PUBLIC_ROUTES = ["/live", "/privacidad", "/soporte"];
+const PUBLIC_ROUTES = ["/privacidad", "/soporte"];
 
 function hardenCookie(response: NextResponse, token: string | undefined) {
   if (!token) return response;
