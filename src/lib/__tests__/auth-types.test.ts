@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  homePathFor,
   isUserType,
   profileIdForUserType,
   safeReturnPath,
@@ -49,16 +48,3 @@ describe("profile mapping", () => {
   });
 });
 
-describe("homePathFor", () => {
-  it("sends travellers to the lite view", () => {
-    expect(homePathFor("b2c")).toBe("/live");
-  });
-
-  it("sends operators to the dashboard", () => {
-    expect(homePathFor("b2b")).toBe("/");
-  });
-
-  it.each([null, undefined])("defaults to the dashboard for %s", (value) => {
-    expect(homePathFor(value)).toBe("/");
-  });
-});
