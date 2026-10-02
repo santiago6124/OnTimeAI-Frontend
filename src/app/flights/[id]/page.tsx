@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 
 import { api, ApiError } from "@/lib/api";
 import { FlightDetailView } from "@/components/flight-detail-view";
+import { api as apiCliente } from "@/lib/api";
 
 /**
  * Detalle de vuelo para la web: Server Component que resuelve el id del
@@ -26,5 +27,19 @@ export default async function FlightDetailPage(
 
   const history = await api.flightHistory(decodeURIComponent(id));
 
-  return <FlightDetailView flight={flight} history={history} />;
+  // Se resuelve acá y no en el botón: así la pantalla llega con el estado
+  // correcto en el primer render y el botón no parpadea de "Guardar" a
+  // "Guardado" después de montarse.
+  const guardado = await apiCliente
+    .savedFlights()
+    .then((lista) => lista.some((v) => v.fa_flight_id === flight.fa_flight_id))
+    .catch(() => false);
+
+  return (
+    <FlightDetailView
+      flight={flight}
+      history={history}
+      guardado={guardado}
+    />
+  );
 }

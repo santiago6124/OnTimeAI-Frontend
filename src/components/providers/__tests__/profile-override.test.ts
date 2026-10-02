@@ -42,8 +42,23 @@ describe("el override local se puede soltar", () => {
     expect(PROVIDER).toMatch(/setProfile:\s*\(profile:\s*ProfileId\s*\|\s*null\)/);
   });
 
-  it("y null BORRA la clave en vez de guardar un valor", () => {
-    expect(PROVIDER).toContain("window.localStorage.removeItem(STORAGE_KEY)");
+  it("y null BORRA la cookie en vez de guardar un valor", () => {
+    // El override pasó de `localStorage` a una cookie para que el servidor
+    // también lo vea: la home es un Server Component y decide qué árbol
+    // dibujar según el perfil. Borrar es poner una fecha pasada.
+    expect(PROVIDER).toContain("expires=Thu, 01 Jan 1970");
+    expect(PROVIDER).toContain("writeCookie(next)");
+  });
+
+  it("el servidor lee el mismo override que el cliente", () => {
+    // Si las dos piezas leyeran lugares distintos, la misma pantalla
+    // terminaría con el menú de un perfil y el contenido del otro.
+    const servidor = readFileSync(
+      join(raiz, "src", "lib", "server-profile.ts"),
+      "utf8",
+    );
+    expect(servidor).toContain('"ontimeai-profile"');
+    expect(PROVIDER).toContain('STORAGE_KEY = "ontimeai-profile"');
   });
 
   it("expone si hay un override activo, para poder decirlo en pantalla", () => {
