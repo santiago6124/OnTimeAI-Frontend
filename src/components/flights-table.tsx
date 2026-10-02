@@ -289,7 +289,7 @@ export function FlightsTableView({
             : `${filtered.length} de ${flights.length} vuelos · página ${currentPage} de ${pageCount}`}
           {isRefreshing ? " · actualizando…" : ""}
           {!isRefreshing && lastUpdated
-            ? ` · datos ${lastUpdated.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}`
+            ? ` · datos ${lastUpdated.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", hour12: false })}`
             : ""}
         </span>
         {pageCount > 1 ? (
