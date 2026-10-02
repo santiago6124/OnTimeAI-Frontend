@@ -44,7 +44,12 @@ function getStoredProfile(): ProfileId | null {
 
 type ProfileContextValue = {
   profile: ProfileId;
-  setProfile: (profile: ProfileId) => void;
+  /** `null` vuelve a seguir el perfil de la cuenta. */
+  setProfile: (profile: ProfileId | null) => void;
+  /** Si hay un override local pisando al perfil de la cuenta. */
+  overridden: boolean;
+  /** El perfil que dicta la cuenta, sin el override. */
+  accountProfile: ProfileId | null;
 };
 
 const ProfileContext = React.createContext<ProfileContextValue | undefined>(
@@ -71,15 +76,31 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     ? storedProfile ?? accountProfile ?? DEFAULT_PROFILE
     : accountProfile ?? "passenger";
 
-  const setProfile = React.useCallback((next: ProfileId) => {
+  const setProfile = React.useCallback((next: ProfileId | null) => {
     if (!canSelectProfile) return;
-    window.localStorage.setItem(STORAGE_KEY, next);
+    // `null` BORRA el override en vez de guardar un valor.
+    //
+    // Antes no habia forma de volver atras: el desplegable solo ofrecia
+    // "airline" o "passenger", nunca "seguir mi cuenta", y lo guardado le gana
+    // al perfil de la cuenta. Un admin que abriera el desplegable una vez
+    // quedaba con la vista congelada en ese navegador para siempre, y cambiar
+    // el perfil en Ajustes no hacia nada visible.
+    if (next === null) {
+      window.localStorage.removeItem(STORAGE_KEY);
+    } else {
+      window.localStorage.setItem(STORAGE_KEY, next);
+    }
     listeners.forEach((listener) => listener());
   }, [canSelectProfile]);
 
   const value = React.useMemo(
-    () => ({ profile, setProfile }),
-    [profile, setProfile],
+    () => ({
+      profile,
+      setProfile,
+      overridden: canSelectProfile && storedProfile !== null,
+      accountProfile,
+    }),
+    [profile, setProfile, canSelectProfile, storedProfile, accountProfile],
   );
 
   return (
