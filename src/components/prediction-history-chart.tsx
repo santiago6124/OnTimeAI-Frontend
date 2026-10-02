@@ -6,22 +6,26 @@ import {
 } from "recharts";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import type { PredictionPoint } from "@/lib/api";
+import { fmtTime, type PredictionPoint } from "@/lib/api";
 
 function asUTC(utc: string): Date {
   return new Date(/[Z+]/.test(utc) ? utc : utc + "Z");
 }
 
+// Se arma a mano y no con `toLocaleTimeString`: `es-AR` sin `hour12` resuelve
+// a reloj de 12 horas. Ver el comentario de `fmtTime` en lib/api.ts.
 function fmtAxisTime(utc: string) {
   const d = asUTC(utc);
-  return d.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" });
+  const hh = String(d.getUTCHours()).padStart(2, "0");
+  const mi = String(d.getUTCMinutes()).padStart(2, "0");
+  return `${hh}:${mi}`;
 }
 
+// Reusa `fmtTime` en vez de repetir el formato: la versión propia armaba la
+// fecha con el locale y devolvía `1/10`, porque `es-AR` ignora
+// `day: "2-digit"`. Un solo lugar donde equivocarse.
 function fmtTooltipTime(utc: string) {
-  const d = asUTC(utc);
-  const date = d.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", timeZone: "UTC" });
-  const time = d.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" });
-  return `${date} ${time} UTC`;
+  return `${fmtTime(utc)} UTC`;
 }
 
 function riskColor(proba: number) {

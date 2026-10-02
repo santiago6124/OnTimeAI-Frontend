@@ -64,10 +64,20 @@ export default function WeatherPage() {
           {data?.fetchedAt && (
             <p className="text-[11px] tabular-nums text-muted-foreground">
               Última actualización:{" "}
+              {/* `timeZone: "UTC"` y el rótulo van juntos: sin ellos esto salía
+                  en la hora local del navegador, en el mismo renglón que el
+                  resto de la pantalla, que es UTC. Dos husos mezclados sin
+                  decir cuál es cuál. */}
               {new Date(data.fetchedAt).toLocaleString("es-AR", {
-                dateStyle: "short",
-                timeStyle: "medium",
-              })}
+                timeZone: "UTC",
+                day: "2-digit",
+                month: "2-digit",
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+                hour12: false,
+              })}{" "}
+              UTC
             </p>
           )}
         </header>
