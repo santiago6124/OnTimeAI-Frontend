@@ -629,12 +629,32 @@ export function toUTCDate(utc: string): Date {
   return new Date(/[Z+]/.test(utc) ? utc : utc + "Z");
 }
 
+/**
+ * Un instante UTC como `dd/MM HH:mm`.
+ *
+ * Se arma a mano en vez de pedírselo a `toLocaleString`, porque el formato ya
+ * está decidido por convención del proyecto y delegarlo al locale lo rompió
+ * dos veces:
+ *
+ *   - `es-AR` con `{ hour: "2-digit", minute: "2-digit" }` y sin `hour12`
+ *     resuelve a reloj de 12 horas: devolvía `1/10 11:59 p. m.` mientras el
+ *     reloj del navbar mostraba `20:05:53`. Dos relojes en la misma pantalla.
+ *   - `es-AR` **ignora** `day: "2-digit"` y devuelve `1/10`, no `01/10`.
+ *     `en-GB` con las mismas opciones sí respeta el cero.
+ *
+ * En los dos casos la llamada se lee correcta y renderiza mal, que es la peor
+ * forma de estar equivocado. Con `getUTC*` y `padStart` el resultado es el
+ * mismo en cualquier navegador, cualquier locale y cualquier versión de ICU.
+ */
 export function fmtTime(utc: string) {
   if (!utc) return "--";
   const d = toUTCDate(utc);
-  const date = d.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", timeZone: "UTC" });
-  const time = d.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" });
-  return `${date} ${time}`;
+  if (Number.isNaN(d.getTime())) return "--";
+  const dd = String(d.getUTCDate()).padStart(2, "0");
+  const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const hh = String(d.getUTCHours()).padStart(2, "0");
+  const mi = String(d.getUTCMinutes()).padStart(2, "0");
+  return `${dd}/${mm} ${hh}:${mi}`;
 }
 
 export function fmtProba(p: number) {
