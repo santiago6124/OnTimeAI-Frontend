@@ -119,7 +119,19 @@ export function DetalleViajero({
                       )}
                       aria-hidden
                     />
-                    <span className="text-sm">{m.texto}</span>
+                    {/* Los que cayeron al respaldo llevan la etiqueta técnica
+                        del backend. Se muestran igual —omitirlos dejaba al
+                        27,5% de los vuelos sin su razón principal— pero más
+                        apagados, para no hacerlos pasar por una frase
+                        redactada. */}
+                    <span
+                      className={cn(
+                        "text-sm",
+                        m.generico && "text-muted-foreground",
+                      )}
+                    >
+                      {m.texto}
+                    </span>
                   </div>
                   {/* La barra dice cuánto pesa cada motivo frente al primero.
                       Sin esto, cuatro frases parecen igual de importantes. */}
