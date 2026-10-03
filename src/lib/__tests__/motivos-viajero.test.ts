@@ -41,23 +41,56 @@ describe("motivosParaViajero", () => {
     const m = motivosParaViajero([
       factor("dest_delay_rate_1h", 0.1),
       factor("prev_arr_delay_tail", 0.9),
-      factor("sknt_origin", 0.4),
+      factor("ORIG_WX_SKNT", 0.4),
     ]);
     expect(m.map((x) => x.peso)).toEqual([...m.map((x) => x.peso)].sort((a, b) => b - a));
     expect(m[0].texto).toContain("avión");
   });
 
-  it("omite las features que no se pueden explicar en una línea", () => {
-    // `CRS_DEP_MIN_sin` y `PAGERANK_ORIGIN` son reales y pesan, pero no hay
-    // forma honesta de contárselas a un pasajero. Una explicación que no se
-    // entiende es peor que una explicación de menos.
+  it("NO descarta ninguna feature, ni las que no tienen frase propia", () => {
+    // La primera versión omitía lo que no sabía explicar. Medido sobre 69.703
+    // predicciones reales, eso dejaba al 27,5% con su razón PRINCIPAL fuera de
+    // la lista: el viajero veía motivos secundarios como si fueran la
+    // explicación.
     const m = motivosParaViajero([
-      factor("CRS_DEP_MIN_sin", 0.9),
-      factor("PAGERANK_ORIGIN", 0.8),
+      factor("una_feature_que_no_existe_todavia", 0.9),
       factor("prev_arr_delay_tail", 0.2),
     ]);
-    expect(m).toHaveLength(1);
-    expect(m[0].texto).toContain("avión");
+    expect(m).toHaveLength(2);
+    expect(m[0].generico).toBe(true);
+    expect(m[0].texto).toBeTruthy();
+  });
+
+  it("la de más peso aparece primera aunque no tenga frase propia", () => {
+    const m = motivosParaViajero([
+      factor("prev_arr_delay_tail", 0.2),
+      factor("feature_nueva", 0.95),
+    ]);
+    expect(m[0].generico).toBe(true);
+    expect(m[0].peso).toBe(1);
+  });
+
+  it("el respaldo usa la etiqueta del backend, no el nombre crudo", () => {
+    const f: ShapFactor = {
+      feature: "ORIG_WX_MYSTERY",
+      label: "Fenómeno raro en origen",
+      contribution: 0.5,
+      direction: "positive",
+    };
+    expect(motivosParaViajero([f])[0].texto).toContain("Fenómeno raro en origen");
+  });
+
+  it("cubre las features que más veces son la principal en producción", () => {
+    // Medido sobre `prediction_shap`: estas seis concentran el 84% de los
+    // casos en que son la razón número uno. Ninguna puede caer al respaldo.
+    const principales = [
+      "CRS_ELAPSED_TIME", "TAIL_DELAY_DECAY", "prev_turnaround_tail_min",
+      "congestion_orig_window", "DEST", "DISTANCE",
+    ];
+    for (const nombre of principales) {
+      const [m] = motivosParaViajero([factor(nombre, 1)]);
+      expect(m.generico, `${nombre} debería tener frase propia`).toBe(false);
+    }
   });
 
   it("no repite la misma frase por varias ventanas de la misma señal", () => {
@@ -74,7 +107,8 @@ describe("motivosParaViajero", () => {
   it("recorta: cuatro razones, no quince", () => {
     const muchos = [
       "prev_arr_delay_tail", "origin_delay_rate_1h", "dest_delay_rate_1h",
-      "carrier_delay_rate_24h", "sknt_origin", "vsby_origin", "congestion_score",
+      "carrier_delay_rate_24h", "ORIG_WX_SKNT", "ORIG_WX_VSBY",
+      "congestion_orig_window",
     ].map((f, i) => factor(f, 1 - i * 0.1));
     expect(motivosParaViajero(muchos)).toHaveLength(4);
   });
@@ -87,7 +121,7 @@ describe("motivosParaViajero", () => {
   it("el peso es relativo al motivo más fuerte", () => {
     const m = motivosParaViajero([
       factor("prev_arr_delay_tail", 1.0),
-      factor("sknt_origin", 0.5),
+      factor("ORIG_WX_SKNT", 0.5),
     ]);
     expect(m[0].peso).toBe(1);
     expect(m[1].peso).toBeCloseTo(0.5, 5);
