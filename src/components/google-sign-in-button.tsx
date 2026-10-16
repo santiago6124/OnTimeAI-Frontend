@@ -51,13 +51,57 @@ function loadGsiScript(): Promise<void> {
 }
 
 /**
- * Si el botón de Google se va a dibujar. Quien pone un separador encima ("o
- * con tu correo") tiene que mirar esto: sin client ID, o en el bundle nativo,
- * el botón no existe y el separador quedaría anunciando una alternativa que no
- * está.
+ * Si el botón de Google se va a dibujar, según lo que se sabe en tiempo de
+ * BUILD. Quien pone un separador encima ("o con tu correo") tiene que mirar
+ * esto: sin client ID, o en el bundle nativo, el botón no existe y el separador
+ * quedaría anunciando una alternativa que no está.
+ *
+ * No alcanza por sí sola en Android: ver `useGoogleSignInDisponible`.
  */
 export const GOOGLE_SIGN_IN_AVAILABLE =
   Boolean(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID) && !IS_BUNDLED;
+
+/**
+ * Lo mismo, pero mirando también en qué plataforma estamos corriendo.
+ *
+ * `IS_BUNDLED` es una bandera de BUILD y solo se prende para el bundle de iOS.
+ * El shell de Android carga la web remota desde Cloud Run, así que ahí vale
+ * `false` y el botón se dibujaba. Pero Google Identity Services no corre dentro
+ * de un WebView embebido: rechaza el flujo con `disallowed_useragent`. El
+ * usuario de Android veía un botón que no podía funcionar.
+ *
+ * La comprobación tiene que ser de runtime porque la misma build sirve a la web
+ * y al WebView de Android. El puente de Capacitor se inyecta también en modo
+ * remoto, así que `isNativePlatform()` responde bien en las dos.
+ *
+ * Arranca en el valor de build y se corrige después de montar, no al revés: así
+ * el primer render del cliente coincide con el del servidor y no hay desajuste
+ * de hidratación. El costo es que en Android el botón puede alcanzar a
+ * dibujarse un instante.
+ *
+ * Es la mitigación hasta que entre el plugin nativo (#46), que necesita los
+ * clientes OAuth de iOS y Android creados en la consola.
+ */
+export function useGoogleSignInDisponible(): boolean {
+  const [disponible, setDisponible] = useState(GOOGLE_SIGN_IN_AVAILABLE);
+
+  useEffect(() => {
+    if (!GOOGLE_SIGN_IN_AVAILABLE) return;
+    let vivo = true;
+    import("@capacitor/core")
+      .then(({ Capacitor }) => {
+        if (vivo && Capacitor.isNativePlatform()) setDisponible(false);
+      })
+      // En la web el paquete está igual, pero si el import falla no hay motivo
+      // para esconder el botón: la web es el caso en que sí funciona.
+      .catch(() => {});
+    return () => {
+      vivo = false;
+    };
+  }, []);
+
+  return disponible;
+}
 
 export function GoogleSignInButton({
   onCredential,
@@ -67,6 +111,8 @@ export function GoogleSignInButton({
   disabled?: boolean;
 }) {
   const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+  // Va antes de cualquier return temprano: es un hook.
+  const disponible = useGoogleSignInDisponible();
   const containerId = useId();
   const containerRef = useRef<HTMLDivElement>(null);
   const callbackRef = useRef(onCredential);
@@ -114,7 +160,10 @@ export function GoogleSignInButton({
   // Without a client ID the app keeps working with password login only. The
   // bundled app has no route handlers to exchange the token, and Google blocks
   // its web flow inside embedded webviews anyway: that needs the native plugin.
-  if (!clientId || IS_BUNDLED) return null;
+  //
+  // `disponible` agrega el caso de Android, que corre la web remota en un
+  // WebView: ahí `IS_BUNDLED` es false pero Google rechaza igual el flujo.
+  if (!clientId || IS_BUNDLED || !disponible) return null;
 
   if (failed) {
     return (

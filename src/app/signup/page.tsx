@@ -30,7 +30,7 @@ import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/password-input";
 import { AuthShell, AuthDivider } from "@/components/auth-shell";
 import {
-  GOOGLE_SIGN_IN_AVAILABLE,
+  useGoogleSignInDisponible,
   GoogleSignInButton,
 } from "@/components/google-sign-in-button";
 import { apiLoginGoogle } from "@/lib/api";
@@ -47,6 +47,9 @@ const MIN_PASSWORD_LENGTH = 10;
 
 function SignupForm() {
   const searchParams = useSearchParams();
+  // Decide junto con el botón: si el separador "o con tu correo" quedara
+  // dibujado sin el botón, anunciaría una alternativa que no está.
+  const googleDisponible = useGoogleSignInDisponible();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
@@ -158,7 +161,7 @@ function SignupForm() {
         disabled={isPending}
       />
 
-      {GOOGLE_SIGN_IN_AVAILABLE && (
+      {googleDisponible && (
         <AuthDivider>o con tu correo</AuthDivider>
       )}
 
