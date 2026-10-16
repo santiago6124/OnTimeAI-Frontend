@@ -7,6 +7,7 @@ import {
   Plane,
   ClipboardCheck,
   ShieldCheck,
+  Timer,
 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
@@ -20,6 +21,14 @@ import {
 import { Badge } from "@/components/ui/badge";
 
 const EXPERIMENTS = [
+  {
+    href: "/tesis/anticipacion",
+    icon: Timer,
+    title: "Anticipación frente a la aerolínea",
+    description:
+      "Cuántos minutos antes el modelo marca un vuelo en riesgo, comparado con el momento en que la aerolínea publica que va a salir tarde. Incluye el porcentaje de veces que avisamos con una hora de ventaja y los vuelos que se demoraron sin que el carrier lo publicara nunca.",
+    status: "Activo — acumulando desde el 16/10",
+  },
   {
     href: "/tesis/casos-de-prueba",
     icon: ClipboardCheck,

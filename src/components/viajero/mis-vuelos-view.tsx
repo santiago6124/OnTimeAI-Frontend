@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Archive, Bookmark, Plane, Trash2 } from "lucide-react";
+import { Archive, Bookmark, Plane, RotateCw, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -19,7 +19,14 @@ import { api, fmtTime, type SavedFlight } from "@/lib/api";
  * pedido es que los guardados queden históricamente, y una lista que borra
  * sola lo viejo no cumple eso.
  */
-export function MisVuelosView({ iniciales }: { iniciales: SavedFlight[] }) {
+export function MisVuelosView({
+  iniciales,
+  fallo = false,
+}: {
+  iniciales: SavedFlight[];
+  /** La lista no se pudo traer. Distinto de no tener ninguno guardado. */
+  fallo?: boolean;
+}) {
   const [vuelos, setVuelos] = React.useState(iniciales);
   const [quitando, setQuitando] = React.useState<string | null>(null);
 
@@ -34,6 +41,29 @@ export function MisVuelosView({ iniciales }: { iniciales: SavedFlight[] }) {
     } finally {
       setQuitando(null);
     }
+  }
+
+  // Primero el fallo: decirle "no guardaste nada" a alguien que si guardo, y
+  // encima invitarlo a buscar otro vuelo, es peor que no mostrar nada.
+  if (fallo && vuelos.length === 0) {
+    return (
+      <Card>
+        <CardContent className="flex flex-col items-center gap-3 py-14 text-center">
+          <RotateCw className="size-8 text-muted-foreground/60" />
+          <p className="text-sm font-medium">No pudimos traer tus vuelos</p>
+          <p className="max-w-sm text-sm text-muted-foreground">
+            Puede ser una caída momentánea. Tus vuelos guardados siguen ahí.
+          </p>
+          <Button
+            variant="outline"
+            className="mt-1"
+            onClick={() => window.location.reload()}
+          >
+            Reintentar
+          </Button>
+        </CardContent>
+      </Card>
+    );
   }
 
   if (vuelos.length === 0) {
