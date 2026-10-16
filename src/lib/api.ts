@@ -651,7 +651,45 @@ export const api = {
     }),
   weatherAlerts: (severity: "high" | "medium" | "all" = "high") =>
     get<WeatherAlert[]>(`/weather/alerts?severity=${severity}`),
+  leadTime: (dias = 30) => get<LeadTime>(`/metrics/lead-time?dias=${dias}`),
 };
+
+/**
+ * Anticipación del modelo frente a la aerolínea (tesis, issue #5).
+ *
+ * El endpoint devuelve una de dos formas. Cuando todavía no se puede calcular
+ * —el registro de revisiones del carrier arrancó el 16/10/2026 y no hay dato
+ * anterior— devuelve `disponible: false` con el motivo, en vez de una media
+ * sobre cero vuelos. La vista tiene que distinguir "no hay datos todavía" de
+ * "la ventaja es cero", que son cosas muy distintas.
+ */
+export type LeadTimeNoDisponible = {
+  disponible: false;
+  motivo: string;
+  desde_utc: string | null;
+  n_vuelos_con_resultado?: number;
+  n_demorados?: number;
+  n_puntos_ciegos?: number;
+};
+
+export type LeadTimeTramo = { tramo: string; n: number };
+
+export type LeadTimeDisponible = {
+  disponible: true;
+  desde_utc: string | null;
+  dias: number;
+  n_vuelos_con_resultado: number;
+  n_demorados: number;
+  n_comparables: number;
+  ventaja_promedio_min: number;
+  ventaja_mediana_min: number;
+  win_rate_60min: number;
+  n_puntos_ciegos: number;
+  histograma: LeadTimeTramo[];
+  advertencia: string;
+};
+
+export type LeadTime = LeadTimeDisponible | LeadTimeNoDisponible;
 
 // Helpers
 export function riskLabel(risk: RiskLevel) {
