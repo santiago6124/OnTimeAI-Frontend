@@ -652,6 +652,11 @@ export const api = {
   weatherAlerts: (severity: "high" | "medium" | "all" = "high") =>
     get<WeatherAlert[]>(`/weather/alerts?severity=${severity}`),
   leadTime: (dias = 30) => get<LeadTime>(`/metrics/lead-time?dias=${dias}`),
+  cascada: (id: string, demoraMin?: number) =>
+    get<Cascada>(
+      `/cascade/${encodeURIComponent(id)}` +
+        (demoraMin === undefined ? "" : `?demora_min=${demoraMin}`),
+    ),
 };
 
 /**
@@ -690,6 +695,46 @@ export type LeadTimeDisponible = {
 };
 
 export type LeadTime = LeadTimeDisponible | LeadTimeNoDisponible;
+
+/**
+ * Efecto cascada: a qué vuelos siguientes les llega la demora de este.
+ *
+ * Propaga por la rotación de la aeronave con una tabla medida sobre 779.777
+ * pares de piernas consecutivas de BTS. Ver `ontimeai/cascade.py` en el
+ * backend.
+ *
+ * `demora_origen` dice de dónde salen los minutos, y no valen lo mismo:
+ * `real` es la demora medida de un vuelo que ya aterrizó, `simulada` es la que
+ * se pasó a mano, y `estimada` se derivó de la probabilidad del modelo —la más
+ * floja, y por eso viene con `aviso`—.
+ *
+ * Cuando no se puede responder llega `motivo` y `piernas` vacío. La pantalla
+ * tiene que distinguirlo de "no hay cascada", que es otra cosa.
+ */
+export type CascadaPierna = {
+  fa_flight_id: string;
+  vuelo: string | null;
+  origen: string;
+  destino: string;
+  orden: number;
+  salida_programada_utc: string | null;
+  holgura_min: number;
+  demora_salida_min: number;
+  demora_llegada_min: number;
+  demorado: boolean;
+  cadena_rota: boolean;
+};
+
+export type Cascada = {
+  vuelo: Record<string, unknown>;
+  demora_origen?: "real" | "simulada" | "estimada";
+  demora_llegada_min?: number;
+  aviso?: string | null;
+  piernas: CascadaPierna[];
+  piernas_conocidas: number;
+  motivo?: string;
+  nota?: string;
+};
 
 // Helpers
 export function riskLabel(risk: RiskLevel) {
