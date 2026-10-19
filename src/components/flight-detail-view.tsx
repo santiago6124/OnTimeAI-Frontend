@@ -33,6 +33,7 @@ import {
   type PredictionPoint,
 } from "@/lib/api";
 import { PredictionEvolution } from "@/components/prediction-evolution";
+import { CascadaCard } from "@/components/cascada-card";
 
 export function FlightDetailView({
   flight,
@@ -171,6 +172,11 @@ export function FlightDetailView({
         </div>
 
         <PredictionEvolution history={historyWithLatestExplanation} arrDelayMin={flight.arr_delay_min} />
+
+        {/* La cascada va después de la evolución: primero qué le pasa a ESTE
+            vuelo, después a quién arrastra. Trae sus datos en el cliente
+            porque el simulador los vuelve a pedir. */}
+        <CascadaCard faFlightId={flight.fa_flight_id} />
 
         <Suspense fallback={<div className="h-48 animate-pulse rounded-lg bg-muted" />}>
           <WeatherCard />
