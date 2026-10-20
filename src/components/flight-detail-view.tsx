@@ -171,12 +171,15 @@ export function FlightDetailView({
 
         </div>
 
-        <PredictionEvolution history={historyWithLatestExplanation} arrDelayMin={flight.arr_delay_min} />
-
-        {/* La cascada va después de la evolución: primero qué le pasa a ESTE
-            vuelo, después a quién arrastra. Trae sus datos en el cliente
-            porque el simulador los vuelve a pedir. */}
+        {/* La cascada va ANTES de la evolución.
+            Estaba debajo, y entre el encabezado y ella quedaban el gráfico de
+            ciclos, el detalle del ciclo y el desglose de factores: más de una
+            pantalla. Es la mitad del título de la tesis y quien la fue a
+            buscar sabiendo que existía no la encontró.
+            Trae sus datos en el cliente porque el simulador los vuelve a pedir. */}
         <CascadaCard faFlightId={flight.fa_flight_id} />
+
+        <PredictionEvolution history={historyWithLatestExplanation} arrDelayMin={flight.arr_delay_min} />
 
         <Suspense fallback={<div className="h-48 animate-pulse rounded-lg bg-muted" />}>
           <WeatherCard />
