@@ -5,6 +5,11 @@ import { AlertTriangle, ShieldCheck } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ShapFactor } from "@/lib/api";
 import { contributionShare, explainFactor } from "@/lib/shap-explain";
+import {
+  BotonColapsar,
+  CuerpoColapsable,
+  useColapsable,
+} from "@/components/ui/seccion-colapsable";
 import { cn } from "@/lib/utils";
 
 export function ShapPanel({
@@ -32,14 +37,26 @@ export function ShapPanel({
     ? explainFactor(main.feature, main.direction, main.value)
     : null;
 
+  // Abierto por defecto: es la explicación de la predicción y esconderla por
+  // omisión dejaría el número sin por qué. El resumen de cuando se cierra es
+  // la causa principal, que es lo que alguien recuerda de este panel.
+  const { abierto, alternar } = useColapsable(true);
+
   return (
     <Card>
       <CardHeader className={cn(compact && "pb-2")}>
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
+        <BotonColapsar
+          abierto={abierto}
+          onToggle={alternar}
+          resumen={mainCopy ? mainCopy.title : undefined}
+          titulo={
             <CardTitle className="text-sm font-medium">
               ¿Por qué esta predicción?
             </CardTitle>
+          }
+        />
+        <div className={cn("flex items-start justify-between gap-3", !abierto && "hidden")}>
+          <div className="min-w-0">
             {!compact ? (
               <CardDescription>
                 Peso relativo de cada factor sobre la decisión del modelo, antes
@@ -60,6 +77,7 @@ export function ShapPanel({
         </div>
       </CardHeader>
 
+      <CuerpoColapsable abierto={abierto}>
       <CardContent className="space-y-4">
         {sorted.length === 0 ? (
           <div className="text-sm text-muted-foreground">
@@ -100,6 +118,7 @@ export function ShapPanel({
           </>
         )}
       </CardContent>
+      </CuerpoColapsable>
     </Card>
   );
 }

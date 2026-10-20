@@ -4,6 +4,11 @@ import { useState } from "react";
 
 import { PredictionHistoryChart } from "@/components/prediction-history-chart";
 import { ShapPanel } from "@/components/shap-panel";
+import {
+  BotonColapsar,
+  CuerpoColapsable,
+  useColapsable,
+} from "@/components/ui/seccion-colapsable";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { fmtProba, fmtTime, type PredictionPoint } from "@/lib/api";
 
@@ -45,11 +50,10 @@ export function PredictionEvolution({
       />
 
       <div className="grid gap-4 lg:grid-cols-[minmax(240px,0.75fr)_minmax(0,2fr)]">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Ciclo seleccionado</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm">
+        <CicloSeleccionado
+          momento={`${fmtTime(selected.predicted_at_utc)} UTC`}
+          probabilidad={fmtProba(selected.delay_probability)}
+        >
             <CycleValue label="Momento" value={`${fmtTime(selected.predicted_at_utc)} UTC`} numero />
             <CycleValue label="Fase" value={PHASE_LABELS[selected.prediction_phase]} />
             <CycleValue label="Probabilidad base calibrada" value={fmtProba(selected.base_probability)} numero />
@@ -79,8 +83,7 @@ export function PredictionEvolution({
               label="Estrategia de umbral"
               value={selected.threshold_strategy?.replaceAll("_", " ") ?? "No registrada"}
             />
-          </CardContent>
-        </Card>
+        </CicloSeleccionado>
 
         <ShapPanel factors={selected.shap} />
       </div>
@@ -113,5 +116,44 @@ function CycleValue({
         {value}
       </span>
     </div>
+  );
+}
+
+
+/**
+ * El detalle del ciclo elegido, cerrado por omisión.
+ *
+ * Son siete filas —momento, fase, probabilidad base, final, ajuste operativo,
+ * cambio contra el ciclo anterior, umbral y estrategia— y casi siempre lo que
+ * se mira es la probabilidad, que queda en el resumen. Abierto está todo.
+ */
+function CicloSeleccionado({
+  momento,
+  probabilidad,
+  children,
+}: {
+  momento: string;
+  probabilidad: string;
+  children: React.ReactNode;
+}) {
+  const { abierto, alternar } = useColapsable(false);
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <BotonColapsar
+          abierto={abierto}
+          onToggle={alternar}
+          resumen={`${probabilidad} · ${momento}`}
+          titulo={
+            <CardTitle className="text-sm font-medium">
+              Ciclo seleccionado
+            </CardTitle>
+          }
+        />
+      </CardHeader>
+      <CuerpoColapsable abierto={abierto}>
+        <CardContent className="space-y-3 text-sm">{children}</CardContent>
+      </CuerpoColapsable>
+    </Card>
   );
 }
