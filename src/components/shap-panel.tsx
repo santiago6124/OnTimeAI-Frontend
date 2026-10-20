@@ -104,6 +104,22 @@ export function ShapPanel({
   );
 }
 
+/**
+ * Cuántos factores se muestran por grupo antes de colapsar.
+ *
+ * El backend guarda el top 15 y el panel los dibujaba todos. Medido sobre 25
+ * vuelos de producción, eso son 15 filas por vuelo: 4 que suben el riesgo y 11
+ * que protegen, y la cola pesa casi nada.
+ *
+ *     peso acumulado:  top 3  41%    top 4  49%    top 5  56%    top 8  75%
+ *
+ * Con cuatro por grupo, los que suben el riesgo casi nunca se truncan —son 4
+ * de mediana— y los protectores bajan de 11 a 4. El resto sigue a un clic:
+ * esconderlos del todo cambiaría lo que el panel afirma, y para una tesis la
+ * lista completa tiene que poder verse.
+ */
+const FACTORES_VISIBLES = 4;
+
 function FactorGroup({
   heading,
   icon,
@@ -119,13 +135,17 @@ function FactorGroup({
   total: number;
   technical: boolean;
 }) {
+  const [expandido, setExpandido] = React.useState(false);
+  const ocultos = Math.max(0, factors.length - FACTORES_VISIBLES);
+  const visibles = expandido ? factors : factors.slice(0, FACTORES_VISIBLES);
+
   return (
     <div className="space-y-2.5">
       <p className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
         {icon}
         {heading}
       </p>
-      {factors.map((f) => (
+      {visibles.map((f) => (
         <ShapRow
           key={f.feature}
           factor={f}
@@ -134,6 +154,17 @@ function FactorGroup({
           technical={technical}
         />
       ))}
+      {ocultos > 0 ? (
+        <button
+          type="button"
+          onClick={() => setExpandido((v) => !v)}
+          className="text-[11px] text-muted-foreground underline-offset-2 hover:underline"
+        >
+          {expandido
+            ? "Ver menos"
+            : `Ver ${ocultos} factor${ocultos === 1 ? "" : "es"} más`}
+        </button>
+      ) : null}
     </div>
   );
 }
