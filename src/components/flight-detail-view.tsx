@@ -17,12 +17,10 @@ import { buttonVariants } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { RiskBadge } from "@/components/risk-badge";
+import { TarjetaColapsable } from "@/components/ui/tarjeta-colapsable";
 import { WeatherCard } from "@/components/weather-card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -127,21 +125,25 @@ export function FlightDetailView({
         </Card>
 
         <div className="grid gap-4">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">
-                Predicción del modelo
-              </CardTitle>
-              <CardDescription>LightGBM v9 · ATL 2021-2024</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <KV
-                label="Probabilidad de retraso"
-                value={fmtProba(flight.delay_probability)}
-                emphasis
-              />
-              <Separator />
-              <KV
+          <TarjetaColapsable
+            titulo="Predicción del modelo"
+            // Cerrada dice la probabilidad, que es el número que uno viene a
+            // buscar. El resto —predicción binaria, riesgo, aeronave, última
+            // corrida, resultado real— son seis filas con separadores que sólo
+            // se miran cuando se quiere el detalle.
+            resumen={fmtProba(flight.delay_probability)}
+            abiertaPorDefecto
+          >
+            <p className="-mt-1 text-xs text-muted-foreground">
+              LightGBM v9 · ATL 2021-2024
+            </p>
+            <KV
+              label="Probabilidad de retraso"
+              value={fmtProba(flight.delay_probability)}
+              emphasis
+            />
+            <Separator />
+            <KV
                 label="Predicción binaria"
                 value={flight.predicted_delay ? "Retrasado (>15 min)" : "A tiempo"}
               />
@@ -159,8 +161,7 @@ export function FlightDetailView({
                     : <span className="text-muted-foreground text-sm">Pendiente</span>
                 }
               />
-            </CardContent>
-          </Card>
+          </TarjetaColapsable>
 
         </div>
 
