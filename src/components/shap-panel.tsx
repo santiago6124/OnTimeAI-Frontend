@@ -139,8 +139,12 @@ function FactorGroup({
   const ocultos = Math.max(0, factors.length - FACTORES_VISIBLES);
   const visibles = expandido ? factors : factors.slice(0, FACTORES_VISIBLES);
 
+  // Expandir hace dos cosas a la vez: muestra los factores que faltaban Y
+  // detalla los que ya estaban. Colapsado cada factor es una línea con su
+  // peso; abierto, cada uno explica por qué.
   return (
-    <div className="space-y-2.5">
+    <div className={cn("transition-all duration-200 motion-reduce:transition-none",
+                       expandido ? "space-y-2.5" : "space-y-1.5")}>
       <p className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
         {icon}
         {heading}
@@ -152,9 +156,13 @@ function FactorGroup({
           max={max}
           total={total}
           technical={technical}
+          detallado={expandido}
         />
       ))}
-      {ocultos > 0 ? (
+      {/* El botón aparece aunque no haya factores ocultos: expandir también
+          muestra la frase que explica cada uno, y sin él un grupo de cuatro
+          o menos se quedaba sin explicación y sin forma de pedirla. */}
+      {factors.length > 0 ? (
         <button
           type="button"
           onClick={() => setExpandido((v) => !v)}
@@ -162,7 +170,9 @@ function FactorGroup({
         >
           {expandido
             ? "Ver menos"
-            : `Ver ${ocultos} factor${ocultos === 1 ? "" : "es"} más`}
+            : ocultos > 0
+              ? `Ver ${ocultos} más y el detalle`
+              : "Ver el detalle"}
         </button>
       ) : null}
     </div>
@@ -174,7 +184,12 @@ function ShapRow({
   max,
   total,
   technical,
+  detallado = false,
 }: {
+  /** Con `false` la fila es una línea: factor, peso y una barra fina. La frase
+   *  que explica el factor sólo aparece al expandir el grupo. Dibujarlas
+   *  siempre son tres bloques por factor y ocho factores a la vista. */
+  detallado?: boolean;
   factor: ShapFactor;
   max: number;
   total: number;
@@ -186,7 +201,7 @@ function ShapRow({
   const copy = explainFactor(factor.feature, factor.direction, factor.value);
 
   return (
-    <div className="space-y-1">
+    <div className={detallado ? "space-y-1" : "space-y-0.5"}>
       <div className="flex items-baseline justify-between gap-2 text-xs">
         <span className="min-w-0 text-foreground">
           {technical ? (
@@ -207,17 +222,37 @@ function ShapRow({
         </span>
       </div>
 
-      {!technical ? (
-        <p className="text-[11px] leading-snug text-muted-foreground">
-          {copy.sentence}
-        </p>
-      ) : factor.value && factor.value !== "NaN" ? (
-        <div className="text-[10px] text-muted-foreground">
-          Valor observado: <span className="tabular-nums">{factor.value}</span>
+      {/* El detalle crece desde cero con una transición de `grid-template-rows`:
+          `height: auto` no es animable en CSS, y un `max-height` fijo recorta
+          las frases largas o deja un salto al final. */}
+      <div
+        className={cn(
+          "grid transition-[grid-template-rows] duration-200 ease-out",
+          "motion-reduce:transition-none",
+          detallado ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+        )}
+      >
+        <div className="overflow-hidden">
+          {!technical ? (
+            <p className="text-[11px] leading-snug text-muted-foreground">
+              {copy.sentence}
+            </p>
+          ) : factor.value && factor.value !== "NaN" ? (
+            <div className="text-[10px] text-muted-foreground">
+              Valor observado:{" "}
+              <span className="tabular-nums">{factor.value}</span>
+            </div>
+          ) : null}
         </div>
-      ) : null}
+      </div>
 
-      <div className="relative h-2 overflow-hidden rounded-full bg-muted">
+      <div
+        className={cn(
+          "relative overflow-hidden rounded-full bg-muted",
+          "transition-[height] duration-200 motion-reduce:transition-none",
+          detallado ? "h-2" : "h-1",
+        )}
+      >
         <div
           className={cn(
             "h-full rounded-full",
