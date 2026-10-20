@@ -24,7 +24,6 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { RiskBadge } from "@/components/risk-badge";
 import { WeatherCard } from "@/components/weather-card";
-import { BotonGuardar } from "@/components/viajero/boton-guardar";
 import { Badge } from "@/components/ui/badge";
 import {
   fmtTime,
@@ -38,11 +37,9 @@ import { CascadaCard } from "@/components/cascada-card";
 export function FlightDetailView({
   flight,
   history,
-  guardado = false,
 }: {
   flight: Flight;
   history: PredictionPoint[];
-  guardado?: boolean;
 }) {
   const historyWithLatestExplanation = history.map((cycle, index) =>
     index === history.length - 1 && cycle.shap.length === 0
@@ -78,10 +75,6 @@ export function FlightDetailView({
               <Badge variant="secondary" className="text-xs">Vuelo concluido</Badge>
             )}
             <RiskBadge risk={flight.risk} size="md" />
-            <BotonGuardar
-              faFlightId={flight.fa_flight_id}
-              guardadoInicial={guardado}
-            />
             <Link
               href={`https://www.flightaware.com/live/flight/${flight.fa_flight_id.split("-")[0]}`}
               target="_blank"

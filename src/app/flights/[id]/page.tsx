@@ -28,22 +28,23 @@ export default async function FlightDetailPage(
     getServerProfile(),
   ]);
 
-  // Se resuelve acá y no dentro del botón: así la pantalla llega con el estado
-  // correcto en el primer render y no parpadea de "Guardar" a "Guardado"
-  // después de montarse.
-  const guardado = await api
-    .savedFlights()
-    .then((lista) => lista.some((v) => v.fa_flight_id === flight.fa_flight_id))
-    .catch(() => false);
-
   if (profile === "passenger") {
+    // Se resuelve acá y no dentro del botón: así la pantalla llega con el
+    // estado correcto en el primer render y no parpadea de "Guardar" a
+    // "Guardado" después de montarse.
+    //
+    // Y sólo acá: operaciones ya no muestra el botón —su navegación tampoco
+    // tiene "Mis vuelos", así que guardar era un camino sin salida— y pedir
+    // la lista para nada costaba una consulta por cada detalle que se abría.
+    const guardado = await api
+      .savedFlights()
+      .then((lista) => lista.some((v) => v.fa_flight_id === flight.fa_flight_id))
+      .catch(() => false);
     // El historial de predicciones no se pide: la pantalla de viajero no lo
     // muestra, y es la consulta más cara de las dos.
     return <DetalleViajero flight={flight} guardado={guardado} />;
   }
 
   const history = await api.flightHistory(identificador);
-  return (
-    <FlightDetailView flight={flight} history={history} guardado={guardado} />
-  );
+  return <FlightDetailView flight={flight} history={history} />;
 }
