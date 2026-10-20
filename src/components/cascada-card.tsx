@@ -6,6 +6,11 @@ import { ArrowDown, GitBranch, TriangleAlert } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  BotonColapsar,
+  CuerpoColapsable,
+  useColapsable,
+} from "@/components/ui/seccion-colapsable";
 import { api, fmtTime, type Cascada } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -121,21 +126,47 @@ export function CascadaCard({
   const estado = estadoDeLaCascada(datos, { cargando, error });
   const piernas = datos?.piernas ?? [];
   const alcanzados = piernas.filter((p) => p.demorado).length;
+  // Abierta por defecto: es la mitad del título de la tesis, y cerrada por
+  // omisión volvería a quedar invisible como cuando estaba al pie.
+  const { abierto, alternar } = useColapsable(true);
+
+  // Lo que dice cerrada. Sin esto, cerrarla esconde el resultado en vez de
+  // ahorrar espacio.
+  const resumen =
+    estado === "cargando"
+      ? "calculando…"
+      : estado === "lista"
+        ? alcanzados === 0
+          ? "no arrastra"
+          : `${alcanzados} vuelo${alcanzados === 1 ? "" : "s"} afectado${alcanzados === 1 ? "" : "s"}`
+        : estado === "no_propaga"
+          ? "no arrastra"
+          : estado === "sin_dato"
+            ? "rotación desconocida"
+            : "sin dato";
 
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-2 text-sm font-medium">
-          <GitBranch className="size-4 text-muted-foreground" aria-hidden />
-          Efecto cascada
-          {datos?.demora_origen ? (
-            <Badge variant="secondary" className="font-normal">
-              {ETIQUETA_ORIGEN[datos.demora_origen]}
-            </Badge>
-          ) : null}
-        </CardTitle>
+        <BotonColapsar
+          abierto={abierto}
+          onToggle={alternar}
+          resumen={resumen}
+          titulo={
+            <CardTitle className="flex items-center gap-2 text-sm font-medium">
+              <GitBranch className="size-4 text-muted-foreground" aria-hidden />
+              Efecto cascada
+              {datos?.demora_origen ? (
+                <Badge variant="secondary" className="font-normal">
+                  {ETIQUETA_ORIGEN[datos.demora_origen]}
+                </Badge>
+              ) : null}
+            </CardTitle>
+          }
+        />
       </CardHeader>
 
+      <CuerpoColapsable abierto={abierto}>
       <CardContent className="space-y-4 pb-5">
         {/* El simulador va arriba: es lo que invita a usar la tarjeta. */}
         <div className="flex flex-wrap items-center gap-2">
@@ -275,6 +306,7 @@ export function CascadaCard({
           <p className="text-xs text-muted-foreground">{datos.nota}.</p>
         ) : null}
       </CardContent>
+      </CuerpoColapsable>
     </Card>
   );
 }
