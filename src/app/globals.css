@@ -286,9 +286,10 @@
   50%      { opacity: 1; }
 }
 
-/* La entrada de la versión con movimiento reducido: la misma llegada, sin
- * desplazarse. Aparecer puesta también se lee como "no hay animación". */
-@keyframes aparece-nube {
+/* La entrada de las versiones con movimiento reducido, de las dos cortinas:
+ * la misma llegada, sin desplazarse. Aparecer puesta también se lee como "no
+ * hay animación". */
+@keyframes aparece-cortina {
   from { opacity: 0; }
 }
 
@@ -330,7 +331,7 @@
   .nube {
     /* El respiro arranca después de la entrada: hasta los 900 ms está en
      * retardo y no aporta opacidad, así que no pelean. */
-    animation: aparece-nube 900ms ease-out both,
+    animation: aparece-cortina 900ms ease-out both,
                respiro-nube 14s ease-in-out 900ms infinite;
   }
   .nube-despeja-izq,
@@ -338,4 +339,112 @@
     transform: none;
     transition: opacity 900ms ease-out;
   }
+}
+
+/* ===========================================================================
+ * Cortina de pista — /flights
+ *
+ * Sin `@layer`, por el mismo motivo que las nubes: tiene que ganarle a las
+ * utilidades de Tailwind sin depender del orden de las clases.
+ *
+ * Todo lo que se anima acá es `transform` u `opacity`, y eso no es un detalle
+ * de prolijidad: la cortina está a la vista justo mientras el hilo principal
+ * parsea 240 KB de JSON y monta el mapa. Una animación de `background-position`
+ * se calcula en ese mismo hilo y se trabaría exactamente cuando se la está
+ * mirando; transform y opacity las resuelve el compositor y siguen corriendo
+ * aunque el JavaScript esté ocupado.
+ * ======================================================================== */
+
+/* El tramo de pista: eje y luces de borde, que se acercan juntos.
+ *
+ * Los valores salen de `puntoDePista()` en `lib/perspectiva-pista.ts` y los
+ * verifica `cortina-de-pista.test.ts`. Si se cambia la curva allá sin tocar
+ * acá, la prueba falla: el asfalto se dibuja con la curva de TypeScript y los
+ * tramos corren con esta, y cuando no coinciden las luces de borde quedan
+ * flotando sobre el asfalto en vez de apoyadas en el borde. */
+@keyframes corre-tramo {
+  0%   { transform: translateY(0.00vh) scale(0.0300); }
+  8%   { transform: translateY(0.03vh) scale(0.0308); }
+  20%  { transform: translateY(0.40vh) scale(0.0407); }
+  35%  { transform: translateY(2.14vh) scale(0.0813); }
+  50%  { transform: translateY(6.25vh) scale(0.1693); }
+  65%  { transform: translateY(13.73vh) scale(0.3204); }
+  80%  { transform: translateY(25.60vh) scale(0.5493); }
+  90%  { transform: translateY(36.45vh) scale(0.7522); }
+  100% { transform: translateY(50.00vh) scale(1.0000); }
+}
+
+.pista-tramo {
+  animation: corre-tramo var(--ciclo, 2200ms) linear var(--retraso, 0ms) infinite;
+  will-change: transform;
+}
+
+/* El destello secuenciado del eje. Prendido corto y apagado largo: una luz de
+ * aproximación es un flash, no un latido. */
+@keyframes destella-pista {
+  0%, 6%    { opacity: 1; }
+  16%, 100% { opacity: 0; }
+}
+
+.pista-destello {
+  animation: destella-pista 1100ms linear var(--retraso, 0ms) infinite;
+}
+
+/* El faro del aeropuerto: verde, blanco, nada. Todo aeródromo tiene uno y gira
+ * a unas 12 vueltas por minuto, o sea un destello de cada color cada 5 s. */
+@keyframes gira-faro {
+  0%, 4%     { opacity: 1; background: #4ade80; }
+  10%, 48%   { opacity: 0; background: #4ade80; }
+  52%, 56%   { opacity: 1; background: #f8fafc; }
+  62%, 100%  { opacity: 0; background: #f8fafc; }
+}
+
+.pista-faro {
+  animation: gira-faro 5s linear infinite;
+}
+
+/* El balanceo de la cabina. Media hora de video de aproximaciones y ninguna
+ * va perfectamente nivelada; sin esto la escena se lee como una maqueta. */
+@keyframes balancea-cabina {
+  from { transform: rotate(-0.7deg) translateX(-0.4vw); }
+  to   { transform: rotate(0.7deg) translateX(0.4vw); }
+}
+
+/* El descenso: la escena baja a su lugar en vez de aparecer puesta. Va en un
+ * elemento aparte del balanceo porque dos animaciones sobre `transform` no se
+ * suman —la última de la lista gana— y acá hacen falta las dos a la vez. */
+@keyframes entra-cabina {
+  from { transform: translateY(-4vh) scale(1.08); opacity: 0; }
+  to   { transform: translateY(0) scale(1); }
+}
+
+.pista-camara { animation: entra-cabina 1400ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.pista-escena { animation: balancea-cabina 7s ease-in-out infinite alternate; }
+
+/* El aterrizaje: el suelo pasa de largo. El `cubic-bezier` arranca rápido y
+ * frena, que es lo que hace un avión cuando toca. */
+.pista-aterriza {
+  transform: translateY(13vh) scale(1.4);
+  transition: transform 1100ms cubic-bezier(0.16, 0.8, 0.3, 1);
+}
+
+/* Con "reducir movimiento" activado la pista no corre: queda quieta, con cada
+ * tramo en su posición de reposo —de ahí `--y` y `--escala`, que vienen de la
+ * misma curva— y los destellos de aproximación siguen secuenciando, porque son
+ * cambios de opacidad y eso no es lo que la preferencia pide quitar.
+ *
+ * Sin las posiciones de reposo todos los tramos se apilarían en el punto de
+ * fuga, que es donde los deja el fotograma 0% de `corre-tramo`: una pista
+ * vacía. Es el mismo error que tuvo la cortina de nubes y por eso está acá
+ * explicado y probado. */
+@media (prefers-reduced-motion: reduce) {
+  .pista-camara {
+    animation: aparece-cortina 900ms ease-out both;
+  }
+  .pista-escena { animation: none; transform: none; }
+  .pista-tramo {
+    animation: none;
+    transform: translateY(calc(var(--y) * 1vh)) scale(var(--escala));
+  }
+  .pista-aterriza { transform: none; transition: none; }
 }
