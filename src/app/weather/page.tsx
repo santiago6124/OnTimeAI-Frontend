@@ -9,6 +9,7 @@ import { HourlyDelayChart } from "@/components/hourly-delay-chart";
 import { Cloud, Eye, Radar, Thermometer, Wind } from "lucide-react";
 import { WeatherMap } from "@/components/maps/weather-map-dynamic";
 import { WeatherErrorCard } from "@/components/weather-error-card";
+import { CortinaDeNubes } from "@/components/cortina-de-nubes";
 import { useWeatherStations } from "@/hooks/use-weather-stations";
 import { api } from "@/lib/api";
 import type { WeatherStation } from "@/lib/mock-data";
@@ -46,8 +47,21 @@ export default function WeatherPage() {
   const { status, data, error } = useWeatherStations(icaoCodes.length > 0 ? icaoCodes : undefined);
   const atlStation = data?.stations.find((s) => s.code === "ATL");
 
+  // Dos esperas seguidas: primero los vuelos del día, para saber qué
+  // aeropuertos consultar, y recién después el METAR de cada uno. La cortina
+  // cubre las dos: entre una y otra la pantalla quedaba vacía un instante.
+  const cargando = icaoCodes.length === 0 || status === "loading";
+
   return (
     <AppShell title="Meteorología ATL">
+      <CortinaDeNubes
+        cargando={cargando}
+        detalle={
+          icaoCodes.length === 0
+            ? "Buscando los vuelos del día"
+            : `Reuniendo el clima de ${icaoCodes.length} aeropuertos`
+        }
+      />
       <div className="space-y-4">
         <header className="space-y-2">
           <div className="flex flex-wrap items-center gap-2">
