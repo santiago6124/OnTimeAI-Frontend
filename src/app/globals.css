@@ -225,3 +225,53 @@
     transparent 12px 24px
   );
 }
+
+/* ── Cortina de nubes de /weather ─────────────────────────────────────────
+ *
+ * La página pide los vuelos del día, arma hasta 150 códigos de aeropuerto y
+ * después el METAR de cada uno. Son varios segundos contra una pantalla a
+ * medio dibujar, y un esqueleto gris no explica la espera.
+ *
+ * Las capas derivan a distintas velocidades para dar profundidad; al terminar
+ * la carga se abren hacia los costados en vez de desvanecerse, que es lo que
+ * hace que se lea como "se despeja" y no como "se apagó".
+ *
+ * Van sin `@layer` a propósito, como `.safe-top`: las utilidades de Tailwind
+ * viven en `@layer utilities` y una regla sin capa les gana, que es lo que
+ * hace falta para que el overlay no dependa del orden de clases.
+ */
+@keyframes deriva-nube {
+  from { transform: translate3d(-12%, 0, 0); }
+  to   { transform: translate3d(12%, 0, 0); }
+}
+
+@keyframes respiro-nube {
+  0%, 100% { opacity: 0.85; }
+  50%      { opacity: 1; }
+}
+
+.nube {
+  animation: deriva-nube var(--velocidad, 26s) ease-in-out infinite alternate,
+             respiro-nube 9s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+/* Al despejar, cada mitad se va para su lado. El `cubic-bezier` arranca lento
+ * y acelera: una nube que se abre de golpe parece un telón, no clima. */
+.nube-despeja-izq { animation: none; transform: translate3d(-115%, 0, 0); }
+.nube-despeja-der { animation: none; transform: translate3d(115%, 0, 0); }
+.nube-despeja-izq,
+.nube-despeja-der {
+  transition: transform 1100ms cubic-bezier(0.45, 0, 0.2, 1),
+              opacity 900ms ease-out 200ms;
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nube { animation: none; }
+  .nube-despeja-izq,
+  .nube-despeja-der {
+    transform: none;
+    transition: opacity 250ms linear;
+  }
+}
