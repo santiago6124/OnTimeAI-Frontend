@@ -4,10 +4,8 @@ import { useState } from "react";
 
 import { PredictionHistoryChart } from "@/components/prediction-history-chart";
 import { ShapPanel } from "@/components/shap-panel";
-import {
-  BotonColapsar,
-  useColapsable,
-} from "@/components/ui/seccion-colapsable";
+import { BotonColapsar } from "@/components/ui/seccion-colapsable";
+import { useSeccionAbierta } from "@/lib/secciones-abiertas";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { fmtProba, fmtTime, type PredictionPoint } from "@/lib/api";
 
@@ -168,7 +166,7 @@ function CicloSeleccionado({
   compacto: React.ReactNode;
   detallado: React.ReactNode;
 }) {
-  const { abierto, alternar } = useColapsable(false);
+  const { abierto, alternar } = useSeccionAbierta("ciclo-seleccionado", false);
   return (
     <Card>
       <CardHeader className="pb-3">
