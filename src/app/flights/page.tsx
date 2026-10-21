@@ -12,7 +12,11 @@ import {
   type RiskFilter,
   type StatusTab,
 } from "@/components/flights-table";
-import { FlightRadarMap } from "@/components/maps/flight-radar-map-dynamic";
+import {
+  FlightRadarMap,
+  precargarMapaDeVuelos,
+} from "@/components/maps/flight-radar-map-dynamic";
+import { CortinaDePista } from "@/components/cortina-de-pista";
 import { flightsToTracks, type MapTrack } from "@/hooks/use-real-flight-tracks";
 import { useFlights } from "@/hooks/use-flights";
 import { Plane } from "lucide-react";
@@ -68,6 +72,13 @@ function FlightsPageContent() {
   });
   const [query, setQuery] = React.useState(() => searchParams.get("q") ?? "");
   const flightsData = useFlights();
+
+  // Durante la espera el chunk del mapa ya viene en camino, así que cuando la
+  // cortina aterriza hay mapa y no un esqueleto.
+  React.useEffect(() => {
+    precargarMapaDeVuelos();
+  }, []);
+
   const tracks = React.useMemo(
     () => flightsToTracks(flightsData.flights),
     [flightsData.flights],
@@ -77,6 +88,10 @@ function FlightsPageContent() {
 
   return (
     <AppShell title="Vuelos ATL">
+      <CortinaDePista
+        cargando={flightsData.loading}
+        detalle="Trayendo los vuelos de hoy"
+      />
       <div className="space-y-4">
         <header className="flex items-center justify-between gap-2">
           <div className="space-y-1">
