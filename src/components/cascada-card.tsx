@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   BotonColapsar,
-  CuerpoColapsable,
   useColapsable,
 } from "@/components/ui/seccion-colapsable";
 import { api, fmtTime, type Cascada } from "@/lib/api";
@@ -166,10 +165,11 @@ export function CascadaCard({
         />
       </CardHeader>
 
-      <CuerpoColapsable abierto={abierto}>
       <CardContent className="space-y-4 pb-5">
-        {/* El simulador va arriba: es lo que invita a usar la tarjeta. */}
-        <div className="flex flex-wrap items-center gap-2">
+        {/* El simulador va arriba: es lo que invita a usar la tarjeta. En
+            compacto se oculta: es un control, no información, y ocupa una
+            fila entera. */}
+        <div className={cn("flex-wrap items-center gap-2", abierto ? "flex" : "hidden")}>
           <span className="text-xs text-muted-foreground">Simular llegada</span>
           {ESCENARIOS.map((m) => (
             <Button
@@ -256,26 +256,35 @@ export function CascadaCard({
                   ) : null}
                   <div
                     className={cn(
-                      "rounded-lg border px-3 py-2",
+                      "rounded-lg border",
+                      abierto ? "px-3 py-2" : "px-2.5 py-1.5",
                       p.demorado
                         ? "border-risk-high/30 bg-risk-high/5"
                         : "border-border",
                     )}
                   >
                     <div className="flex flex-wrap items-baseline justify-between gap-x-3">
-                      <span className="font-mono text-sm">
+                      <span className={cn("font-mono", abierto ? "text-sm" : "text-xs")}>
                         {p.vuelo ?? p.fa_flight_id.slice(0, 10)}
                       </span>
                       <span className="text-xs text-muted-foreground">
                         {p.origen} → {p.destino}
-                        {p.salida_programada_utc
+                        {abierto && p.salida_programada_utc
                           ? ` · ${fmtTime(p.salida_programada_utc)}`
                           : ""}
                       </span>
                     </div>
-                    <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                    {/* Compacto no pierde los números, los pone en la misma
+                        línea y sin las palabras que se entienden por contexto. */}
+                    <div
+                      className={cn(
+                        "flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground",
+                        abierto && "mt-1",
+                      )}
+                    >
                       <span>
-                        escala {Math.round(p.holgura_min)} min
+                        {abierto ? "escala " : ""}
+                        {Math.round(p.holgura_min)} min
                       </span>
                       <span
                         className={cn(
@@ -283,9 +292,9 @@ export function CascadaCard({
                           p.demorado && "font-medium text-risk-high",
                         )}
                       >
-                        llega +{Math.round(p.demora_llegada_min)} min
+                        {abierto ? "llega " : ""}+{Math.round(p.demora_llegada_min)} min
                       </span>
-                      {p.cadena_rota ? (
+                      {p.cadena_rota && abierto ? (
                         <span className="flex items-center gap-1 text-risk-medium">
                           <TriangleAlert className="size-3" aria-hidden />
                           con esta demora la aerolínea cambia el avión
@@ -299,14 +308,13 @@ export function CascadaCard({
           </>
         )}
 
-        {datos?.aviso ? (
+        {abierto && datos?.aviso ? (
           <p className="text-xs text-muted-foreground">{datos.aviso}.</p>
         ) : null}
-        {datos?.nota && piernas.length > 0 ? (
+        {abierto && datos?.nota && piernas.length > 0 ? (
           <p className="text-xs text-muted-foreground">{datos.nota}.</p>
         ) : null}
       </CardContent>
-      </CuerpoColapsable>
     </Card>
   );
 }

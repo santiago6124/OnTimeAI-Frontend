@@ -6,7 +6,6 @@ import { PredictionHistoryChart } from "@/components/prediction-history-chart";
 import { ShapPanel } from "@/components/shap-panel";
 import {
   BotonColapsar,
-  CuerpoColapsable,
   useColapsable,
 } from "@/components/ui/seccion-colapsable";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -51,9 +50,42 @@ export function PredictionEvolution({
 
       <div className="grid gap-4 lg:grid-cols-[minmax(240px,0.75fr)_minmax(0,2fr)]">
         <CicloSeleccionado
-          momento={`${fmtTime(selected.predicted_at_utc)} UTC`}
-          probabilidad={fmtProba(selected.delay_probability)}
-        >
+          compacto={
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+              <DatoCiclo etiqueta="Momento" valor={fmtTime(selected.predicted_at_utc)} />
+              <DatoCiclo etiqueta="Fase" valor={PHASE_LABELS[selected.prediction_phase]} />
+              <DatoCiclo etiqueta="Base" valor={fmtProba(selected.base_probability)} />
+              <DatoCiclo etiqueta="Final" valor={fmtProba(selected.delay_probability)} fuerte />
+              <DatoCiclo
+                etiqueta="Ajuste"
+                valor={`${selected.operational_adjustment >= 0 ? "+" : ""}${(
+                  selected.operational_adjustment * 100
+                ).toFixed(1)} pp`}
+              />
+              <DatoCiclo
+                etiqueta="Cambio"
+                valor={
+                  delta === null
+                    ? "Primer ciclo"
+                    : `${delta >= 0 ? "+" : ""}${(delta * 100).toFixed(1)} pp`
+                }
+              />
+              <DatoCiclo
+                etiqueta="Umbral"
+                valor={
+                  selected.threshold_used === null
+                    ? "—"
+                    : fmtProba(selected.threshold_used)
+                }
+              />
+              <DatoCiclo
+                etiqueta="Estrategia"
+                valor={selected.threshold_strategy?.replaceAll("_", " ") ?? "—"}
+              />
+            </div>
+          }
+          detallado={
+            <>
             <CycleValue label="Momento" value={`${fmtTime(selected.predicted_at_utc)} UTC`} numero />
             <CycleValue label="Fase" value={PHASE_LABELS[selected.prediction_phase]} />
             <CycleValue label="Probabilidad base calibrada" value={fmtProba(selected.base_probability)} numero />
@@ -83,7 +115,9 @@ export function PredictionEvolution({
               label="Estrategia de umbral"
               value={selected.threshold_strategy?.replaceAll("_", " ") ?? "No registrada"}
             />
-        </CicloSeleccionado>
+            </>
+          }
+        />
 
         <ShapPanel factors={selected.shap} />
       </div>
@@ -128,13 +162,11 @@ function CycleValue({
  * se mira es la probabilidad, que queda en el resumen. Abierto está todo.
  */
 function CicloSeleccionado({
-  momento,
-  probabilidad,
-  children,
+  compacto,
+  detallado,
 }: {
-  momento: string;
-  probabilidad: string;
-  children: React.ReactNode;
+  compacto: React.ReactNode;
+  detallado: React.ReactNode;
 }) {
   const { abierto, alternar } = useColapsable(false);
   return (
@@ -143,7 +175,6 @@ function CicloSeleccionado({
         <BotonColapsar
           abierto={abierto}
           onToggle={alternar}
-          resumen={`${probabilidad} · ${momento}`}
           titulo={
             <CardTitle className="text-sm font-medium">
               Ciclo seleccionado
@@ -151,9 +182,29 @@ function CicloSeleccionado({
           }
         />
       </CardHeader>
-      <CuerpoColapsable abierto={abierto}>
-        <CardContent className="space-y-3 text-sm">{children}</CardContent>
-      </CuerpoColapsable>
+      <CardContent className={abierto ? "space-y-3 text-sm" : "pb-4"}>
+        {abierto ? detallado : compacto}
+      </CardContent>
     </Card>
+  );
+}
+
+/** Un valor del ciclo en su forma apretada. */
+function DatoCiclo({
+  etiqueta,
+  valor,
+  fuerte = false,
+}: {
+  etiqueta: string;
+  valor: React.ReactNode;
+  fuerte?: boolean;
+}) {
+  return (
+    <div className="min-w-0">
+      <p className="text-[11px] text-muted-foreground">{etiqueta}</p>
+      <div className={fuerte ? "font-semibold tabular-nums" : "tabular-nums"}>
+        {valor}
+      </div>
+    </div>
   );
 }
