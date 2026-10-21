@@ -3,7 +3,8 @@
 import * as React from "react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BotonColapsar, useColapsable } from "@/components/ui/seccion-colapsable";
+import { BotonColapsar } from "@/components/ui/seccion-colapsable";
+import { useSeccionAbierta } from "@/lib/secciones-abiertas";
 import { cn } from "@/lib/utils";
 
 /**
@@ -20,12 +21,16 @@ import { cn } from "@/lib/utils";
  * el servidor, no una consulta de más.
  */
 export function TarjetaColapsable({
+  clave,
   titulo,
   compacto,
   detallado,
   detalladoPorDefecto = false,
   className,
 }: {
+  /** Identifica la sección para recordar si quedó expandida. Estable: si
+   *  cambia, el usuario pierde lo que había elegido. */
+  clave: string;
   titulo: React.ReactNode;
   /** Toda la información, en su forma más apretada. */
   compacto: React.ReactNode;
@@ -34,7 +39,7 @@ export function TarjetaColapsable({
   detalladoPorDefecto?: boolean;
   className?: string;
 }) {
-  const { abierto, alternar } = useColapsable(detalladoPorDefecto);
+  const { abierto, alternar } = useSeccionAbierta(clave, detalladoPorDefecto);
   return (
     <Card className={className}>
       <CardHeader className="pb-2">

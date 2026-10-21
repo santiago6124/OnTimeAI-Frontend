@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import type { ShapFactor } from "@/lib/api";
 import { contributionShare, explainFactor } from "@/lib/shap-explain";
 import { cn } from "@/lib/utils";
+import { useSeccionAbierta } from "@/lib/secciones-abiertas";
 
 export function ShapPanel({
   factors,
@@ -135,7 +136,11 @@ function FactorGroup({
   total: number;
   technical: boolean;
 }) {
-  const [expandido, setExpandido] = React.useState(false);
+  // La clave sale del encabezado, que distingue los dos grupos y no cambia.
+  const { abierto: expandido, alternar } = useSeccionAbierta(
+    `factores:${heading}`,
+    false,
+  );
   const ocultos = Math.max(0, factors.length - FACTORES_VISIBLES);
   const visibles = expandido ? factors : factors.slice(0, FACTORES_VISIBLES);
 
@@ -165,7 +170,7 @@ function FactorGroup({
       {factors.length > 0 ? (
         <button
           type="button"
-          onClick={() => setExpandido((v) => !v)}
+          onClick={alternar}
           className="text-[11px] text-muted-foreground underline-offset-2 hover:underline"
         >
           {expandido
