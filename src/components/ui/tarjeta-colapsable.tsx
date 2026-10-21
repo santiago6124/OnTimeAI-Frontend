@@ -3,53 +3,52 @@
 import * as React from "react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  BotonColapsar,
-  CuerpoColapsable,
-  useColapsable,
-} from "@/components/ui/seccion-colapsable";
+import { BotonColapsar, useColapsable } from "@/components/ui/seccion-colapsable";
 import { cn } from "@/lib/utils";
 
 /**
- * Una tarjeta cuyo cuerpo colapsa.
+ * Una tarjeta con dos versiones del MISMO contenido: compacta y detallada.
  *
- * Existe para que `flight-detail-view`, que es Server Component, pueda tener
- * secciones que abren y cierran: el contenido se arma en el servidor y llega
- * acá como children.
+ * No esconde nada al cerrar. Ésa fue la primera versión y estaba mal: cerrada
+ * mostraba sólo el título y un resumen de una línea, y lo que se pedía era que
+ * la sección siguiera mostrando su información, apretada. Cerrar para ocultar
+ * ahorra espacio tirando el contenido; acá se ahorra apretándolo.
  *
- * `resumen` es lo que la sección dice cuando está cerrada. No es opcional en
- * la práctica: una sección cerrada sin resumen esconde información en vez de
- * ahorrar espacio, que es lo contrario de lo que se busca.
+ * Las dos versiones llegan ya renderizadas: `flight-detail-view` es Server
+ * Component, así que no puede decidir cuál armar según un estado de cliente.
+ * Se arman las dos en el servidor y acá se elige. El costo es render de más en
+ * el servidor, no una consulta de más.
  */
 export function TarjetaColapsable({
   titulo,
-  resumen,
-  children,
-  abiertaPorDefecto = false,
+  compacto,
+  detallado,
+  detalladoPorDefecto = false,
   className,
 }: {
   titulo: React.ReactNode;
-  resumen?: React.ReactNode;
-  children: React.ReactNode;
-  abiertaPorDefecto?: boolean;
+  /** Toda la información, en su forma más apretada. */
+  compacto: React.ReactNode;
+  /** Lo mismo, con las etiquetas y el aire completos. */
+  detallado: React.ReactNode;
+  detalladoPorDefecto?: boolean;
   className?: string;
 }) {
-  const { abierto, alternar } = useColapsable(abiertaPorDefecto);
+  const { abierto, alternar } = useColapsable(detalladoPorDefecto);
   return (
     <Card className={className}>
-      <CardHeader className={cn("pb-2", !abierto && "pb-3")}>
+      <CardHeader className="pb-2">
         <BotonColapsar
           abierto={abierto}
           onToggle={alternar}
           titulo={
             <CardTitle className="text-sm font-medium">{titulo}</CardTitle>
           }
-          resumen={resumen}
         />
       </CardHeader>
-      <CuerpoColapsable abierto={abierto}>
-        <CardContent className="space-y-4">{children}</CardContent>
-      </CuerpoColapsable>
+      <CardContent className={cn(abierto ? "space-y-4" : "pb-4")}>
+        {abierto ? detallado : compacto}
+      </CardContent>
     </Card>
   );
 }

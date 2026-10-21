@@ -127,41 +127,62 @@ export function FlightDetailView({
         <div className="grid gap-4">
           <TarjetaColapsable
             titulo="Predicción del modelo"
-            // Cerrada dice la probabilidad, que es el número que uno viene a
-            // buscar. El resto —predicción binaria, riesgo, aeronave, última
-            // corrida, resultado real— son seis filas con separadores que sólo
-            // se miran cuando se quiere el detalle.
-            resumen={fmtProba(flight.delay_probability)}
-            abiertaPorDefecto
-          >
-            <p className="-mt-1 text-xs text-muted-foreground">
-              LightGBM v9 · ATL 2021-2024
-            </p>
-            <KV
-              label="Probabilidad de retraso"
-              value={fmtProba(flight.delay_probability)}
-              emphasis
-            />
-            <Separator />
-            <KV
-                label="Predicción binaria"
-                value={flight.predicted_delay ? "Retrasado (>15 min)" : "A tiempo"}
-              />
-              <Separator />
-              <KV label="Nivel de riesgo" value={<RiskBadge risk={flight.risk} />} />
-              <Separator />
-              <KV label="Aeronave" value={flight.aircraft_type || "—"} variante="codigo" />
-              <KV label="Última predicción" value={fmtTime(flight.predicted_at_utc)} variante="numero" />
-              <Separator />
-              <KV
-                label="Resultado real"
-                value={
-                  flight.has_actual && flight.arr_delay_min !== null
-                    ? <ActualOutcome arrDelay={flight.arr_delay_min} predicted={!!flight.predicted_delay} />
-                    : <span className="text-muted-foreground text-sm">Pendiente</span>
-                }
-              />
-          </TarjetaColapsable>
+            detalladoPorDefecto
+            // Compacto: las mismas seis cosas en una grilla apretada, sin
+            // separadores ni etiquetas largas. Detallado: con el aire y los
+            // nombres completos. No se esconde nada en ninguno de los dos.
+            compacto={
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs sm:grid-cols-3">
+                <Dato etiqueta="Probabilidad" valor={fmtProba(flight.delay_probability)} fuerte />
+                <Dato
+                  etiqueta="Predicción"
+                  valor={flight.predicted_delay ? "Retrasado" : "A tiempo"}
+                />
+                <Dato etiqueta="Riesgo" valor={<RiskBadge risk={flight.risk} size="sm" />} />
+                <Dato etiqueta="Aeronave" valor={flight.aircraft_type || "—"} />
+                <Dato etiqueta="Última corrida" valor={fmtTime(flight.predicted_at_utc)} />
+                <Dato
+                  etiqueta="Resultado"
+                  valor={
+                    flight.has_actual && flight.arr_delay_min !== null
+                      ? `${Math.round(flight.arr_delay_min)} min`
+                      : "Pendiente"
+                  }
+                />
+              </div>
+            }
+            detallado={
+              <>
+                <p className="-mt-1 text-xs text-muted-foreground">
+                  LightGBM v9 · ATL 2021-2024
+                </p>
+                <KV
+                  label="Probabilidad de retraso"
+                  value={fmtProba(flight.delay_probability)}
+                  emphasis
+                />
+                <Separator />
+                <KV
+                  label="Predicción binaria"
+                  value={flight.predicted_delay ? "Retrasado (>15 min)" : "A tiempo"}
+                />
+                <Separator />
+                <KV label="Nivel de riesgo" value={<RiskBadge risk={flight.risk} />} />
+                <Separator />
+                <KV label="Aeronave" value={flight.aircraft_type || "—"} variante="codigo" />
+                <KV label="Última predicción" value={fmtTime(flight.predicted_at_utc)} variante="numero" />
+                <Separator />
+                <KV
+                  label="Resultado real"
+                  value={
+                    flight.has_actual && flight.arr_delay_min !== null
+                      ? <ActualOutcome arrDelay={flight.arr_delay_min} predicted={!!flight.predicted_delay} />
+                      : <span className="text-muted-foreground text-sm">Pendiente</span>
+                  }
+                />
+              </>
+            }
+          />
 
         </div>
 
@@ -264,5 +285,31 @@ function ActualOutcome({ arrDelay, predicted }: { arrDelay: number; predicted: b
         {correct ? "✓ Predicción correcta" : "✗ Predicción incorrecta"}
       </span>
     </span>
+  );
+}
+
+
+/**
+ * Un dato en la versión compacta: etiqueta chica arriba, valor abajo.
+ *
+ * Es el mismo contenido que `KV` pero sin el aire ni los separadores, para que
+ * seis datos entren en dos o tres columnas en vez de seis filas.
+ */
+function Dato({
+  etiqueta,
+  valor,
+  fuerte = false,
+}: {
+  etiqueta: string;
+  valor: React.ReactNode;
+  fuerte?: boolean;
+}) {
+  return (
+    <div className="min-w-0">
+      <p className="text-[11px] text-muted-foreground">{etiqueta}</p>
+      <div className={fuerte ? "font-semibold tabular-nums" : "tabular-nums"}>
+        {valor}
+      </div>
+    </div>
   );
 }
