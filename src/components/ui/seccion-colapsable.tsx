@@ -6,47 +6,25 @@ import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
- * Cuerpo que colapsa, con la animación compartida por toda la página.
+ * Las secciones del detalle de vuelo no esconden: comprimen.
  *
- * El detalle de vuelo en modo operaciones son cinco bloques —encabezado,
- * predicción, cascada, evolución y clima— y la evolución trae adentro otros
- * tres. Dibujados enteros son varias pantallas de scroll, y lo que uno busca
- * casi siempre es el número de arriba.
- *
- * La animación va con `grid-template-rows` de `0fr` a `1fr` y no con
- * `max-height`: `height: auto` no es animable en CSS, y un máximo fijo recorta
- * el contenido largo o deja un salto al final cuando el contenido es corto.
- * Está en un solo lugar para que las cinco secciones abran igual.
+ * Hubo una primitiva `CuerpoColapsable` que animaba el alto de cero a auto y
+ * se quitó. Cerrar para ocultar ahorra espacio tirando el contenido, y lo que
+ * se busca es que la sección siga diciendo lo suyo, apretada: el mismo dato
+ * con menos etiquetas, menos aire y sin las frases que se entienden por
+ * contexto. Cada sección trae sus dos versiones y elige cuál dibujar.
  */
-export function CuerpoColapsable({
-  abierto,
-  children,
-  className,
-}: {
-  abierto: boolean;
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <div
-      className={cn(
-        "grid transition-[grid-template-rows] duration-200 ease-out",
-        "motion-reduce:transition-none",
-        abierto ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
-      )}
-      aria-hidden={!abierto}
-    >
-      <div className={cn("overflow-hidden", className)}>{children}</div>
-    </div>
-  );
-}
 
 /**
- * El control que abre y cierra.
+ * El control que alterna entre la versión compacta y la detallada de una
+ * sección.
  *
- * Lleva el resumen al lado del título: colapsado la sección tiene que seguir
- * diciendo lo suyo, porque si no, cerrarla es esconder información en vez de
- * ahorrar espacio.
+ * No es "mostrar y ocultar": las dos versiones dicen lo mismo, una apretada y
+ * otra con las etiquetas y el aire completos. El chevron gira para indicar que
+ * hay más detalle disponible, no que hay contenido escondido.
+ *
+ * `resumen` queda para las secciones que además quieran adelantar un dato en
+ * el encabezado.
  */
 export function BotonColapsar({
   abierto,
