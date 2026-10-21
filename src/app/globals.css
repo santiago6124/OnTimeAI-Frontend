@@ -154,11 +154,32 @@
   }
 }
 
+/* "Reducir movimiento": el barrido apaga toda animación y toda transición de
+ * la app. Es el default correcto para una interfaz que no fue pensada con esa
+ * preferencia en mente, y la mayor parte de esta no lo fue.
+ *
+ * Pero `!important` sobre los longhands le gana a cualquier `animation:` que
+ * escriba un componente, por específico que sea su selector. Eso convierte el
+ * barrido en un techo: un componente que SÍ tiene un tratamiento pensado para
+ * movimiento reducido —quitar el desplazamiento y dejar la opacidad, en vez de
+ * quedarse en una imagen fija— no tiene forma de expresarlo.
+ *
+ * `data-movimiento-propio` es la salida. El elemento que lo lleva, y todo lo
+ * que tiene adentro, queda afuera del barrido y se hace cargo él mismo de la
+ * preferencia. No es permiso para ignorarla: es la obligación de atenderla en
+ * su propio bloque `prefers-reduced-motion`. Hoy lo usa la cortina de nubes de
+ * meteorología, que sin esto era una imagen fija que desaparecía de golpe
+ * —exactamente lo que el barrido quería evitar— para quien tiene la
+ * preferencia activada. */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *:not([data-movimiento-propio]):not([data-movimiento-propio] *),
+  *:not([data-movimiento-propio]):not([data-movimiento-propio] *)::before,
+  *:not([data-movimiento-propio]):not([data-movimiento-propio] *)::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+  html {
     scroll-behavior: auto !important;
   }
 }
@@ -265,6 +286,12 @@
   50%      { opacity: 1; }
 }
 
+/* La entrada de la versión con movimiento reducido: la misma llegada, sin
+ * desplazarse. Aparecer puesta también se lee como "no hay animación". */
+@keyframes aparece-nube {
+  from { opacity: 0; }
+}
+
 /* La deriva tiene que notarse en los pocos segundos que la cortina está a la
  * vista. Con los 58 y 90 segundos de la primera versión el movimiento era de
  * menos del 2% del ancho en cuatro segundos: técnicamente animado, en los
@@ -301,7 +328,10 @@
  * para que se lea como algo vivo y no como un parpadeo. */
 @media (prefers-reduced-motion: reduce) {
   .nube {
-    animation: respiro-nube 14s ease-in-out infinite;
+    /* El respiro arranca después de la entrada: hasta los 900 ms está en
+     * retardo y no aporta opacidad, así que no pelean. */
+    animation: aparece-nube 900ms ease-out both,
+               respiro-nube 14s ease-in-out 900ms infinite;
   }
   .nube-despeja-izq,
   .nube-despeja-der {
