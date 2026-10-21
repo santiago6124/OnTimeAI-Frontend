@@ -104,6 +104,13 @@ export function CortinaDeNubes({
         background:
           "linear-gradient(180deg,#5eb8ef 0%,#89cdf2 26%,#b4dff6 54%,#d9edf9 78%,#f1f7fb 100%)",
       }}
+      // La cortina se hace cargo ella misma de "reducir movimiento": el
+      // barrido global de `globals.css` apaga toda animación y toda
+      // transición con `!important`, y acá eso dejaba una imagen fija que
+      // desaparecía de golpe. El bloque `prefers-reduced-motion` de `.nube`
+      // quita el desplazamiento y deja la opacidad, que es lo que la
+      // preferencia pide; sin este atributo ese bloque no llega a aplicarse.
+      data-movimiento-propio
       aria-hidden
     >
       {CAPAS.map((capa, i) => (
