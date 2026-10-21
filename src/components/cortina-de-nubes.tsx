@@ -44,8 +44,8 @@ const MS_DESPEJE = 1200;
  * se lea como bruma.
  */
 const CAPAS = [
-  { id: "nubes-fondo", frecuencia: "0.007 0.015", octavas: 4, corte: -1.1, base: 0.92, opacidad: 0.55, velocidad: "90s", semilla: 7 },
-  { id: "nubes-frente", frecuencia: "0.013 0.024", octavas: 5, corte: -1.7, base: 1.05, opacidad: 0.85, velocidad: "58s", semilla: 21 },
+  { id: "nubes-fondo", frecuencia: "0.007 0.015", octavas: 4, corte: -1.1, base: 0.92, opacidad: 0.55, velocidad: "26s", semilla: 7, entrada: "entra-nube-izq" },
+  { id: "nubes-frente", frecuencia: "0.013 0.024", octavas: 5, corte: -1.7, base: 1.05, opacidad: 0.85, velocidad: "17s", semilla: 21, entrada: "entra-nube-der" },
 ] as const;
 
 /**
@@ -117,6 +117,7 @@ export function CortinaDeNubes({
             {
               opacity: capa.opacidad,
               "--velocidad": capa.velocidad,
+              "--entrada": capa.entrada,
             } as React.CSSProperties
           }
         >
