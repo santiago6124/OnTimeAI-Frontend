@@ -28,9 +28,11 @@ import {
   fmtProba,
   type Flight,
   type PredictionPoint,
+  toUTCDate,
 } from "@/lib/api";
 import { PredictionEvolution } from "@/components/prediction-evolution";
 import { CascadaCard } from "@/components/cascada-card";
+import { cn } from "@/lib/utils";
 
 export function FlightDetailView({
   flight,
@@ -39,6 +41,10 @@ export function FlightDetailView({
   flight: Flight;
   history: PredictionPoint[];
 }) {
+  const duracion = duracionProgramada(
+    flight.scheduled_out_utc,
+    flight.scheduled_in_utc,
+  );
   const historyWithLatestExplanation = history.map((cycle, index) =>
     index === history.length - 1 && cycle.shap.length === 0
       ? { ...cycle, shap: flight.shap ?? [] }
@@ -95,7 +101,9 @@ export function FlightDetailView({
         </div>
 
         <Card>
-          <CardContent className="flex flex-col gap-6 pt-6 md:flex-row md:items-center md:justify-between">
+          {/* `py-4` y no `pt-6 gap-6`: con el relleno anterior esta tarjeta
+              medía casi 180 px y la mitad era aire. */}
+          <CardContent className="flex flex-col gap-4 py-4 md:flex-row md:items-center md:justify-between">
             <RouteEndpoint
               code={flight.origin}
               scheduledTime={flight.scheduled_out_utc}
@@ -103,12 +111,34 @@ export function FlightDetailView({
               actualTime={flight.actual_out_utc ?? flight.actual_off_utc}
               label="Salida (UTC)"
             />
+            {/* El medio llevaba una línea con un avión y nada más: era el
+                hueco más grande de la pantalla. Ahora dice cuánto dura el
+                vuelo y, si ya aterrizó, con cuánto retraso. */}
             <div className="hidden flex-col items-center gap-1 md:flex">
               <div className="flex items-center gap-2 text-muted-foreground">
-                <div className="h-px w-16 bg-border" />
+                <div className="h-px w-12 bg-border" />
                 <Plane className="size-4" />
-                <div className="h-px w-16 bg-border" />
+                <div className="h-px w-12 bg-border" />
               </div>
+              {duracion ? (
+                <span className="text-[11px] tabular-nums text-muted-foreground">
+                  {duracion}
+                </span>
+              ) : null}
+              {flight.has_actual && flight.arr_delay_min !== null ? (
+                <span
+                  className={cn(
+                    "text-[11px] tabular-nums",
+                    flight.arr_delay_min > 15
+                      ? "text-risk-high"
+                      : "text-muted-foreground",
+                  )}
+                >
+                  {flight.arr_delay_min > 0
+                    ? `llegó +${Math.round(flight.arr_delay_min)} min`
+                    : `llegó ${Math.round(flight.arr_delay_min)} min`}
+                </span>
+              ) : null}
             </div>
             <div className="flex md:hidden items-center gap-2 text-muted-foreground">
               <ArrowRight className="size-4" />
@@ -312,4 +342,23 @@ function Dato({
       </div>
     </div>
   );
+}
+
+
+/**
+ * Cuánto dura el vuelo según el horario programado, como "1 h 29 min".
+ *
+ * Va en el centro del encabezado, donde antes había una línea decorativa y
+ * nada más. Devuelve null si falta alguno de los dos horarios o si la resta no
+ * tiene sentido: inventar una duración sería peor que no mostrarla.
+ */
+function duracionProgramada(salida?: string | null, llegada?: string | null) {
+  if (!salida || !llegada) return null;
+  const a = toUTCDate(salida).getTime();
+  const b = toUTCDate(llegada).getTime();
+  if (Number.isNaN(a) || Number.isNaN(b) || b <= a) return null;
+  const min = Math.round((b - a) / 60000);
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return h === 0 ? `${m} min` : m === 0 ? `${h} h` : `${h} h ${m} min`;
 }
