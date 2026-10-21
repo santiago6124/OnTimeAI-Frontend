@@ -156,6 +156,7 @@ export function FlightDetailView({
 
         <div className="grid gap-4">
           <TarjetaColapsable
+            clave="prediccion-modelo"
             titulo="Predicción del modelo"
             detalladoPorDefecto
             // Compacto: las mismas seis cosas en una grilla apretada, sin
