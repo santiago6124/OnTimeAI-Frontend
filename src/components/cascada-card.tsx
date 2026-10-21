@@ -6,10 +6,8 @@ import { ArrowDown, GitBranch, TriangleAlert } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  BotonColapsar,
-  useColapsable,
-} from "@/components/ui/seccion-colapsable";
+import { BotonColapsar } from "@/components/ui/seccion-colapsable";
+import { useSeccionAbierta } from "@/lib/secciones-abiertas";
 import { api, fmtTime, type Cascada } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -127,7 +125,7 @@ export function CascadaCard({
   const alcanzados = piernas.filter((p) => p.demorado).length;
   // Abierta por defecto: es la mitad del título de la tesis, y cerrada por
   // omisión volvería a quedar invisible como cuando estaba al pie.
-  const { abierto, alternar } = useColapsable(true);
+  const { abierto, alternar } = useSeccionAbierta("efecto-cascada", true);
 
   // Lo que dice cerrada. Sin esto, cerrarla esconde el resultado en vez de
   // ahorrar espacio.
