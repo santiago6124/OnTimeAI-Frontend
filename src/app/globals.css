@@ -240,9 +240,24 @@
  * viven en `@layer utilities` y una regla sin capa les gana, que es lo que
  * hace falta para que el overlay no dependa del orden de clases.
  */
+/* La amplitud importa tanto como la velocidad: la capa mide el doble de la
+ * pantalla, así que un 12% se traduce en poquísimo movimiento aparente. */
 @keyframes deriva-nube {
-  from { transform: translate3d(-12%, 0, 0); }
-  to   { transform: translate3d(12%, 0, 0); }
+  from { transform: translate3d(-9%, 0, 0) scale(1.04); }
+  to   { transform: translate3d(9%, 0, 0) scale(1.04); }
+}
+
+/* La entrada: las nubes llegan desde los costados en vez de aparecer puestas.
+ * Sin esto el primer segundo es una imagen fija, que es lo que se reportó
+ * como "no hay ninguna animación". */
+@keyframes entra-nube-izq {
+  from { transform: translate3d(-26%, 0, 0) scale(1.04); opacity: 0; }
+  to   { transform: translate3d(-9%, 0, 0) scale(1.04); }
+}
+
+@keyframes entra-nube-der {
+  from { transform: translate3d(26%, 0, 0) scale(1.04); opacity: 0; }
+  to   { transform: translate3d(9%, 0, 0) scale(1.04); }
 }
 
 @keyframes respiro-nube {
@@ -250,8 +265,13 @@
   50%      { opacity: 1; }
 }
 
+/* La deriva tiene que notarse en los pocos segundos que la cortina está a la
+ * vista. Con los 58 y 90 segundos de la primera versión el movimiento era de
+ * menos del 2% del ancho en cuatro segundos: técnicamente animado, en los
+ * hechos una foto. */
 .nube {
-  animation: deriva-nube var(--velocidad, 26s) ease-in-out infinite alternate,
+  animation: var(--entrada) 1.4s cubic-bezier(0.22, 1, 0.36, 1) both,
+             deriva-nube var(--velocidad, 16s) ease-in-out 1.4s infinite alternate,
              respiro-nube 9s ease-in-out infinite;
   will-change: transform, opacity;
 }
@@ -267,11 +287,25 @@
   opacity: 0;
 }
 
+/* Con "reducir movimiento" activado no se apaga todo: se quita el
+ * DESPLAZAMIENTO, que es lo que molesta a quien tiene sensibilidad vestibular,
+ * y se deja el cambio de opacidad, que no.
+ *
+ * La primera versión ponía `animation: none` y un fundido de 250 ms, y el
+ * resultado era una imagen fija que desaparecía de golpe. Eso no es respetar
+ * la preferencia, es abandonarla: quien la tiene activada se queda sin saber
+ * que la página está cargando, que es justo lo que la cortina viene a
+ * resolver.
+ *
+ * El respiro va más lento que en la versión con movimiento —14 s contra 9—
+ * para que se lea como algo vivo y no como un parpadeo. */
 @media (prefers-reduced-motion: reduce) {
-  .nube { animation: none; }
+  .nube {
+    animation: respiro-nube 14s ease-in-out infinite;
+  }
   .nube-despeja-izq,
   .nube-despeja-der {
     transform: none;
-    transition: opacity 250ms linear;
+    transition: opacity 900ms ease-out;
   }
 }
