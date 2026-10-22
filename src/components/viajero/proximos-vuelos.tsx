@@ -4,6 +4,7 @@ import { Plane } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RiskBadge } from "@/components/risk-badge";
 import { fmtTime, toUTCDate, type Flight } from "@/lib/api";
+import { flightDetailHref } from "@/lib/routes";
 
 /**
  * Las que todavía no salieron, ordenadas y recortadas a doce.
@@ -61,7 +62,7 @@ export function ProximosVuelos({ vuelos: proximos }: { vuelos: Flight[] }) {
             return (
               <li key={v.fa_flight_id}>
                 <Link
-                  href={`/flights/${encodeURIComponent(v.fa_flight_id)}`}
+                  href={flightDetailHref(v.fa_flight_id)}
                   className="flex items-center gap-3 px-6 py-3 transition-colors hover:bg-accent/50"
                 >
                   <Plane className="size-4 shrink-0 text-muted-foreground" />

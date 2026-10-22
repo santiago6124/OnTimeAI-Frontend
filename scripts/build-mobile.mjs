@@ -97,6 +97,13 @@ const PODAR = [
   ["src/app/api", "route handlers dinámicos"],
   ["src/proxy.ts", "Proxy no existe en un export estático"],
   ["src/lib/server-auth.ts", "lee cookies() en el servidor"],
+  // Lo importan la home y el detalle de vuelo de la web para elegir el árbol
+  // Viajero/Operaciones. Importa server-auth (podado arriba) y `next/headers`,
+  // y el typecheck de `next build` lo revisa aunque ninguna página lo
+  // alcance: sin esta entrada el bundle fallaba con "Cannot find module
+  // '@/lib/server-auth'" desde el PR #55. Las variantes móviles deciden el
+  // perfil con `useProfile()`.
+  ["src/lib/server-profile.ts", "lee cookies() en el servidor; el bundle usa useProfile()"],
   // Evolución del modelo (admin). Página de servidor en dos sentidos que un
   // export no admite: getServerRole() lee cookies(), y searchParams la vuelve
   // dinámica. Portarla es el patrón vista + wrapper cliente de las demás
@@ -120,6 +127,14 @@ const REEMPLAZAR = [
   ["mobile/admin-layout.tsx", "src/app/admin/layout.tsx"],
   ["mobile/tesis-layout.tsx", "src/app/tesis/layout.tsx"],
   ["mobile/verificacion-page.tsx", "src/app/tesis/verificacion/page.tsx"],
+  // Perfil Viajero (PRs #54 a #58). Todas son páginas de servidor en la web;
+  // en el export el render corre una sola vez, en build time y sin usuario,
+  // así que /mis-vuelos quedaba horneada con el estado de error y las otras
+  // con la foto de ese momento. Mismo patrón que las de arriba.
+  ["mobile/mis-vuelos-page.tsx", "src/app/mis-vuelos/page.tsx"],
+  ["mobile/alertas-page.tsx", "src/app/alertas/page.tsx"],
+  ["mobile/anticipacion-page.tsx", "src/app/tesis/anticipacion/page.tsx"],
+  ["mobile/components/home-viajero.tsx", "src/components/viajero/home-viajero.tsx"],
   ["mobile/components/metric-cards.tsx", "src/components/metric-cards.tsx"],
   ["mobile/components/model-badge.tsx", "src/components/model-badge.tsx"],
   [
@@ -374,8 +389,26 @@ for (const ruta of [
   "login/index.html",
   "flights/index.html",
   "flights/detail/index.html",
+  "mis-vuelos/index.html",
+  "alertas/index.html",
+  "tesis/anticipacion/index.html",
 ]) {
   if (!existsSync(join(OUT, ruta))) problemas.push(`falta ${ruta} en out/`);
+}
+
+// Canario de una página de servidor que se coló al export. El render de build
+// time corre sin usuario: el fetch falla y el estado de error queda escrito en
+// el HTML, para siempre. Pasó con /mis-vuelos en el primer bundle del
+// rediseño; la variante cliente de mobile/ prerenderiza un esqueleto.
+const misVuelosHtml = join(OUT, "mis-vuelos/index.html");
+if (
+  existsSync(misVuelosHtml) &&
+  /No pudimos traer tus vuelos/.test(readFileSync(misVuelosHtml, "utf8"))
+) {
+  problemas.push(
+    "/mis-vuelos quedó horneada con el estado de error: la página pidió los " +
+      "datos en build time. Tiene que entrar en REEMPLAZAR con su variante cliente.",
+  );
 }
 
 // Y que lo excluido siga excluido.

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { RiskBadge } from "@/components/risk-badge";
 import { api, fmtTime, type SavedFlight } from "@/lib/api";
+import { flightDetailHref } from "@/lib/routes";
 
 /**
  * Los vuelos guardados, del más próximo al más viejo.
@@ -166,7 +167,7 @@ function Fila({
     <li className="flex items-center gap-3 px-6 py-3">
       <Icono className="size-4 shrink-0 text-muted-foreground" />
       <Link
-        href={`/flights/${encodeURIComponent(vuelo.fa_flight_id)}`}
+        href={flightDetailHref(vuelo.fa_flight_id)}
         className="min-w-0 flex-1"
       >
         <div className="flex items-baseline gap-2">
