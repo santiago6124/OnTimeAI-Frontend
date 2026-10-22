@@ -5,8 +5,10 @@ import { useSearchParams } from "next/navigation";
 
 import { AppShell } from "@/components/app-shell";
 import { BackButton } from "@/components/back-button";
+import { useProfile } from "@/components/providers/profile-provider";
 import { api, type Flight, type PredictionPoint } from "@/lib/api";
 import { FlightDetailView } from "@/components/flight-detail-view";
+import { DetalleViajero } from "@/components/viajero/detalle-viajero";
 
 /**
  * Detalle de vuelo en el bundle empaquetado.
@@ -17,16 +19,30 @@ import { FlightDetailView } from "@/components/flight-detail-view";
  * `scripts/build-mobile.mjs` mueve la ruta a `/flights/detail` y el id viaja
  * como query param. Los enlaces los emite `flightDetailHref()`, que ya sabe
  * cuál de las dos formas corresponde a este build.
+ *
+ * Igual que la web, dibuja una de dos pantallas según el perfil: la de
+ * operaciones (SHAP, historial, umbral) o la del viajero (veredicto, motivos
+ * en castellano, botón de guardar). La web lo decide con `getServerProfile()`;
+ * acá con `useProfile()`, ver `mobile/app-page.tsx`.
  */
 function FlightDetail() {
   const id = useSearchParams().get("id");
+  const { profile } = useProfile();
+  const esViajero = profile === "passenger";
 
   const [state, setState] = React.useState<{
     status: "loading" | "ok" | "error";
     flight: Flight | null;
     history: PredictionPoint[];
+    guardado: boolean;
     message: string;
-  }>({ status: "loading", flight: null, history: [], message: "" });
+  }>({
+    status: "loading",
+    flight: null,
+    history: [],
+    guardado: false,
+    message: "",
+  });
 
   React.useEffect(() => {
     // Sin id no hay nada que pedir. El caso se dibuja abajo, en el render, y no
@@ -38,11 +54,27 @@ function FlightDetail() {
     (async () => {
       try {
         // En serie y no en paralelo a propósito: si el vuelo no existe, no
-        // tiene sentido haber pedido también su historial.
+        // tiene sentido haber pedido también lo demás.
         const flight = await api.flight(id);
+
+        if (esViajero) {
+          // Como en la web: si no se pudo saber si está guardado, se asume que
+          // no. El botón lo corrige al primer toque.
+          const guardado = await api
+            .savedFlights()
+            .then((lista) =>
+              lista.some((v) => v.fa_flight_id === flight.fa_flight_id),
+            )
+            .catch(() => false);
+          if (alive) {
+            setState({ status: "ok", flight, history: [], guardado, message: "" });
+          }
+          return;
+        }
+
         const history = await api.flightHistory(id);
         if (alive) {
-          setState({ status: "ok", flight, history, message: "" });
+          setState({ status: "ok", flight, history, guardado: false, message: "" });
         }
       } catch (error) {
         if (!alive) return;
@@ -50,6 +82,7 @@ function FlightDetail() {
           status: "error",
           flight: null,
           history: [],
+          guardado: false,
           message:
             error instanceof Error
               ? error.message
@@ -61,10 +94,14 @@ function FlightDetail() {
     return () => {
       alive = false;
     };
-  }, [id]);
+  }, [id, esViajero]);
 
   if (state.status === "ok" && state.flight) {
-    return <FlightDetailView flight={state.flight} history={state.history} />;
+    return esViajero ? (
+      <DetalleViajero flight={state.flight} guardado={state.guardado} />
+    ) : (
+      <FlightDetailView flight={state.flight} history={state.history} />
+    );
   }
 
   const mensaje = !id ? "No se indicó qué vuelo mostrar." : state.message;
