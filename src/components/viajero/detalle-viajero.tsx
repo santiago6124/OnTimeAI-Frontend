@@ -19,6 +19,7 @@ import { motivosParaViajero, veredicto } from "@/lib/motivos-viajero";
  * alguien que se va de viaje es ruido que tapa las tres cosas que importa
  * saber: si va a salir en horario, a qué hora sale realmente, y por qué.
  */
+// eslint-disable-next-line complexity -- deuda registrada en .complejidad-baseline.json
 export function DetalleViajero({
   flight,
   guardado = false,

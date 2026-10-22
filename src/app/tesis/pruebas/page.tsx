@@ -155,6 +155,7 @@ function JsonViewer({ data }: { data: unknown }) {
   );
 }
 
+// eslint-disable-next-line complexity -- deuda registrada en .complejidad-baseline.json
 function TestCasesViewer({ data }: { data: unknown }) {
   const d = data as {
     cp01: {
@@ -300,6 +301,7 @@ function VerdictButtons({
   );
 }
 
+// eslint-disable-next-line complexity -- deuda registrada en .complejidad-baseline.json
 function EndpointCard({
   ep,
   onVerdict,

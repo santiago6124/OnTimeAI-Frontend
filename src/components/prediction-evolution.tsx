@@ -15,6 +15,7 @@ const PHASE_LABELS: Record<PredictionPoint["prediction_phase"], string> = {
   POST_LANDING: "Vuelo finalizado",
 };
 
+// eslint-disable-next-line complexity -- deuda registrada en .complejidad-baseline.json
 export function PredictionEvolution({
   history,
   arrDelayMin,

@@ -96,6 +96,7 @@ function authDelBundle(): Auth {
  * la cuenta no existe, porque Firebase no distingue a propósito para no
  * revelar qué correos están registrados.
  */
+// eslint-disable-next-line complexity -- deuda registrada en .complejidad-baseline.json
 export function mensajeDeError(error: unknown): string {
   const code =
     typeof error === "object" && error !== null && "code" in error

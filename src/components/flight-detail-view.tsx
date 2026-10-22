@@ -34,6 +34,7 @@ import { PredictionEvolution } from "@/components/prediction-evolution";
 import { CascadaCard } from "@/components/cascada-card";
 import { cn } from "@/lib/utils";
 
+// eslint-disable-next-line complexity -- deuda registrada en .complejidad-baseline.json
 export function FlightDetailView({
   flight,
   history,

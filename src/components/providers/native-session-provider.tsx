@@ -72,6 +72,7 @@ export function NativeSessionGate({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
     let alive = true;
 
+    // eslint-disable-next-line complexity -- deuda registrada en .complejidad-baseline.json
     (async () => {
       try {
         const session = await resolverSesion();

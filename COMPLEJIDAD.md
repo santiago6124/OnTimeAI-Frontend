@@ -67,11 +67,13 @@ La clave de la baseline es `ruta relativa::nombre`, con el nombre que ESLint
 pone en el mensaje: `src/components/cascada-card.tsx::CascadaCard`,
 `src/app/api/ota/updates/route.ts::POST`. Las funciones sin nombre (arrow
 functions, callbacks, `forwardRef`) se identifican por tipo y línea del `=>`:
-`src/components/ui/chart.tsx::arrow@L202`. **Esa clave cambia si la función se
+`src/components/ui/chart.tsx::arrow@L204`. **Esa clave cambia si la función se
 mueve de línea** aunque no cambie de contenido: el check la reporta como nueva
 y hay que correr `--actualizar-baseline`, que la acepta porque la lista no
 crece. Lo mismo pasa si dos funciones de un archivo comparten nombre: las dos
-llevan la línea para no pisarse.
+llevan la línea para no pisarse. Y como la marca `eslint-disable-next-line`
+va en la línea anterior, agregarla también corre la clave: la baseline se
+genera después de marcar, no antes.
 
 ## Cómo se usa
 
@@ -105,42 +107,44 @@ como artifact, también cuando falla.
 radon, para comparar con el Backend): A (1–5) 1113, B (6–10) 69, C (11–20) 32,
 D (21–30) 2, E (31–40) 2.
 
+Las líneas son las del código ya marcado, que es lo que mide el check.
+
 | Función | CC | Archivo |
 |---|---|---|
-| `CascadaCard` | 32 | `src/components/cascada-card.tsx:71` |
-| `TestCasesViewer` | 31 | `src/app/tesis/pruebas/page.tsx:158` |
-| `POST` | 23 | `src/app/api/ota/updates/route.ts:116` |
-| arrow function | 22 | `src/components/ui/chart.tsx:202` |
-| `PredictionEvolution` | 20 | `src/components/prediction-evolution.tsx:18` |
-| `ReportsPage` | 19 | `src/app/reports/page.tsx:38` |
-| `WeatherPage` | 19 | `src/app/weather/page.tsx:31` |
-| `FlightsTableView`, `FlightRow` | 19 | `src/components/flights-table.tsx` |
-| `flightToTrack` | 19 | `src/hooks/use-real-flight-tracks.ts:36` |
-| `EndpointCard` | 18 | `src/app/tesis/pruebas/page.tsx:303` |
-| `FlightDetailView` | 18 | `src/components/flight-detail-view.tsx:37` |
-| `TesisWeatherPage` | 17 | `src/app/tesis/weather/page.tsx:18` |
-| arrow function | 16 | `src/components/ui/chart.tsx:149` |
-| `VerificacionView` | 16 | `src/components/verificacion-view.tsx:204` |
-| `get` | 16 | `src/lib/api.ts:324` |
-| `deriveImpact` | 16 | `src/lib/weather-api.ts:168` |
-| `POST` | 15 | `src/app/api/auth/firebase/route.ts:23` |
-| `POST` | 15 | `src/app/api/auth/google/route.ts:17` |
-| arrow function | 14 | `src/components/cascada-card.tsx:247` |
-| `SettingsPage` | 13 | `src/app/settings/page.tsx:42` |
-| `ShapRow` | 13 | `src/components/shap-panel.tsx:187` |
-| `DetalleViajero` | 13 | `src/components/viajero/detalle-viajero.tsx:22` |
-| `mensajeDeError` | 13 | `src/lib/firebase.ts:99` |
-| `UsersPage` | 12 | `src/app/admin/users/page.tsx:53` |
-| `RouteHistoryChart` | 12 | `src/components/route-history-chart.tsx:18` |
-| `ShapPanel` | 12 | `src/components/shap-panel.tsx:11` |
-| `getPayloadConfigFromPayload` | 12 | `src/components/ui/chart.tsx:330` |
-| `WeatherCardView` | 12 | `src/components/weather-card-view.tsx:75` |
-| `nativeExchange` | 12 | `src/lib/api.ts:517` |
-| `fetchMetars`, `parseVisibility` | 12 | `src/lib/weather-api.ts` |
-| `MetricCardsView` | 11 | `src/components/metric-cards-view.tsx:87` |
-| async arrow function | 11 | `src/components/providers/native-session-provider.tsx:47` |
-| `Sidebar` | 11 | `src/components/ui/sidebar.tsx:152` |
-| `deriveCondition` | 11 | `src/lib/weather-api.ts:150` |
+| `CascadaCard` | 32 | `src/components/cascada-card.tsx:72` |
+| `TestCasesViewer` | 31 | `src/app/tesis/pruebas/page.tsx:159` |
+| `POST` | 23 | `src/app/api/ota/updates/route.ts:117` |
+| arrow function | 22 | `src/components/ui/chart.tsx:204` |
+| `PredictionEvolution` | 20 | `src/components/prediction-evolution.tsx:19` |
+| `ReportsPage` | 19 | `src/app/reports/page.tsx:39` |
+| `WeatherPage` | 19 | `src/app/weather/page.tsx:32` |
+| `FlightsTableView`, `FlightRow` | 19 | `src/components/flights-table.tsx:85`, `:338` |
+| `flightToTrack` | 19 | `src/hooks/use-real-flight-tracks.ts:37` |
+| `EndpointCard` | 18 | `src/app/tesis/pruebas/page.tsx:305` |
+| `FlightDetailView` | 18 | `src/components/flight-detail-view.tsx:38` |
+| `TesisWeatherPage` | 17 | `src/app/tesis/weather/page.tsx:19` |
+| arrow function | 16 | `src/components/ui/chart.tsx:150` |
+| `VerificacionView` | 16 | `src/components/verificacion-view.tsx:205` |
+| `get` | 16 | `src/lib/api.ts:325` |
+| `deriveImpact` | 16 | `src/lib/weather-api.ts:172` |
+| `POST` | 15 | `src/app/api/auth/firebase/route.ts:24` |
+| `POST` | 15 | `src/app/api/auth/google/route.ts:18` |
+| arrow function | 14 | `src/components/cascada-card.tsx:249` |
+| `SettingsPage` | 13 | `src/app/settings/page.tsx:43` |
+| `ShapRow` | 13 | `src/components/shap-panel.tsx:189` |
+| `DetalleViajero` | 13 | `src/components/viajero/detalle-viajero.tsx:23` |
+| `mensajeDeError` | 13 | `src/lib/firebase.ts:100` |
+| `UsersPage` | 12 | `src/app/admin/users/page.tsx:54` |
+| `RouteHistoryChart` | 12 | `src/components/route-history-chart.tsx:19` |
+| `ShapPanel` | 12 | `src/components/shap-panel.tsx:12` |
+| `getPayloadConfigFromPayload` | 12 | `src/components/ui/chart.tsx:333` |
+| `WeatherCardView` | 12 | `src/components/weather-card-view.tsx:76` |
+| `nativeExchange` | 12 | `src/lib/api.ts:519` |
+| `fetchMetars`, `parseVisibility` | 12 | `src/lib/weather-api.ts:55`, `:128` |
+| `MetricCardsView` | 11 | `src/components/metric-cards-view.tsx:88` |
+| async arrow function | 11 | `src/components/providers/native-session-provider.tsx:48` |
+| `Sidebar` | 11 | `src/components/ui/sidebar.tsx:153` |
+| `deriveCondition` | 11 | `src/lib/weather-api.ts:153` |
 
 `chart.tsx` y `sidebar.tsx` son componentes generados por shadcn/ui y después
 adaptados; su deuda se hereda del generador y conviene bajarla cuando se los

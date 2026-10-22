@@ -8,6 +8,7 @@ import { contributionShare, explainFactor } from "@/lib/shap-explain";
 import { cn } from "@/lib/utils";
 import { useSeccionAbierta } from "@/lib/secciones-abiertas";
 
+// eslint-disable-next-line complexity -- deuda registrada en .complejidad-baseline.json
 export function ShapPanel({
   factors,
   compact = false,
@@ -184,6 +185,7 @@ function FactorGroup({
   );
 }
 
+// eslint-disable-next-line complexity -- deuda registrada en .complejidad-baseline.json
 function ShapRow({
   factor,
   max,

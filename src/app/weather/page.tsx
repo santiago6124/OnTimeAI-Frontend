@@ -28,6 +28,7 @@ function iataToIcao(iata: string): string | null {
   return ICAO_EXCEPTIONS[iata] ?? "K" + iata;
 }
 
+// eslint-disable-next-line complexity -- deuda registrada en .complejidad-baseline.json
 export default function WeatherPage() {
   const [icaoCodes, setIcaoCodes] = React.useState<string[]>([]);
 

@@ -35,6 +35,7 @@ function comoHora(key: string): string {
   return `${key.padStart(2, "0")}:00`;
 }
 
+// eslint-disable-next-line complexity -- deuda registrada en .complejidad-baseline.json
 export default async function ReportsPage({
   searchParams,
 }: {

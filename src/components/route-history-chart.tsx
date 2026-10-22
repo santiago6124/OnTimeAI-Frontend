@@ -15,6 +15,7 @@ const chartConfig = {
   on_time_rate: { label: "Puntualidad", color: "var(--chart-2)" },
 } satisfies ChartConfig;
 
+// eslint-disable-next-line complexity -- deuda registrada en .complejidad-baseline.json
 export function RouteHistoryChart({ origin, dest }: { origin: string; dest: string }) {
   const routeKey = `${origin}:${dest}`;
   const [state, setState] = useState<{
