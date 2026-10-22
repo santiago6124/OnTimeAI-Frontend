@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { fmtTime, type Flight } from "@/lib/api";
+import { flightDetailHref } from "@/lib/routes";
 import { RiskBadge } from "@/components/risk-badge";
 
 /** `DL 1234`, `dl1234`, `DAL1234` → `DL1234`. */
@@ -62,7 +63,9 @@ export function BuscadorVuelo({ vuelos }: { vuelos: Flight[] }) {
   const sinResultados = normalizar(consulta).length >= 2 && resultados.length === 0;
 
   function abrir(id: string) {
-    router.push(`/flights/${encodeURIComponent(id)}`);
+    // Por flightDetailHref() y no a mano: en el bundle de iOS la ruta es
+    // /flights/detail/?id=…, y un push a /flights/<id> da una pantalla vacía.
+    router.push(flightDetailHref(id));
   }
 
   return (

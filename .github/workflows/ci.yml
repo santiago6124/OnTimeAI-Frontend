@@ -37,3 +37,15 @@ jobs:
 
       - name: Lint
         run: pnpm lint
+
+      - name: Bundle móvil (iOS)
+        # El bundle de iOS se compila desde otro árbol: scripts/build-mobile.mjs
+        # poda y reemplaza páginas antes de un `next build` con output:'export'.
+        # Nada de lo anterior lo cubre, y así se rompió en silencio con el PR #55
+        # (server-profile.ts importaba un módulo podado): tres semanas de merges
+        # verdes y el primer intento de publicar un OTA fue el que lo encontró.
+        # Las mismas variables que ios-ota.yml e ios-release.yml.
+        env:
+          MOBILE_API_ORIGIN: ${{ vars.MOBILE_API_ORIGIN }}
+          MOBILE_APP_ORIGIN: ${{ vars.MOBILE_APP_ORIGIN }}
+        run: node scripts/build-mobile.mjs --strict

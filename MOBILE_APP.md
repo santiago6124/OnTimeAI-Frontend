@@ -7,6 +7,10 @@ Para publicar: el procedimiento de iOS está en
 Estado al **2026-09-06**. Verificado: el bundle de iOS arranca, muestra el login
 y sirve todos sus assets desde el binario, en el simulador de iPhone 17 Pro.
 
+Actualizado el **2026-10-22**: el bundle cubre el perfil Viajero del rediseño
+(home, detalle, Mis vuelos, Alertas, Anticipación) y `ci.yml` lo compila en cada
+PR. Ver el punto "iOS — perfil Viajero" en §2.
+
 ---
 
 ## 1. Resumen
@@ -70,12 +74,16 @@ Cloud Run.
 - **iOS — rutas**: `/flights/[id]` viaja como `/flights/detail/?id=…`, porque
   `output: 'export'` no admite segmentos dinámicos sin `generateStaticParams` y
   los `fa_flight_id` son datos vivos
-- **iOS — excluido**: `/live` (la vista Lite). Su layout llama a
-  `getVerifiedSession()`, que lee la cookie con `next/headers`, y `cookies()` no
-  existe en un export. Es además una superficie pública para compartir por web;
-  la app ya trae el dashboard completo. El toggle Lite/Pro del header se oculta
-  con `LIVE_ENABLED`, así que no queda ningún botón apuntando a una ruta
-  inexistente — que es motivo de rechazo en App Review
+- **iOS — perfil Viajero (2026-10-22)**: la web elige la home y el detalle de
+  vuelo con `getServerProfile()`, que lee cookies en el servidor; el bundle lo
+  elige con `useProfile()` en `mobile/app-page.tsx` y
+  `mobile/flight-detail-page.tsx`. `/mis-vuelos`, `/alertas` y
+  `/tesis/anticipacion` son páginas de servidor en la web y en el export se
+  congelarían en la foto del build (en `/mis-vuelos`, con el estado de error),
+  así que tienen variante cliente en `mobile/`. Los enlaces al detalle del
+  viajero pasan por `flightDetailHref()`, como los demás. `build-mobile.mjs`
+  verifica el HTML generado y `ci.yml` compila el bundle en cada PR: se rompió
+  en silencio con el PR #55 y nadie lo vio hasta intentar publicar el OTA
 - **iOS — excluido**: `/reports` (Evolución del modelo, solo admin). Es una
   página de servidor por partida doble: `getServerRole()` lee cookies y
   `searchParams` la vuelve dinámica. Su entrada del menú se oculta con
@@ -127,7 +135,7 @@ Cloud Run.
 | `scripts/build-mobile.mjs` | Arma `.mobile/out`: copia por allowlist, poda, verifica |
 | `scripts/ios-prepare.sh` | Todo lo anterior + sync + parche, sin dejar el repo pisado |
 | `scripts/ios-patch-router.sh` | El router de assets. **Código nativo: no se arregla por OTA** |
-| `mobile/*.tsx` | Las 9 páginas/componentes que el bundle reemplaza |
+| `mobile/*.tsx`, `mobile/components/*.tsx` | Las páginas/componentes que el bundle reemplaza (la lista es `REEMPLAZAR` en `build-mobile.mjs`) |
 | `ios/` | **No versionado**: se regenera con `npx cap add ios` |
 
 ---
@@ -168,6 +176,10 @@ Con **Xcode 27** en local, `xcodebuild` rechaza el target iOS 14.0 que genera
 Capacitor 7 en los Pods. Se pasa `IPHONEOS_DEPLOYMENT_TARGET=15.0` en la línea
 de comandos (o se sube el target en Xcode); CI no lo necesita porque `macos-15`
 trae Xcode 16.
+
+CI compila este mismo bundle en cada PR (`ci.yml`, paso *Bundle móvil*), con
+`--strict` y las variables `MOBILE_*` del repo. Un PR que rompe el export no
+llega a main.
 
 Para probar el bundle sin Xcode, en un navegador de escritorio:
 
