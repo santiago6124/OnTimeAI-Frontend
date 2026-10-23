@@ -73,6 +73,41 @@ export async function plataformaActual(): Promise<Plataforma> {
  *   el de iOS dejaba el botón escondido en Android para siempre, porque el
  *   deploy de la web no tiene por qué conocer un client ID de iOS.
  */
+/**
+ * Si el plugin nativo está REALMENTE en el binario que está corriendo.
+ *
+ * Tener el client ID no alcanza, y confundir las dos cosas fue una regresión
+ * que llegó a producción. Android no empaqueta la web: la carga de Cloud Run.
+ * Así que un deploy del frontend le cambia el JS a los teléfonos YA
+ * instalados, sin pasar por Play. El gate veía el client ID —que el deploy de
+ * la web sí tiene— y dibujaba el botón, pero el APK instalado no traía el
+ * plugin, porque eso es código nativo y viaja en el APK. Botón que falla al
+ * tocarlo: justo lo que el código anterior evitaba escondiéndolo.
+ *
+ * `isPluginAvailable` contesta bien sin tener que importar el plugin: lee la
+ * cabecera que el lado nativo inyecta al arrancar. En un binario sin el plugin
+ * da `false`, y como el plugin se registra con implementación solo `web`,
+ * `platforms.has("android")` también da `false`.
+ */
+export async function pluginNativoPresente(): Promise<boolean> {
+  try {
+    const { Capacitor } = await import("@capacitor/core");
+    return Capacitor.isPluginAvailable("SocialLogin");
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * El gate completo: credenciales Y plugin. Es lo que tiene que mirar quien
+ * decide si dibujar el botón.
+ */
+export async function googleNativoListo(): Promise<boolean> {
+  const plataforma = await plataformaActual();
+  if (!googleDisponibleEn(plataforma)) return false;
+  return pluginNativoPresente();
+}
+
 export function googleDisponibleEn(plataforma: Plataforma): boolean {
   if (plataforma === "ios") {
     return GOOGLE_IOS_CLIENT_ID !== "" && GOOGLE_WEB_CLIENT_ID !== "";
@@ -133,9 +168,9 @@ export class GoogleNativoError extends Error {
  * `credencialDeGoogle()` en las páginas de login y alta.
  */
 export async function pedirIdTokenDeGoogle(): Promise<string> {
-  if (!googleDisponibleEn(await plataformaActual())) {
+  if (!(await googleNativoListo())) {
     throw new GoogleNativoError(
-      "El login con Google no está configurado en este build.",
+      "El login con Google no está disponible en esta versión de la app.",
     );
   }
 
