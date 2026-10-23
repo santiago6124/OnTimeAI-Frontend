@@ -10,6 +10,7 @@
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
+    "test:cov": "vitest run --coverage",
     "build:mobile": "node scripts/build-mobile.mjs",
     "cap:android": "cap sync android && cap open android",
     "cap:ios": "bash scripts/ios-prepare.sh --open"
@@ -50,6 +51,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitest/coverage-v8": "4.1.10",
     "eslint": "^9",
     "eslint-config-next": "16.3.0",
     "happy-dom": "20.14.0",

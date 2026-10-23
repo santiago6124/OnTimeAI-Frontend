@@ -51,3 +51,7 @@ next-env.d.ts
 
 # reporte de scripts/complejidad.mjs --reporte (en CI va como artifact)
 /complejidad.json
+
+# reportes locales de los gates de calidad (en CI van como artifact): ver CALIDAD.md
+/jscpd/
+/diff-cover.md
