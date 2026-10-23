@@ -113,6 +113,7 @@ async function loadManifest(): Promise<Manifest | null> {
   }
 }
 
+// eslint-disable-next-line complexity -- deuda registrada en .complejidad-baseline.json
 export async function POST(request: Request) {
   let body: UpdateRequest;
   try {

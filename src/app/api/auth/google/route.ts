@@ -14,6 +14,7 @@ const BACKEND =
   "http://localhost:8000";
 
 /** Exchange a Google ID token for our session cookie. The Backend stays the auth authority. */
+// eslint-disable-next-line complexity -- deuda registrada en .complejidad-baseline.json
 export async function POST(request: Request) {
   let body: unknown;
   try {

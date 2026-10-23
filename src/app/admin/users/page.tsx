@@ -50,6 +50,7 @@ function fmtDate(utc: string) {
   return fmtTime(utc).split(" ")[0]; // just dd/MM
 }
 
+// eslint-disable-next-line complexity -- deuda registrada en .complejidad-baseline.json
 export default function UsersPage() {
   const { user: sessionUser } = useSession();
   const me = sessionUser?.username ?? null;

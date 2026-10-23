@@ -26,6 +26,26 @@ jobs:
       - name: Instalar dependencias
         run: pnpm install --frozen-lockfile
 
+      - name: Complejidad ciclomática
+        # Gate: ninguna función de src/ por encima de 10 (McCabe, regla
+        # `complexity` de ESLint) fuera de las exentas en
+        # .complejidad-baseline.json, y esa lista sólo puede achicarse. Corre
+        # con los comentarios eslint-disable apagados, así que una marca en el
+        # código no exime nada; el Lint de más abajo aplica la misma regla. Va
+        # antes que los tests porque tarda segundos y un fallo acá no necesita
+        # la suite entera. El reporte de todas las funciones va al resumen del
+        # job y como artifact. Ver COMPLEJIDAD.md.
+        run: |
+          node scripts/complejidad.mjs --check \
+            --reporte complejidad.json \
+            --resumen "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: complejidad
+          path: complejidad.json
+
       - name: Tests
         run: pnpm test
 

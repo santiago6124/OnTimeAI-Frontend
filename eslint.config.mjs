@@ -5,6 +5,19 @@ import nextTs from "eslint-config-next/typescript";
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
+  // Gate de complejidad ciclomática (McCabe): ninguna función de la app por
+  // encima de 10. Las que ya lo superaban al instalar el gate están en
+  // .complejidad-baseline.json y llevan un eslint-disable-next-line para que
+  // `pnpm lint` pase; la marca no exime nada por sí sola, porque
+  // scripts/complejidad.mjs corre con los comentarios apagados y compara contra
+  // la baseline, que sólo puede achicarse. El mismo 10 vive en UMBRAL de ese
+  // script. Ver COMPLEJIDAD.md.
+  {
+    files: ["src/**/*.{js,jsx,mjs,ts,tsx}"],
+    rules: {
+      complexity: ["error", 10],
+    },
+  },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:

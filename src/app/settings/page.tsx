@@ -40,6 +40,7 @@ const ACCOUNT_PROFILES: { value: UserType; label: string; description: string }[
   },
 ];
 
+// eslint-disable-next-line complexity -- deuda registrada en .complejidad-baseline.json
 export default function SettingsPage() {
   const { user } = useSession();
   const { setProfile, overridden } = useProfile();

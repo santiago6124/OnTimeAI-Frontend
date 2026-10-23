@@ -321,6 +321,7 @@ export class ApiError extends Error {
   }
 }
 
+// eslint-disable-next-line complexity -- deuda registrada en .complejidad-baseline.json
 async function get<T>(path: string, options?: RequestInit): Promise<T> {
   const authHdrs = await getAuthHeaders();
   const base = typeof window === "undefined" ? SERVER_BASE : CLIENT_BASE;
@@ -514,6 +515,7 @@ async function nativeLogin(
  * devolver la misma forma que devuelve el BFF. `isNewUser` se deriva igual que
  * allá: lo dice el backend, o no hay tipo de cuenta todavía.
  */
+// eslint-disable-next-line complexity -- deuda registrada en .complejidad-baseline.json
 async function nativeExchange(
   path: "/auth/google" | "/auth/firebase",
   idToken: string,

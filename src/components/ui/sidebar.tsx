@@ -149,6 +149,7 @@ function SidebarProvider({
   )
 }
 
+// eslint-disable-next-line complexity -- deuda registrada en .complejidad-baseline.json
 function Sidebar({
   side = "left",
   variant = "sidebar",

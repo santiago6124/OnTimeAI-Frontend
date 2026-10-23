@@ -51,6 +51,7 @@ export class WeatherApiError extends Error {
   }
 }
 
+// eslint-disable-next-line complexity -- deuda registrada en .complejidad-baseline.json
 export async function fetchMetars(
   ids: string[],
   { revalidate = 300 }: { revalidate?: number } = {},
@@ -123,6 +124,7 @@ export async function fetchMetars(
   return data as AwcMetar[];
 }
 
+// eslint-disable-next-line complexity -- deuda registrada en .complejidad-baseline.json
 function parseVisibility(v: string | number | null): number | null {
   if (v == null) return null;
   if (typeof v === "number") return v;
@@ -147,6 +149,7 @@ function parseVisibility(v: string | number | null): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+// eslint-disable-next-line complexity -- deuda registrada en .complejidad-baseline.json
 function deriveCondition(m: AwcMetar): WeatherStation["condition"] {
   const wx = (m.wxString ?? "").toUpperCase();
   if (/TS|SQ/.test(wx)) return "storm";
@@ -165,6 +168,7 @@ function deriveCondition(m: AwcMetar): WeatherStation["condition"] {
   return "clear";
 }
 
+// eslint-disable-next-line complexity -- deuda registrada en .complejidad-baseline.json
 function deriveImpact(m: AwcMetar): WeatherStation["impact"] {
   const cat = m.fltCat;
   if (cat === "LIFR" || cat === "IFR") return "high";
