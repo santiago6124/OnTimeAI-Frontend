@@ -10,6 +10,7 @@ import {
 } from "@/lib/auth-google";
 import {
   googleDisponibleEn,
+  googleNativoListo,
   plataformaActual,
 } from "@/lib/native/google-sign-in";
 
@@ -113,10 +114,14 @@ export function useVarianteDeGoogle(): Variante {
   useEffect(() => {
     if (VARIANTE_DE_BUILD === "ninguno") return;
     let vivo = true;
-    plataformaActual().then((plataforma) => {
-      if (!vivo || plataforma === "web") return;
-      setVariante(googleDisponibleEn(plataforma) ? "nativo" : "ninguno");
-    });
+    (async () => {
+      const plataforma = await plataformaActual();
+      if (plataforma === "web") return;
+      // En nativo NO se cae a la variante web: Google Identity Services
+      // rechaza el WebView igual. O el botón nativo, o ninguno.
+      const listo = await googleNativoListo();
+      if (vivo) setVariante(listo ? "nativo" : "ninguno");
+    })();
     return () => {
       vivo = false;
     };
