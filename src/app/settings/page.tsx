@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
 import { ProfileSwitcher } from "@/components/profile-switcher";
 import { useProfile } from "@/components/providers/profile-provider";
 import { SystemHealthCard } from "@/components/system-health-card";
+import { AjusteBiometria } from "@/components/biometria";
 import { useSession } from "@/components/providers/session-provider";
 import { type UserType } from "@/lib/auth-types";
 
@@ -166,6 +167,10 @@ export default function SettingsPage() {
 
         {/* GET /admin/db-stats exige superadmin en el backend (_require_superadmin). */}
         {user?.role === "superadmin" ? <SystemHealthCard /> : null}
+
+        {/* Solo en el bundle de iOS con Face ID o Touch ID configurado; en la
+            web y en Android no dibuja nada. */}
+        <AjusteBiometria />
 
         {/* Las tiendas exigen que la baja exista dentro de la app (App Store
             5.1.1, Play "Account deletion"), no solo por correo. Va última:

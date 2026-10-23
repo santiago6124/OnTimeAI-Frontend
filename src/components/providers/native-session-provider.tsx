@@ -7,6 +7,34 @@ import { apiMe } from "@/lib/api";
 import { appPath } from "@/lib/mobile-env";
 import type { SessionUser } from "@/lib/auth-types";
 import { SessionProvider } from "@/components/providers/session-provider";
+import { OfertaBiometria } from "@/components/biometria";
+
+/**
+ * La sesión con la que arranca el bundle, o `null` para mandar al login.
+ *
+ * Primero el JWT guardado. Si no hay, o el backend ya no lo acepta, se prueba
+ * con Face ID antes de rendirse —si el usuario lo activó—. Va también en
+ * /login, porque ahí cae el 401 de un token que venció con la app abierta, y
+ * no puede entrar en bucle: `entrarConBiometria` pide la cara una sola vez por
+ * arranque.
+ *
+ * Está fuera del componente para poder probarlo sin montar React.
+ */
+export async function resolverSesion(): Promise<SessionUser | null> {
+  const { loadToken, clearToken } = await import("@/lib/native/session");
+  if (await loadToken()) {
+    try {
+      return await apiMe();
+    } catch {
+      // El token no sirve (expiró, o el backend lo rechaza). `get()` ya lo
+      // borró si la respuesta fue 401; para cualquier otra falla lo limpiamos
+      // acá, porque una sesión que no se puede validar no es una sesión.
+      await clearToken();
+    }
+  }
+  const { entrarConBiometria } = await import("@/lib/native/biometria");
+  return entrarConBiometria();
+}
 
 /**
  * Resuelve la sesión del lado del cliente y guarda las rutas privadas.
@@ -46,24 +74,7 @@ export function NativeSessionGate({ children }: { children: React.ReactNode }) {
 
     (async () => {
       try {
-        const { loadToken, clearToken } = await import(
-          "@/lib/native/session"
-        );
-        const token = await loadToken();
-
-        let session: SessionUser | null = null;
-        if (token) {
-          try {
-            session = await apiMe();
-          } catch {
-            // El token no sirve (expiró, o el backend lo rechaza). `get()` ya
-            // lo borró si la respuesta fue 401; para cualquier otra falla lo
-            // limpiamos acá, porque una sesión que no se puede validar no es
-            // una sesión.
-            await clearToken();
-            session = null;
-          }
-        }
+        const session = await resolverSesion();
 
         if (!alive) return;
 
@@ -143,5 +154,10 @@ export function NativeSessionGate({ children }: { children: React.ReactNode }) {
     return <div className="min-h-screen bg-background" aria-hidden />;
   }
 
-  return <SessionProvider user={user}>{children}</SessionProvider>;
+  return (
+    <SessionProvider user={user}>
+      {children}
+      {user && <OfertaBiometria />}
+    </SessionProvider>
+  );
 }

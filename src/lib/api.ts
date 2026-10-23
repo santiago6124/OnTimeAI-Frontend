@@ -583,6 +583,11 @@ export async function apiLogout() {
   if (IS_BUNDLED) {
     const { clearToken } = await import("@/lib/native/session");
     await clearToken();
+    // Con la entrada por Face ID, la sesión de Firebase que queda en
+    // IndexedDB alcanza para sacar un JWT nuevo: un logout que no la cierra
+    // no cierra nada. Ver `limpiarAlCerrarSesion`.
+    const { limpiarAlCerrarSesion } = await import("@/lib/native/biometria");
+    await limpiarAlCerrarSesion();
     return;
   }
 

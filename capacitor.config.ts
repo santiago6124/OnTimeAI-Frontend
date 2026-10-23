@@ -99,6 +99,22 @@ const config: CapacitorConfig = {
     // Los `.txt` del payload RSC y los assets de Next ya vienen comprimidos por
     // la red; no hay nada local que mezclar.
     webContentsDebuggingEnabled: false,
+    // Allowlist, igual que `ios.includePlugins`: sin ella `cap sync android`
+    // mete en el APK todo plugin que esté en package.json. Está para dejar
+    // AFUERA a `@capgo/capacitor-native-biometric`: la entrada con Face ID es
+    // solo de iOS, y en Android el plugin agregaría una actividad y los
+    // permisos de biometría (los trae androidx.biometric) a un APK que nunca
+    // los usa —y que Play obliga a declarar—. Un plugin nuevo para Android
+    // hay que sumarlo acá a mano.
+    includePlugins: [
+      "@capacitor/app",
+      "@capacitor/keyboard",
+      "@capacitor/preferences",
+      "@capacitor/splash-screen",
+      "@capacitor/status-bar",
+      "@capgo/capacitor-social-login",
+      "@capgo/capacitor-updater",
+    ],
   },
 };
 
