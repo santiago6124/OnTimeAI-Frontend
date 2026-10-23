@@ -201,6 +201,7 @@ function FlightTable({ flights }: { flights: Flight[] }) {
 
 /* ─── page ────────────────────────────────────────────────────────────────── */
 
+// eslint-disable-next-line complexity -- deuda registrada en .complejidad-baseline.json
 export function VerificacionView({
   flights,
   fetchError,

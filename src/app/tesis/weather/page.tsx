@@ -15,6 +15,7 @@ import { RawPayloadPanel } from "@/components/raw-payload-panel";
 import { useWeatherStations } from "@/hooks/use-weather-stations";
 import type { WeatherStation } from "@/lib/mock-data";
 
+// eslint-disable-next-line complexity -- deuda registrada en .complejidad-baseline.json
 export default function TesisWeatherPage() {
   const { status, data, error, reload } = useWeatherStations();
 

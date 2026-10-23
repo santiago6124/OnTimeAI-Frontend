@@ -33,6 +33,7 @@ function toMs(iso: string | null | undefined): number | null {
   return Number.isNaN(ms) ? null : ms;
 }
 
+// eslint-disable-next-line complexity -- deuda registrada en .complejidad-baseline.json
 export function flightToTrack(f: Flight, now: number): MapTrack | null {
   const o = AIRPORTS[f.origin];
   const d = AIRPORTS[f.destination];

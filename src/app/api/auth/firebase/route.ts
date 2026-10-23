@@ -20,6 +20,7 @@ const BACKEND =
   process.env.NEXT_PUBLIC_API_URL ??
   "http://localhost:8000";
 
+// eslint-disable-next-line complexity -- deuda registrada en .complejidad-baseline.json
 export async function POST(request: Request) {
   let body: unknown;
   try {

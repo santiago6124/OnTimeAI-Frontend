@@ -72,6 +72,7 @@ function conditionSeverity(d: WeatherData): "normal" | "caution" | "severe" {
 
 export type WeatherErrorKind = "unavailable" | "server" | null;
 
+// eslint-disable-next-line complexity -- deuda registrada en .complejidad-baseline.json
 export function WeatherCardView({
   data,
   errorKind,

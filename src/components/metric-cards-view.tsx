@@ -84,6 +84,7 @@ export function MetricCardsSkeleton() {
   );
 }
 
+// eslint-disable-next-line complexity -- deuda registrada en .complejidad-baseline.json
 export function MetricCardsView({ data: m }: { data: MetricsSummary | null }) {
   if (!m) {
     return (

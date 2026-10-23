@@ -48,3 +48,6 @@ next-env.d.ts
 
 # artefactos de build (no se versionan: son ~50 MB y se regeneran)
 /dist/
+
+# reporte de scripts/complejidad.mjs --reporte (en CI va como artifact)
+/complejidad.json

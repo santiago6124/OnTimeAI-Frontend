@@ -68,6 +68,7 @@ const ETIQUETA_ORIGEN = {
   estimada: "estimada del modelo",
 } as const;
 
+// eslint-disable-next-line complexity -- deuda registrada en .complejidad-baseline.json
 export function CascadaCard({
   faFlightId,
   inicial,
@@ -244,6 +245,7 @@ export function CascadaCard({
             </p>
 
             <ol className="space-y-2">
+              {/* eslint-disable-next-line complexity -- deuda registrada en .complejidad-baseline.json */}
               {piernas.map((p) => (
                 <li key={`${p.fa_flight_id}-${p.orden}`}>
                   {p.orden > 1 ? (

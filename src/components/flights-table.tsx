@@ -81,6 +81,7 @@ export function FlightsTable() {
   return <FlightsTableView {...data} />;
 }
 
+// eslint-disable-next-line complexity -- deuda registrada en .complejidad-baseline.json
 export function FlightsTableView({
   flights,
   loading,
@@ -333,6 +334,7 @@ function TableSkeleton() {
   ));
 }
 
+// eslint-disable-next-line complexity -- deuda registrada en .complejidad-baseline.json
 function FlightRow({ flight }: { flight: Flight }) {
   const actualDeparture = flight.actual_out_utc ?? flight.actual_off_utc;
   const actualArrival = flight.actual_in_utc ?? flight.actual_on_utc;
