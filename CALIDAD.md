@@ -15,7 +15,7 @@ qué valor tenía al instalarlo y cómo correrlo en la máquina de uno.
 | Bugs críticos | `pnpm typecheck` + `pnpm lint` (`eslint-config-next`) | 0 errores | 0 |
 | Complejidad ciclomática | `scripts/complejidad.mjs --check` | ninguna función nueva > 10; baseline sólo achica | 36 exentas |
 | Duplicación | `jscpd` 4 sobre `src/` sin tests | ≤ 5 % de líneas | 1,27 % (334/26.399 líneas, 23 clones) |
-| Cobertura total | `vitest --coverage` (v8) sobre `src/` | trinquete ≥ 17 % líneas, 13 % ramas, 10 % funciones, 17 % sentencias; sólo sube | 17,6 / 13,7 / 10,2 / 17,2 % |
+| Cobertura total | `vitest --coverage` (v8) sobre `src/` | trinquete ≥ 32 % líneas, 24 % ramas, 20 % funciones, 32 % sentencias; sólo sube | 17,6 / 13,7 / 10,2 / 17,2 % |
 | Cobertura del código nuevo | `diff-cover` sobre el lcov de vitest | ≥ 80 % de las líneas cambiadas en el PR | se mide en cada PR |
 
 Todo corre en el job `checks` de `.github/workflows/ci.yml`, en cada PR y en
@@ -57,6 +57,11 @@ sin los tests ni los `.d.ts`. Los umbrales viven en `vitest.config.mts`
 y cuando sube se suben, siempre al entero inmediatamente inferior al valor
 medido. Línea de base del 2026-10-22 sobre `origin/main`: 17,6 % líneas, 13,7
 % ramas, 10,2 % funciones, 17,2 % sentencias; umbrales 17, 13, 10 y 17.
+Primera subida el 2026-10-23, con los tests de `src/lib` (cliente HTTP,
+METARs, sesión del servidor y del bundle), de los cuatro route handlers sin
+cubrir y de hooks y providers renderizados con `react-dom/server`: 32,9 %
+líneas, 24,9 % ramas, 20,8 % funciones, 32,4 % sentencias; umbrales 32, 24,
+20 y 32.
 
 Es un piso bajo a conciencia. La mayor parte de `src/` son páginas y
 componentes de React que hoy no tienen tests; el gate no exige cubrirlos de

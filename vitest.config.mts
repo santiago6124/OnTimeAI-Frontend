@@ -19,12 +19,14 @@ export default defineConfig({
       // Trinquete: el total no puede bajar de estos valores, y cuando la
       // cobertura sube, se suben al entero inmediatamente inferior al valor
       // medido. Línea de base del 2026-10-22 sobre origin/main: 17,6 % líneas,
-      // 13,7 % ramas, 10,2 % funciones y 17,2 % sentencias. Ver CALIDAD.md.
+      // 13,7 % ramas, 10,2 % funciones y 17,2 % sentencias. Subido el
+      // 2026-10-23 con los tests de src/lib, los route handlers, hooks y
+      // providers: 32,9 / 24,9 / 20,8 / 32,4 %. Ver CALIDAD.md.
       thresholds: {
-        lines: 17,
-        branches: 13,
-        functions: 10,
-        statements: 17,
+        lines: 32,
+        branches: 24,
+        functions: 20,
+        statements: 32,
       },
     },
   },
