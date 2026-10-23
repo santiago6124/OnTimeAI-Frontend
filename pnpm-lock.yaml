@@ -117,6 +117,9 @@ importers:
       eslint-config-next:
         specifier: 16.3.0
         version: 16.3.0(@typescript-eslint/parser@8.59.0(eslint@9.39.4(jiti@2.6.1))(typescript@5.9.3))(eslint@9.39.4(jiti@2.6.1))(typescript@5.9.3)
+      happy-dom:
+        specifier: 20.14.0
+        version: 20.14.0
       playwright-core:
         specifier: ^1.63.0
         version: 1.63.0
