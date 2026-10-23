@@ -98,3 +98,41 @@ describe("guardarEstado", () => {
     expect(espia).toHaveBeenCalledTimes(1);
   });
 });
+
+/**
+ * CP-COB-FE-25 — el hook `useSeccionAbierta` encima del almacenamiento.
+ * Se renderiza con `react-dom/server`: el primer render ve el valor por
+ * defecto (el servidor no tiene localStorage) y `alternar` invierte lo
+ * guardado, partiendo de ese defecto cuando no hay nada.
+ */
+describe("useSeccionAbierta", () => {
+  async function capturar(clave: string, porDefecto?: boolean) {
+    const { createElement } = await import("react");
+    const { renderToString } = await import("react-dom/server");
+    const { useSeccionAbierta } = await import("@/lib/secciones-abiertas");
+    const caja: { valor?: ReturnType<typeof useSeccionAbierta> } = {};
+    function Sonda() {
+      caja.valor = useSeccionAbierta(clave, porDefecto);
+      return null;
+    }
+    renderToString(createElement(Sonda));
+    return caja.valor as ReturnType<typeof useSeccionAbierta>;
+  }
+
+  it("en el servidor dibuja el valor por defecto", async () => {
+    guardarEstado({ cascada: true });
+
+    expect((await capturar("cascada", false)).abierto).toBe(false);
+    expect((await capturar("otra", true)).abierto).toBe(true);
+  });
+
+  it("alternar invierte lo guardado y parte del defecto si no hay nada", async () => {
+    const { alternar } = await capturar("cascada", true);
+
+    alternar();
+    expect(leerEstado()["cascada"]).toBe(false);
+
+    alternar();
+    expect(leerEstado()["cascada"]).toBe(true);
+  });
+});
