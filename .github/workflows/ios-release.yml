@@ -105,6 +105,14 @@ jobs:
         env:
           MOBILE_API_ORIGIN: ${{ inputs.apiOrigin || vars.MOBILE_API_ORIGIN }}
           MOBILE_APP_ORIGIN: ${{ inputs.appOrigin || vars.MOBILE_APP_ORIGIN }}
+          # Los dos client IDs de Google, o ninguno: --strict rechaza uno solo.
+          # Son `vars` y no `secrets` porque un client ID de OAuth es público
+          # por diseño —viaja en el Info.plist de la app— y como secret GitHub
+          # lo enmascararía en los logs, que es ruido sin beneficio.
+          # Vacíos mientras la app de iOS no exista en la consola de Firebase:
+          # ahí el botón no se dibuja y el parche nativo se saltea.
+          MOBILE_GOOGLE_IOS_CLIENT_ID: ${{ vars.MOBILE_GOOGLE_IOS_CLIENT_ID }}
+          MOBILE_GOOGLE_CLIENT_ID: ${{ vars.MOBILE_GOOGLE_CLIENT_ID }}
         run: node scripts/build-mobile.mjs --strict
 
       - name: Config de iOS (sin server.url)
@@ -200,6 +208,14 @@ jobs:
             echo "::error::El ícono tiene que ser 1024x1024 y sin canal alpha."
             exit 1
           fi
+
+      - name: Login con Google nativo
+        # El esquema de URL en Info.plist y el handler en AppDelegate. Es la
+        # parte que el OTA no puede entregar: cambiarla exige este build.
+        # Sin client ID se saltea solo y el botón tampoco se dibuja.
+        env:
+          GOOGLE_IOS_CLIENT_ID: ${{ vars.MOBILE_GOOGLE_IOS_CLIENT_ID }}
+        run: bash scripts/ios-patch-google.sh
 
       - name: Router de export estático
         # Sin esto la app arranca en negro: el router de Capacitor manda toda
