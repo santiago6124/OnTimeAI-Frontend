@@ -24,13 +24,13 @@ restaurar() {
 }
 trap restaurar EXIT
 
-echo "==> 1/8 bundle web empaquetado"
+echo "==> 1/9 bundle web empaquetado"
 node scripts/build-mobile.mjs
 
-echo "==> 2/8 config de iOS (sin server.url)"
+echo "==> 2/9 config de iOS (sin server.url)"
 cp capacitor.config.ios.ts capacitor.config.ts
 
-echo "==> 3/8 cap sync ios"
+echo "==> 3/9 cap sync ios"
 npx cap sync ios
 
 # `ios/` no se versiona: se regenera con `cap add ios`, y con ella vuelven los
@@ -38,24 +38,27 @@ npx cap sync ios
 # Este paso los reemplaza por los de la app, generados desde assets/, que SÍ
 # está versionado. Sin esto, cada build limpio saldría con el ícono del
 # framework — lo primero que ve quien revisa la app.
-echo "==> 4/8 íconos y splash desde assets/"
+echo "==> 4/9 íconos y splash desde assets/"
 npx @capacitor/assets generate --ios \
   --iconBackgroundColor '#0a0a0a' --iconBackgroundColorDark '#0a0a0a' \
   --splashBackgroundColor '#0a0a0a' --splashBackgroundColorDark '#0a0a0a'
 
-echo "==> 5/8 router de export estático"
+echo "==> 5/9 router de export estático"
 bash scripts/ios-patch-router.sh
 
-echo "==> 6/8 login con Google nativo"
+echo "==> 6/9 login con Google nativo"
 # Se saltea solo si MOBILE_GOOGLE_IOS_CLIENT_ID está vacío, que es el estado
 # mientras la app de iOS no exista en la consola de Firebase.
 GOOGLE_IOS_CLIENT_ID="${MOBILE_GOOGLE_IOS_CLIENT_ID:-}" \
   bash scripts/ios-patch-google.sh
 
-echo "==> 7/8 Face ID (NSFaceIDUsageDescription)"
+echo "==> 7/9 Face ID (NSFaceIDUsageDescription)"
 bash scripts/ios-patch-biometria.sh
 
-echo "==> 8/8 ajustes de tienda (cifrado exento, solo iPhone)"
+echo "==> 8/9 Sign in with Apple (entitlement, CODE_SIGN_ENTITLEMENTS, marca)"
+bash scripts/ios-patch-apple.sh
+
+echo "==> 9/9 ajustes de tienda (cifrado exento, solo iPhone)"
 bash scripts/ios-store-settings.sh
 
 echo

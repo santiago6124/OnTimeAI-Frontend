@@ -33,6 +33,10 @@ import {
   useGoogleSignInDisponible,
   GoogleSignInButton,
 } from "@/components/google-sign-in-button";
+import {
+  AppleSignInButton,
+  useAppleSignInDisponible,
+} from "@/components/apple-sign-in-button";
 import { type SesionDeGoogle } from "@/lib/auth-google";
 import { firebaseAuth, mensajeDeError } from "@/lib/firebase";
 import { cn } from "@/lib/utils";
@@ -50,6 +54,8 @@ function SignupForm() {
   // Decide junto con el botón: si el separador "o con tu correo" quedara
   // dibujado sin el botón, anunciaría una alternativa que no está.
   const googleDisponible = useGoogleSignInDisponible();
+  // Solo en el binario de iOS que trae el entitlement; ver apple-sign-in.ts.
+  const appleDisponible = useAppleSignInDisponible();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
@@ -100,7 +106,7 @@ function SignupForm() {
 
   // El canje del token lo hace el botón, que es el que sabe por qué camino vino
   // la credencial. Acá solo queda a dónde mandar al usuario.
-  function handleGoogleSession(session: SesionDeGoogle) {
+  function handleSesionExterna(session: SesionDeGoogle) {
     setError("");
     if (session.isNewUser) {
       window.location.replace(onboardingPath);
@@ -145,13 +151,26 @@ function SignupForm() {
 
   return (
     <>
+      {/* Apple arriba de Google: la guía 4.8 de App Store pide que no quede
+          menos visible que otro login de terceros. Mismo tamaño, mismo handler:
+          los dos devuelven la sesión ya canjeada en /auth/firebase. */}
+      {appleDisponible && (
+        <div className="mb-3">
+          <AppleSignInButton
+            onSession={handleSesionExterna}
+            onError={setError}
+            disabled={isPending}
+          />
+        </div>
+      )}
+
       <GoogleSignInButton
-        onSession={handleGoogleSession}
+        onSession={handleSesionExterna}
         onError={setError}
         disabled={isPending}
       />
 
-      {googleDisponible && (
+      {(googleDisponible || appleDisponible) && (
         <AuthDivider>o con tu correo</AuthDivider>
       )}
 

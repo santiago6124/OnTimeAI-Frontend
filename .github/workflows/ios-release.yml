@@ -222,6 +222,14 @@ jobs:
         # app en la primera llamada a Face ID. Nativo: no llega por OTA.
         run: bash scripts/ios-patch-biometria.sh
 
+      - name: Sign in with Apple
+        # Entitlement com.apple.developer.applesignin, CODE_SIGN_ENTITLEMENTS
+        # en el target App y la marca del user agent que el gate de JS mira
+        # para dibujar el botón. Nativo: no llega por OTA. Va antes de la firma
+        # manual: con el perfil "OnTimeAI App Store", el archive corta si el
+        # perfil no trae la capability Sign in with Apple.
+        run: bash scripts/ios-patch-apple.sh
+
       - name: Router de export estático
         # Sin esto la app arranca en negro: el router de Capacitor manda toda
         # ruta sin extensión al index de la raíz, y Next exporta uno por
