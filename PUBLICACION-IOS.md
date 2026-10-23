@@ -87,9 +87,12 @@ Anotá el **Team ID** (10 caracteres, en *Membership details*): es el secret
 
 - Tipo: **App IDs → App**
 - Bundle ID: **explícito**, `com.ontimeai.app`
-- Capabilities: **ninguna**. La app no usa push, ni iCloud, ni Sign in with
-  Apple, ni background modes. Habilitar capabilities que no se usan obliga a
-  declaraciones extra en el review sin ganar nada.
+- Capabilities: **solo Sign in with Apple** (desde 1.1.0: la guía 4.8 la exige
+  porque la app ofrece Google). Ni push, ni iCloud, ni background modes:
+  habilitar capabilities que no se usan obliga a declaraciones extra en el
+  review sin ganar nada. Habilitarla invalida el perfil del paso 4, que hay que
+  regenerar y volver a cargar en `IOS_PROVISIONING_PROFILE_BASE64`. Ver
+  MOBILE_APP.md §12.
 
 El bundle ID es permanente. Una vez publicado no se puede cambiar.
 
@@ -350,7 +353,7 @@ un archivo corrupto o cambiado se descarta.
 | # | Qué | Dónde | Resultado |
 |---|---|---|---|
 | 1 | Cuenta de desarrollador | developer.apple.com | `IOS_TEAM_ID` |
-| 2 | App ID `com.ontimeai.app` | Identifiers | — (sin capabilities) |
+| 2 | App ID `com.ontimeai.app` | Identifiers | — (capability: Sign in with Apple) |
 | 3 | Certificado Apple Distribution | Certificates | `IOS_CERTIFICATE_P12_BASE64` + password |
 | 4 | Perfil App Store Connect `OnTimeAI App Store` | Profiles | `IOS_PROVISIONING_PROFILE_BASE64` |
 | 5 | Clave de API | ASC → Integrations | 3 secrets `APPSTORE_*` |

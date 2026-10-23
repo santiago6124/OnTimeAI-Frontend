@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import { Check } from "lucide-react";
 import { apiDeleteAccount, apiSetUserType } from "@/lib/api";
-import { appPath } from "@/lib/mobile-env";
+import { appPath, IS_BUNDLED } from "@/lib/mobile-env";
 import { cn } from "@/lib/utils";
 import { ProfileSwitcher } from "@/components/profile-switcher";
 import { useProfile } from "@/components/providers/profile-provider";
@@ -80,6 +80,14 @@ export default function SettingsPage() {
     setDeleteError("");
     startDeleting(async () => {
       try {
+        // Una cuenta creada con Apple pide confirmar con Apple antes de
+        // borrarse, para revocar el acceso (5.1.1(v)). Fuera del bundle de iOS,
+        // o sin Apple en la cuenta, no hace nada. Si el usuario cancela esa
+        // hoja, tira y la baja no sigue. Ver `auth-apple.ts`.
+        if (IS_BUNDLED) {
+          const { revocarAppleAntesDeBorrar } = await import("@/lib/auth-apple");
+          await revocarAppleAntesDeBorrar();
+        }
         await apiDeleteAccount();
         // La sesión ya no existe de ningún lado; el login es el único lugar
         // con sentido. replace, para que "atrás" no vuelva a una cuenta muerta.

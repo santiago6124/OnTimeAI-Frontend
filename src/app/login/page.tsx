@@ -9,7 +9,8 @@
  * un solo título, y la marca queda arriba como contexto.
  *
  * Google va primero porque es el camino que la mayoría usa y el que no exige
- * recordar nada. El correo queda abajo, no escondido.
+ * recordar nada; en el binario de iOS, Apple va encima (guía 4.8 de App
+ * Store). El correo queda abajo, no escondido.
  */
 
 import { Suspense, useState, useTransition } from "react";
@@ -30,6 +31,10 @@ import {
   useGoogleSignInDisponible,
   GoogleSignInButton,
 } from "@/components/google-sign-in-button";
+import {
+  AppleSignInButton,
+  useAppleSignInDisponible,
+} from "@/components/apple-sign-in-button";
 import { apiLoginFirebase } from "@/lib/api";
 import { type SesionDeGoogle } from "@/lib/auth-google";
 import { firebaseAuth, mensajeDeError } from "@/lib/firebase";
@@ -41,6 +46,8 @@ function LoginForm() {
   // Decide junto con el botón: si el separador "o con tu correo" quedara
   // dibujado sin el botón, anunciaría una alternativa que no está.
   const googleDisponible = useGoogleSignInDisponible();
+  // Solo en el binario de iOS que trae el entitlement; ver apple-sign-in.ts.
+  const appleDisponible = useAppleSignInDisponible();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -138,7 +145,7 @@ function LoginForm() {
   // El canje del token lo hace el botón, que es el que sabe por qué camino
   // vino la credencial —Google Identity Services en la web, el plugin nativo en
   // el teléfono—. Acá solo queda a dónde mandar al usuario.
-  function handleGoogleSession(session: SesionDeGoogle) {
+  function handleSesionExterna(session: SesionDeGoogle) {
     setError("");
     if (session.isNewUser) {
       const next = requestedPath
@@ -154,13 +161,26 @@ function LoginForm() {
 
   return (
     <>
+      {/* Apple arriba de Google: la guía 4.8 de App Store pide que no quede
+          menos visible que otro login de terceros. Mismo tamaño, mismo handler:
+          los dos devuelven la sesión ya canjeada en /auth/firebase. */}
+      {appleDisponible && (
+        <div className="mb-3">
+          <AppleSignInButton
+            onSession={handleSesionExterna}
+            onError={setError}
+            disabled={isPending}
+          />
+        </div>
+      )}
+
       <GoogleSignInButton
-        onSession={handleGoogleSession}
+        onSession={handleSesionExterna}
         onError={setError}
         disabled={isPending}
       />
 
-      {googleDisponible && (
+      {(googleDisponible || appleDisponible) && (
         <AuthDivider>o con tu correo</AuthDivider>
       )}
 

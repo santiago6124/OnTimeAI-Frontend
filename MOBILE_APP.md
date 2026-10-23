@@ -119,6 +119,7 @@ Cloud Run.
 | `src/lib/native/session.ts` | Token en `@capacitor/preferences` |
 | `src/lib/native/google-sign-in.ts` | El plugin de Google y el gate por plataforma |
 | `src/lib/auth-google.ts` | Los dos caminos de Google detrás de una sola firma |
+| `src/lib/native/apple-sign-in.ts` · `src/lib/auth-apple.ts` | Sign in with Apple (solo iOS): gate, nonce, sesión y revocación en la baja. Ver §12 |
 | `src/lib/native/app-ready.ts` | Dos señales separadas: confirma el bundle al plugin de OTA apenas React monta; baja el splash recién cuando hay pantalla |
 | `src/components/providers/native-session-provider.tsx` | El gate de sesión: reemplazo de `proxy.ts` en el bundle |
 | `src/components/*-view.tsx` | Vistas puras. Web y móvil traen los datos distinto pero dibujan lo mismo |
@@ -141,6 +142,7 @@ Cloud Run.
 | `scripts/ios-prepare.sh` | Todo lo anterior + sync + parche, sin dejar el repo pisado |
 | `scripts/ios-patch-router.sh` | El router de assets. **Código nativo: no se arregla por OTA** |
 | `scripts/ios-patch-google.sh` | Esquema de URL y handler del login con Google. **Código nativo: tampoco** |
+| `scripts/ios-patch-apple.sh` | Entitlement de Sign in with Apple, `CODE_SIGN_ENTITLEMENTS` y la marca del user agent. **Nativo** |
 | `mobile/*.tsx`, `mobile/components/*.tsx` | Las páginas/componentes que el bundle reemplaza (la lista es `REEMPLAZAR` en `build-mobile.mjs`) |
 | `ios/` | **No versionado**: se regenera con `npx cap add ios` |
 
@@ -583,3 +585,158 @@ viaja en el zip del OTA. **Sale con un binario nuevo por `ios-release.yml`**,
 el mismo que tiene que llevar el login con Google (§9). Un OTA con este JS
 sobre el binario 1.0.0 no rompe nada: el plugin no está, el gate da `false` y
 la app sigue con la contraseña.
+
+---
+
+## 12. Sign in with Apple (solo iOS)
+
+**Por qué.** Guideline 4.8 de App Store: una app que ofrece un login de
+terceros —"Continuar con Google", desde el PR #75— tiene que ofrecer también
+uno equivalente en privacidad. Sin esto el binario 1.1.0 vuelve rechazado.
+
+### El camino
+
+```
+hoja nativa de Apple  →  identity token  →  signInWithCredential  →  ID token
+ (nonce = SHA-256)       de Apple            OAuthProvider("apple.com")  de Firebase
+                                             { idToken, rawNonce }          ↓
+                                                                     /auth/firebase
+```
+
+Es el mismo puente que Google (§9): el plugin es el mismo
+(`@capgo/capacitor-social-login` **7.20.0**, que trae el proveedor Apple con
+`ASAuthorizationController` en iOS) y la sesión entra por Firebase.
+`signInWithCredential` es HTTP y anda en el bundle; `signInWithPopup` no.
+
+- **El nonce va en dos formas.** A Apple, el SHA-256 en hex (el plugin lo pasa
+  tal cual a `request.nonce`); a Firebase, el crudo. Cruzarlos da
+  `auth/invalid-credential` sin más pista. El hash usa `crypto.subtle` y, si
+  faltara, un SHA-256 en JS fijado contra los vectores de FIPS 180-2.
+- **Modo legado del plugin** (`useProperTokenExchange: false`, `redirectUrl: ""`):
+  no hace llamadas de red y devuelve el authorization code dentro de
+  `accessToken.token`. En modo `true` la 7.20 lo pierde: no lo copia a la
+  respuesta que llega a JS.
+- El plugin guarda el identity token en `UserDefaults` para su propio logout;
+  se borra apenas vuelve la hoja, porque no lo usamos.
+- **Botón**: negro, logo y texto blancos, mismo tamaño que el de Google y
+  **arriba** de él (HIG + 4.8). Solo en login y alta.
+
+### El gate: plataforma + plugin + marca del binario
+
+El plugin ya está en el binario 1.1.0 (7) —es el de Google—, pero ese binario
+**no tiene el entitlement**: la hoja falla con `AuthorizationError 1000`. Como
+un bundle nuevo le llega por OTA, preguntar por el plugin no alcanza, y desde
+JS no se leen los entitlements. Por eso `ios-patch-apple.sh` pone, junto con el
+entitlement, la marca `OnTimeAI-SIWA/1` en `ios.appendUserAgent` del
+`capacitor.config.json` del binario (vive en el `.ipa`, no en el zip del OTA).
+El botón aparece solo con iOS **y** la marca **y** el plugin. Lo fija
+`apple-nativo.test.ts`, que además verifica que la marca del script y la del JS
+sean la misma.
+
+Un `npx cap sync` posterior al parche reescribe ese JSON y borra la marca: el
+botón desaparece (falla cerrada). `ios-prepare.sh` y `ios-release.yml` parchean
+siempre después del sync.
+
+### Baja de cuenta: revocar en Apple (5.1.1(v))
+
+Apple exige revocar el token de Apple cuando se borra una cuenta creada con
+Sign in with Apple. En Ajustes → Eliminar cuenta, en el bundle de iOS y solo si
+la sesión de Firebase tiene `apple.com` entre sus proveedores:
+
+1. Se abre la hoja de Apple otra vez: el authorization code es de un solo uso y
+   vence a los 5 min, el del login ya no sirve.
+2. `reauthenticateWithCredential` (no `signIn`): con otro Apple ID, Firebase
+   rechaza (`auth/user-mismatch`) en vez de cambiar de cuenta.
+3. `POST identitytoolkit.googleapis.com/v2/accounts:revokeToken` con
+   `tokenType: "CODE"`, el código y el ID token de Firebase. Es la llamada del
+   SDK nativo de iOS (`revokeToken(withAuthorizationCode:)`). La
+   `revokeAccessToken` del SDK de JS **no sirve**: manda `ACCESS_TOKEN`, que
+   exige canjear el código con un client secret en un servidor, y sin
+   `currentUser` no hace nada sin avisar.
+4. Recién después `DELETE /users/me` (que borra la cuenta de Firebase: revocar
+   después ya no tendría con qué).
+
+Si el usuario **cancela** la hoja, la baja **no sigue** (mensaje en Ajustes).
+Cualquier **otra** falla —Firebase sin la clave de Apple, red, Apple ID
+distinto— deja un `console.warn` y la baja **sigue**: retener la cuenta de
+alguien que pidió borrarla es peor que no revocar.
+
+**Riesgo remanente**: una cuenta de Apple que se borra desde la **web** no se
+revoca (la web no tiene Sign in with Apple para conseguir un código). Para
+cubrirlo haría falta que el backend guarde el refresh token de Apple al dar de
+alta, lo que exige el canje con client secret del lado del servidor.
+
+### Backend (`/auth/firebase`)
+
+Sin cambios necesarios en principio, pero **a verificar en el primer login real**:
+
+- `_verify_firebase_id_token` exige `email` y `email_verified`. Apple siempre
+  entrega un correo (el real o uno de `privaterelay.appleid.com`) y lo declara
+  verificado; Firebase debería propagarlo como `email_verified: true`. Si
+  llegara `false`, el login con Apple da **403 "Falta verificar el correo"**, y
+  el arreglo es del backend: aceptar `firebase.sign_in_provider == "apple.com"`.
+- Con "Ocultar mi correo" el usuario queda con la dirección del relay como
+  nombre de usuario (es lo que se ve en Ajustes). El backend no manda mails, así
+  que no hace falta registrar un dominio en el relay de Apple.
+- El nombre (Apple lo da solo la primera vez) el backend no lo usa: no se pierde nada.
+- `DELETE /users/me` borra la cuenta de Firebase buscándola por correo, que para
+  Apple es el del relay o el real: funciona.
+- Si el correo que comparte Apple ya tiene cuenta (contraseña o Google),
+  Firebase —en "una cuenta por correo"— rechaza con
+  `auth/account-exists-with-different-credential`; el botón dice que entre como
+  la primera vez.
+
+### Las piezas
+
+| Archivo | Rol |
+|---|---|
+| `src/lib/native/apple-sign-in.ts` | Gate (plataforma + marca + plugin), nonce y SHA-256, la hoja de Apple |
+| `src/lib/auth-apple.ts` | Credencial de Firebase, sesión, revocación antes de la baja, mensajes |
+| `src/components/apple-sign-in-button.tsx` | El botón (HIG) y `useAppleSignInDisponible` |
+| `src/app/login/page.tsx` · `src/app/signup/page.tsx` | Apple arriba de Google |
+| `src/app/settings/page.tsx` | Revoca antes de `apiDeleteAccount()` |
+| `scripts/ios-patch-apple.sh` | Entitlement, `CODE_SIGN_ENTITLEMENTS` (Debug y Release del target App) y marca |
+
+### Esto NO llega por OTA
+
+El entitlement, `CODE_SIGN_ENTITLEMENTS`, la marca del user agent y el perfil de
+provisión con la capability viajan en el binario. **Sale con un build nuevo por
+`ios-release.yml`** (1.1.0 (8) o el que siga). Un OTA con este JS sobre 1.1.0 (7)
+no rompe nada: falta la marca, el botón no se dibuja.
+
+### Checklist manual antes de `ios-release.yml`
+
+En este orden (el 2 depende del 1, y el build depende del 3):
+
+1. **Apple Developer → Identifiers → `com.ontimeai.app`** → Capabilities →
+   tildar **Sign in with Apple** ("Enable as a primary App ID") → Save.
+   Apple avisa que los perfiles existentes quedan inválidos: es esperado.
+2. **Apple Developer → Profiles → `OnTimeAI App Store`** → Edit → Save (o
+   generarlo de nuevo con el mismo nombre, mismo App ID y certificado
+   Apple Distribution) → Download. El nombre tiene que seguir siendo
+   exactamente `OnTimeAI App Store` (`IOS_PROFILE_NAME` en `ios-release.yml`).
+3. **GitHub → Settings → Secrets and variables → Actions** → actualizar el
+   secret **`IOS_PROVISIONING_PROFILE_BASE64`** con
+   `base64 -i OnTimeAI_App_Store.mobileprovision | pbcopy`. Sin esto el archive
+   corta: el perfil viejo no trae `com.apple.developer.applesignin` y Xcode lo
+   compara con `App.entitlements`.
+4. **Apple Developer → Keys → +** → "Sign in with Apple" → Configure → App ID
+   primario `com.ontimeai.app` → Register → **descargar el `.p8`** (se baja una
+   sola vez) y anotar el **Key ID**. El Team ID es el de `IOS_TEAM_ID`.
+5. **Firebase (`ontimeai-prod`) → Authentication → Sign-in method → Agregar
+   proveedor → Apple** → habilitar. Para iOS nativo, *Services ID* puede quedar
+   vacío. En **"Configuración del flujo de código de OAuth"**: *Apple Team ID*,
+   *Key ID* y la *clave privada* (contenido del `.p8`). Sin el paso 5 el login
+   con Apple falla con `auth/operation-not-allowed`; sin los tres campos, el
+   login anda pero la revocación de la baja falla (y la baja sigue igual).
+6. Verificar que la app iOS `com.ontimeai.app` siga registrada en Firebase
+   (⚙ Configuración → Tus apps): Firebase acepta el identity token cuyo `aud`
+   es ese bundle ID.
+7. **Actions → iOS Release (TestFlight)** con `version` `1.1.0`, `ota: true`,
+   `subir: true`. El build sale con el número del run (≥ 8).
+8. En TestFlight, con un iPhone real: entrar con Apple (probar "Ocultar mi
+   correo"), confirmar que el backend no devuelve 403, y eliminar la cuenta:
+   tiene que pedir Apple de nuevo y, después, en Ajustes del iPhone → Apple ID
+   → Iniciar sesión con Apple, OnTimeAI ya no tiene que figurar.
+9. En App Store Connect, notas para el revisor: el login con Apple está en la
+   pantalla de ingreso, arriba de Google.
