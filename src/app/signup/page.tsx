@@ -33,7 +33,7 @@ import {
   useGoogleSignInDisponible,
   GoogleSignInButton,
 } from "@/components/google-sign-in-button";
-import { apiLoginGoogle } from "@/lib/api";
+import { type SesionDeGoogle } from "@/lib/auth-google";
 import { firebaseAuth, mensajeDeError } from "@/lib/firebase";
 import { cn } from "@/lib/utils";
 import { safeReturnPath } from "@/lib/auth-types";
@@ -98,28 +98,17 @@ function SignupForm() {
     });
   }
 
-  function handleGoogleCredential(idToken: string) {
+  // El canje del token lo hace el botón, que es el que sabe por qué camino vino
+  // la credencial. Acá solo queda a dónde mandar al usuario.
+  function handleGoogleSession(session: SesionDeGoogle) {
     setError("");
-    startTransition(async () => {
-      try {
-        const session = await apiLoginGoogle(idToken);
-        if (session.isNewUser) {
-          window.location.replace(onboardingPath);
-          return;
-        }
-        window.location.replace(
-          requestedPath
-            ? safeReturnPath(requestedPath)
-            : "/",
-        );
-      } catch (cause) {
-        setError(
-          cause instanceof Error
-            ? cause.message
-            : "No se pudo continuar con Google.",
-        );
-      }
-    });
+    if (session.isNewUser) {
+      window.location.replace(onboardingPath);
+      return;
+    }
+    window.location.replace(
+      requestedPath ? safeReturnPath(requestedPath) : "/",
+    );
   }
 
   if (enviado) {
@@ -157,7 +146,8 @@ function SignupForm() {
   return (
     <>
       <GoogleSignInButton
-        onCredential={handleGoogleCredential}
+        onSession={handleGoogleSession}
+        onError={setError}
         disabled={isPending}
       />
 
