@@ -38,6 +38,9 @@ importers:
       '@capacitor/status-bar':
         specifier: ^7.0.6
         version: 7.0.6(@capacitor/core@7.6.9)
+      '@capgo/capacitor-native-biometric':
+        specifier: 7.6.0
+        version: 7.6.0(@capacitor/core@7.6.9)
       '@capgo/capacitor-social-login':
         specifier: ^7.20.0
         version: 7.20.0(@capacitor/core@7.6.9)
@@ -371,6 +374,11 @@ packages:
 
   '@capacitor/status-bar@7.0.6':
     resolution: {integrity: sha512-7AVqj46b26QikImQzWfsJmzG8NUJZBGkrVSuoeTo+SX/YH3hXH0MqwwFgMqMGHfa/BICDgSvTjM9miVFlq0+RQ==}
+    peerDependencies:
+      '@capacitor/core': '>=7.0.0'
+
+  '@capgo/capacitor-native-biometric@7.6.0':
+    resolution: {integrity: sha512-ZQ+Nc+uS2sT8TED/REYlmGV34ASFsBe30YdABBQIRL+A2iVbWtdiL0FbX+1sKKXzrS2DGf+mD657Qwl1jGSDLg==}
     peerDependencies:
       '@capacitor/core': '>=7.0.0'
 
@@ -5287,6 +5295,10 @@ snapshots:
       '@capacitor/core': 7.6.9
 
   '@capacitor/status-bar@7.0.6(@capacitor/core@7.6.9)':
+    dependencies:
+      '@capacitor/core': 7.6.9
+
+  '@capgo/capacitor-native-biometric@7.6.0(@capacitor/core@7.6.9)':
     dependencies:
       '@capacitor/core': 7.6.9
 

@@ -488,3 +488,98 @@ Los pasos 2 y 3 **no están en Authentication**: las apps se registran en
    `MOBILE_OTA_URL=http://localhost:3000/api/ota/updates` y
    `NSAllowsLocalNetworking = true` en el `Info.plist` generado (`ios/` no está
    versionado) el simulador llega al `next dev` del Mac. Nada de eso va al repo.
+
+---
+
+## 11. Entrada con Face ID (solo iOS)
+
+El JWT del backend vence a las 8 h. Pasado eso el bundle caía en el login y
+había que volver a escribir correo y contraseña, aunque Firebase siguiera con
+la sesión viva en IndexedDB (se renueva sola con su refresh token). Face ID es
+el permiso del usuario para usar esa sesión sin preguntarle nada más.
+
+### Qué hace
+
+```
+arranque sin JWT válido  →  ¿activado? ¿plugin? ¿Face ID configurado?
+                            ¿sesión de Firebase persistida?
+                                         ↓ sí a todo
+                         Face ID  →  getIdToken(true)  →  /auth/firebase
+                            ↓ cancela / falla                  ↓
+                          login normal                  saveToken → adentro
+```
+
+- **Oferta, una vez.** Con la sesión resuelta, si el teléfono tiene Face ID o
+  Touch ID, hay sesión de Firebase y todavía no se eligió nada, aparece abajo
+  una tarjeta "Usar Face ID para entrar" con *Usar Face ID* / *Ahora no*. Aceptar
+  pide la cara una vez antes de guardar: si no pasa, no se guarda nada y la
+  oferta vuelve en el próximo arranque. La elección vive en `Preferences`
+  (`ontimeai.biometria.eleccion`). Les aparece también a quienes ya tenían
+  sesión antes de actualizar.
+- **Ajustes.** Una tarjeta "Entrar con Face ID" para activarlo o desactivarlo.
+  En la web y en Android no se dibuja.
+- **Cuándo se pide la cara: solo sin JWT válido**, no en cada arranque. Con el
+  JWT vigente la app ya entra sola; pedir la cara ahí sería un bloqueo de
+  pantalla, otra función con otra pregunta (qué hacer con una sesión válida si
+  el usuario cancela). Acá Face ID reemplaza a la contraseña, no se suma.
+  Incluye el caso de un token que vence con la app abierta: el 401 manda a
+  /login y el gate lo intenta ahí.
+- **Nunca en bucle.** Un intento por arranque, marcado en `sessionStorage`
+  antes de pedir la cara. La marca sobrevive a las recargas duras del gate
+  (`window.location.replace`) y muere cuando iOS mata el proceso. Sin ella, un
+  cancel mandaría a /login, /login montaría el gate de nuevo y volvería a
+  pedir la cara.
+- **Logout** borra el JWT, cierra la sesión de Firebase y olvida la elección
+  (también al eliminar la cuenta, que pasa por el logout). Cerrar Firebase en
+  el logout es nuevo: antes la sesión de Firebase que quedaba era inofensiva,
+  porque nada la convertía en un JWT sin la contraseña. Con Face ID pasa a ser
+  una credencial.
+
+### Las piezas
+
+| Archivo | Rol |
+|---|---|
+| `src/lib/native/biometria.ts` | Gate por plataforma y plugin, preferencia, intento único, canje |
+| `src/components/biometria.tsx` | Oferta y ajuste; no dibujan nada hasta confirmar que corresponde |
+| `src/components/providers/native-session-provider.tsx` | `resolverSesion()`: JWT primero, Face ID después |
+| `scripts/ios-patch-biometria.sh` | `NSFaceIDUsageDescription` en `Info.plist`. **Nativo: no llega por OTA** |
+| `capacitor.config.ts` | `android.includePlugins`: deja el plugin afuera del APK |
+
+Plugin: `@capgo/capacitor-native-biometric` **7.6.0** (línea 7, Capacitor 7),
+fijado exacto. Se usa solo `isAvailable` y `verifyIdentity` con
+`useFallback: false`: la alternativa a la cara es nuestro login, no el código
+del iPhone, que no es la contraseña de la cuenta.
+
+### Android queda igual
+
+Android carga la web de Cloud Run, así que este JS le llega con el próximo
+deploy. No dibuja nada porque el gate pregunta la plataforma **y** si el plugin
+está en el binario (`isPluginAvailable("NativeBiometric")`), la misma lección
+que dejó el botón de Google. Además, `android.includePlugins` deja el plugin
+afuera del APK: sin esa allowlist `cap sync android` lo metería, con una
+actividad y los permisos de biometría que Play obliga a declarar, en una app
+que no los usa. Un plugin nuevo para Android hay que sumarlo ahí a mano.
+
+### Lo que NO protege
+
+Face ID acá es una **compuerta de interfaz, no un cifrado**. El refresh token de
+Firebase está en IndexedDB sin protección biométrica: quien tenga acceso al
+contenedor de la app (un backup sin cifrar, un teléfono con jailbreak) lo puede
+usar sin pasar por la cara. Lo mismo vale para el JWT de `session.ts`, que está
+en `UserDefaults`.
+
+La alternativa fuerte es guardar la credencial en el **Keychain con
+`SecAccessControl` biométrico** (`.biometryCurrentSet`), para que el propio
+sistema se niegue a entregarla sin Face ID. **No se hizo a propósito**: exige
+sacar la sesión de Firebase de IndexedDB y manejar su refresh a mano, y el
+riesgo que cubre —el contenedor ya comprometido— expone igual el JWT vigente.
+Si alguna vez hace falta, ese es el camino.
+
+### Esto NO llega por OTA
+
+Hacen falta el pod del plugin y `NSFaceIDUsageDescription` en `Info.plist`
+—sin la clave, iOS cierra la app en la primera llamada a Face ID—, y nada de eso
+viaja en el zip del OTA. **Sale con un binario nuevo por `ios-release.yml`**,
+el mismo que tiene que llevar el login con Google (§9). Un OTA con este JS
+sobre el binario 1.0.0 no rompe nada: el plugin no está, el gate da `false` y
+la app sigue con la contraseña.
