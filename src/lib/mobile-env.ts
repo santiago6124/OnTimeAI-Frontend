@@ -51,6 +51,40 @@ export const APP_ORIGIN = normalizeOrigin(process.env.NEXT_PUBLIC_APP_ORIGIN);
  */
 export const REPORTS_ENABLED = process.env.NEXT_PUBLIC_DISABLE_REPORTS !== "1";
 
+/**
+ * Clientes OAuth del login con Google nativo.
+ *
+ * Son dos y no uno, y confundirlos es el error que hace que Android compile y
+ * falle en el teléfono:
+ *
+ * - `GOOGLE_IOS_CLIENT_ID` identifica a la app de iOS ante Google. Su versión
+ *   invertida es además el esquema de URL que va en `Info.plist`, y de eso se
+ *   ocupa `scripts/ios-patch-google.sh`.
+ * - `GOOGLE_WEB_CLIENT_ID` es el cliente de tipo *web*. En Android no hay
+ *   client ID propio que pasarle al plugin: lo que necesita es el del
+ *   servidor, que es el web. Y es también el `aud` que termina teniendo el ID
+ *   token, o sea lo que el backend verifica.
+ *
+ * Vacíos mientras no existan las apps en la consola de Firebase, y con eso el
+ * botón nativo no se dibuja. Es deliberado: un botón que no puede funcionar es
+ * peor que no tener botón, que es exactamente el problema que tenía Android
+ * antes de `useGoogleSignInDisponible`.
+ */
+export const GOOGLE_IOS_CLIENT_ID = (
+  process.env.NEXT_PUBLIC_GOOGLE_IOS_CLIENT_ID ?? ""
+).trim();
+
+export const GOOGLE_WEB_CLIENT_ID = (
+  process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? ""
+).trim();
+
+/**
+ * Qué se necesita de cada uno lo decide `googleDisponibleEn()` en
+ * `lib/native/google-sign-in.ts`, porque depende de la plataforma y eso no se
+ * sabe en tiempo de build: la misma build sirve a la web y al WebView de
+ * Android.
+ */
+
 function normalizeOrigin(value: string | undefined): string {
   return (value ?? "").trim().replace(/\/+$/, "");
 }

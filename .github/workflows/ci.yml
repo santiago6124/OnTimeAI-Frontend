@@ -48,4 +48,8 @@ jobs:
         env:
           MOBILE_API_ORIGIN: ${{ vars.MOBILE_API_ORIGIN }}
           MOBILE_APP_ORIGIN: ${{ vars.MOBILE_APP_ORIGIN }}
+          # Para que el PR compile con la misma configuración que el release y
+          # no descubramos en el build de TestFlight que falta uno de los dos.
+          MOBILE_GOOGLE_IOS_CLIENT_ID: ${{ vars.MOBILE_GOOGLE_IOS_CLIENT_ID }}
+          MOBILE_GOOGLE_CLIENT_ID: ${{ vars.MOBILE_GOOGLE_CLIENT_ID }}
         run: node scripts/build-mobile.mjs --strict

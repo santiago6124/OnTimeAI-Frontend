@@ -61,6 +61,22 @@ const APP_ORIGIN =
   "https://ontimeai-frontend-871707213932.us-central1.run.app";
 
 /**
+ * Clientes OAuth del login con Google nativo.
+ *
+ * Vacíos por defecto, y eso es lo correcto mientras las apps de iOS y Android
+ * no existan en la consola de Firebase: con un client ID vacío el botón nativo
+ * no se dibuja (`googleDisponibleEn` en `src/lib/native/google-sign-in.ts`) y
+ * `scripts/ios-patch-google.sh` se saltea el parche. El build sale coherente:
+ * sin botón y sin esquema de URL, en vez de un botón que no puede funcionar.
+ *
+ * No son un secreto: un client ID de OAuth es público por diseño —viaja en el
+ * Info.plist de cualquier app que lo use— así que pasarlos como variables de
+ * build y dejarlos en el bundle es lo normal, no una filtración.
+ */
+const GOOGLE_IOS_CLIENT_ID = (process.env.MOBILE_GOOGLE_IOS_CLIENT_ID ?? "").trim();
+const GOOGLE_WEB_CLIENT_ID = (process.env.MOBILE_GOOGLE_CLIENT_ID ?? "").trim();
+
+/**
  * Se copia por ALLOWLIST, no por denylist.
  *
  * Esto termina adentro de un .ipa que se instala en teléfonos ajenos, así que
@@ -319,6 +335,17 @@ if (STRICT) {
       fallar(`${nombre} tiene que ser una URL https, y vale "${valor}"`);
     }
   }
+
+  // Los dos client IDs o ninguno. Con uno solo el botón se dibuja —alcanza con
+  // que los dos no estén vacíos para eso— y después falla: iOS necesita el
+  // propio para identificarse Y el web como `iOSServerClientId`.
+  if (Boolean(GOOGLE_IOS_CLIENT_ID) !== Boolean(GOOGLE_WEB_CLIENT_ID)) {
+    fallar(
+      "MOBILE_GOOGLE_IOS_CLIENT_ID y MOBILE_GOOGLE_CLIENT_ID van juntos: " +
+        "con uno solo el botón de Google se dibuja y no puede funcionar. " +
+        `iOS="${GOOGLE_IOS_CLIENT_ID}" web="${GOOGLE_WEB_CLIENT_ID}"`,
+    );
+  }
 }
 
 /**
@@ -334,6 +361,8 @@ writeFileSync(
     "NEXT_PUBLIC_DISABLE_REPORTS=1",
     `NEXT_PUBLIC_API_ORIGIN=${API_ORIGIN}`,
     `NEXT_PUBLIC_APP_ORIGIN=${APP_ORIGIN}`,
+    `NEXT_PUBLIC_GOOGLE_IOS_CLIENT_ID=${GOOGLE_IOS_CLIENT_ID}`,
+    `NEXT_PUBLIC_GOOGLE_CLIENT_ID=${GOOGLE_WEB_CLIENT_ID}`,
     "",
   ].join("\n"),
 );
@@ -463,6 +492,26 @@ for (const [nombre, valor] of [
     problemas.push(
       `${nombre} no quedó inyectado en el bundle (esperaba "${valor}"): sin ` +
         "eso la app no sabe contra qué host hablar y falla recién en el teléfono.",
+    );
+  }
+}
+
+// Los client IDs de Google, solo si se pidieron.
+//
+// Vacíos no se verifican: ese es el estado normal mientras la consola de
+// Firebase no tenga las apps creadas. Pero si alguien los pasó y no quedaron
+// inyectados, el síntoma es un botón que no aparece y nadie entiende por qué
+// —la app sigue andando con correo y contraseña, así que no hay error que
+// mirar—. Es justo el tipo de falla silenciosa que esta sección existe para
+// cazar.
+for (const [nombre, valor] of [
+  ["MOBILE_GOOGLE_IOS_CLIENT_ID", GOOGLE_IOS_CLIENT_ID],
+  ["MOBILE_GOOGLE_CLIENT_ID", GOOGLE_WEB_CLIENT_ID],
+]) {
+  if (valor && !jsTotal.includes(valor)) {
+    problemas.push(
+      `${nombre} no quedó inyectado en el bundle (esperaba "${valor}"): el ` +
+        "botón de Google no se va a dibujar y la app no va a dar ningún error.",
     );
   }
 }
