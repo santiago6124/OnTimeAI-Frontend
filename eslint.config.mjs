@@ -30,6 +30,10 @@ const eslintConfig = defineConfig([
     // linteala duplica cada hallazgo y encima reporta el archivo equivocado.
     ".mobile/**",
 
+    // Reporte HTML de `pnpm test:cov` (reporter lcov de vitest): trae su propio
+    // JS, que no es nuestro.
+    "coverage/**",
+
     // Proyectos nativos generados por Capacitor. El JS que traen es de los
     // plugins, no del repo, y se regenera en cada `cap sync`.
     "android/**",
