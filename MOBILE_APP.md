@@ -248,7 +248,8 @@ Sin ninguno de estos, `android-build.yml` igual produce un APK debug y
 
 ### Keystore de Android
 
-Generado el 2026-09-18 con OpenSSL (no hay JDK en la Mac): PKCS12, RSA 4096,
+Generado el 2026-09-18 con OpenSSL (entonces no había JDK en la Mac; hoy sí,
+`keytool` está en openjdk@17): PKCS12, RSA 4096,
 alias `upload`, válido hasta 2056, en `~/.ontimeai/android-upload.p12` con la
 contraseña al lado. `build.gradle` lo abre con `storeType "PKCS12"`, que en
 Java también lee un JKS por si se regenera con `keytool`.
@@ -397,18 +398,38 @@ Sin esto el código compila, el botón no se dibuja y el parche nativo se saltea
 con Google en el teléfono no existe:
 
 1. **Authentication → Sign-in method → Google**: habilitar.
-2. **Agregar app iOS** con bundle ID `com.ontimeai.app`. De ahí sale el client
-   ID de iOS → `MOBILE_GOOGLE_IOS_CLIENT_ID`.
-3. **Agregar app Android** con package `com.ontimeai.app` y **dos** huellas
-   SHA-1:
-   - la de la clave de subida (`ONTIMEAI_KEYSTORE_FILE` en los secrets;
-     `keytool -list -v`)
-   - la de **Play App Signing** (Play Console → Configuración → Firma de la
-     aplicación)
+   *(hecho el 2026-10-23)*
 
-   La segunda es la que se olvida. La app usa Play App Signing, así que
-   registrando solo la de subida el login funciona en un APK compilado a mano
-   y **falla para cualquiera que instale desde Play**.
+Los pasos 2 y 3 **no están en Authentication**: las apps se registran en
+**⚙ Configuración del proyecto → General → Tus apps → Agregar app**.
+
+2. **Agregar app iOS** con bundle ID `com.ontimeai.app`. Al terminar ofrece
+   descargar `GoogleService-Info.plist`: **no hace falta agregarlo al
+   proyecto**, porque no usamos el SDK nativo de Firebase —y eso es lo que
+   `PUBLICACION.md` declara a la App Store—. Lo único que se saca de ahí es la
+   clave `CLIENT_ID`, que es `MOBILE_GOOGLE_IOS_CLIENT_ID`. El cliente OAuth de
+   iOS lo crea Firebase solo, siempre que Google ya esté habilitado como
+   proveedor (paso 1).
+
+3. **Agregar app Android** con package `com.ontimeai.app` y **dos** huellas
+   SHA-1. Las dos salen de la misma pantalla de **Play Console → Prueba y
+   lanzamiento → Integridad de la app → Firma de app**:
+   - **Certificado de la clave de firma de la app** (la de Play App Signing)
+   - **Certificado de la clave de carga** (la de subida)
+
+   No hace falta el archivo del keystore para esto. Si igual se quiere sacar
+   de ahí, el keystore es `~/.ontimeai/android-upload.p12` (PKCS12, alias
+   `upload`) y el comando es
+   `keytool -list -v -keystore ~/.ontimeai/android-upload.p12 -storetype PKCS12`.
+   En GitHub vive como el secret `ANDROID_KEYSTORE_BASE64`, que **no se puede
+   volver a leer**: los secrets son de solo escritura.
+
+   La de Play App Signing es la que se olvida. La app usa Play App Signing, así
+   que registrando solo la de carga el login funciona en un APK compilado a
+   mano y **falla para cualquiera que instale desde Play**.
+
+   Las huellas se pueden agregar después de crear la app, en la misma pantalla
+   de Tus apps → la app Android → **Agregar huella digital**.
 
 ---
 
