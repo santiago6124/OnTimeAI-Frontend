@@ -27,6 +27,11 @@ vi.mock("@/lib/native/session", () => ({
   },
 }));
 
+const { limpiarAlCerrarSesion } = vi.hoisted(() => ({
+  limpiarAlCerrarSesion: vi.fn(async () => undefined),
+}));
+vi.mock("@/lib/native/biometria", () => ({ limpiarAlCerrarSesion }));
+
 type Llamada = { url: string; init: RequestInit };
 const llamadas: Llamada[] = [];
 
@@ -152,5 +157,20 @@ describe("después del login, en el bundle", () => {
     expect(llamadas[0].init.method).toBe("PATCH");
     expect(header(llamadas[0], "Authorization")).toBe("Bearer jwt-1");
     expect(JSON.parse(String(llamadas[0].init.body))).toEqual({ user_type: "b2c" });
+  });
+});
+
+describe("apiLogout en el bundle", () => {
+  it("borra el JWT y además cierra Firebase y olvida Face ID", async () => {
+    // Con la entrada por Face ID, la sesión de Firebase alcanza para sacar un
+    // JWT nuevo. Un logout que solo borrara el JWT dejaría la puerta abierta.
+    almacen.token = "jwt-1";
+    limpiarAlCerrarSesion.mockClear();
+    const { apiLogout } = await import("@/lib/api");
+
+    await apiLogout();
+
+    expect(almacen.token).toBeNull();
+    expect(limpiarAlCerrarSesion).toHaveBeenCalledTimes(1);
   });
 });

@@ -177,6 +177,11 @@ const config: CapacitorConfig = {
       // scripts/ios-patch-google.sh, y sin ellos el flujo vuelve de Google sin
       // token y sin error.
       "@capgo/capacitor-social-login",
+      // La entrada con Face ID. Además del plugin hace falta
+      // NSFaceIDUsageDescription en Info.plist, que pone
+      // scripts/ios-patch-biometria.sh: sin esa clave iOS cierra la app en la
+      // primera llamada a Face ID.
+      "@capgo/capacitor-native-biometric",
     ],
   },
 };
