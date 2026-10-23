@@ -76,11 +76,63 @@ describe("googleDisponibleEn", () => {
   });
 });
 
+describe("googleNativoListo", () => {
+  /**
+   * La regresión que llegó a producción el 2026-10-23.
+   *
+   * Android no empaqueta la web: la carga de Cloud Run. Así que un deploy del
+   * frontend le cambia el JS a los teléfonos YA instalados, sin pasar por
+   * Play. El gate miraba solo el client ID —que el deploy de la web sí
+   * tiene— y dibujaba el botón, pero el APK instalado no traía el plugin,
+   * porque eso es código nativo. Botón que falla al tocarlo.
+   *
+   * Tener la credencial y tener el plugin son dos cosas distintas y hay que
+   * preguntar por las dos.
+   */
+  async function conPlugin(presente: boolean, plataforma: string) {
+    const mod = await conClientIds(IOS, WEB);
+    vi.doMock("@capacitor/core", () => ({
+      Capacitor: {
+        getPlatform: () => plataforma,
+        isPluginAvailable: (n: string) => presente && n === "SocialLogin",
+      },
+    }));
+    return mod;
+  }
+
+  it("con credenciales y plugin, está listo", async () => {
+    const { googleNativoListo } = await conPlugin(true, "android");
+    await expect(googleNativoListo()).resolves.toBe(true);
+  });
+
+  it("con credenciales pero SIN plugin, NO está listo", async () => {
+    // El caso del APK viejo de Android contra el deploy nuevo de la web.
+    const { googleNativoListo } = await conPlugin(false, "android");
+    await expect(googleNativoListo()).resolves.toBe(false);
+  });
+
+  it("lo mismo en iOS: un bundle sin el plugin no dibuja el botón", async () => {
+    const { googleNativoListo } = await conPlugin(false, "ios");
+    await expect(googleNativoListo()).resolves.toBe(false);
+  });
+
+  it("en web nunca está listo, aunque el plugin diga que sí", async () => {
+    // El plugin se registra con implementación `web`, así que
+    // isPluginAvailable da true en el navegador. Si el gate mirara solo eso,
+    // la web dibujaría el botón nativo en vez del de Google Identity Services.
+    const { googleNativoListo } = await conPlugin(true, "web");
+    await expect(googleNativoListo()).resolves.toBe(false);
+  });
+});
+
 describe("pedirIdTokenDeGoogle", () => {
-  it("falla con un mensaje legible si el build no tiene client IDs", async () => {
+  it("falla con un mensaje legible si el build no tiene con qué", async () => {
+    // El mensaje habla de "esta versión de la app" y no de configuración:
+    // desde el lado del usuario los dos casos —sin client ID y sin plugin— se
+    // arreglan igual, actualizando, y ninguno es culpa suya.
     const mod = await conClientIds("", "");
     await expect(mod.pedirIdTokenDeGoogle()).rejects.toThrow(
-      /no está configurado/i,
+      /no está disponible en esta versión/i,
     );
   });
 
