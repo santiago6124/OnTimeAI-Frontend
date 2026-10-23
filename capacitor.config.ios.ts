@@ -175,7 +175,8 @@ const config: CapacitorConfig = {
       // El login con Google. Además del plugin hace falta el esquema de URL en
       // Info.plist y el handler en AppDelegate: los pone
       // scripts/ios-patch-google.sh, y sin ellos el flujo vuelve de Google sin
-      // token y sin error.
+      // token y sin error. El mismo plugin atiende Sign in with Apple, que
+      // necesita el entitlement que pone scripts/ios-patch-apple.sh.
       "@capgo/capacitor-social-login",
       // La entrada con Face ID. Además del plugin hace falta
       // NSFaceIDUsageDescription en Info.plist, que pone
