@@ -172,6 +172,11 @@ const config: CapacitorConfig = {
       "@capacitor/splash-screen",
       "@capacitor/status-bar",
       "@capgo/capacitor-updater",
+      // El login con Google. Además del plugin hace falta el esquema de URL en
+      // Info.plist y el handler en AppDelegate: los pone
+      // scripts/ios-patch-google.sh, y sin ellos el flujo vuelve de Google sin
+      // token y sin error.
+      "@capgo/capacitor-social-login",
     ],
   },
 };

@@ -99,9 +99,12 @@ Cloud Run.
   gate nativo deja ver `/signup` sin sesión, como `proxy.ts`. Verificado con el
   JS del bundle en Chrome (login → onboarding → dashboard → recarga), y por
   `curl` que Firebase y el FastAPI aceptan CORS desde `capacitor://localhost`.
-  **Google queda solo en la web**: Google Identity Services no corre en un
-  WebView embebido; en el teléfono hace falta un plugin nativo de Google
-  Sign-In, y el botón (y su separador) se ocultan solos en el bundle
+  **Google por plugin nativo**: Google Identity Services no corre en un WebView
+  embebido —rechaza el flujo con `disallowed_useragent`, y afecta igual a
+  Android, que carga la web remota pero la carga en un WebView—. El camino es
+  `@capgo/capacitor-social-login` → ID token de Google →
+  `signInWithCredential` del SDK de JS → ID token de Firebase →
+  `/auth/firebase`. Ver la sección 9
 
 ---
 
@@ -114,6 +117,8 @@ Cloud Run.
 | `src/lib/mobile-env.ts` | Banderas de build. Sin variables definidas, todo rinde como antes — la web es un no-op verificable |
 | `src/lib/routes.ts` | `flightDetailHref()`: emite la forma de enlace que corresponde a cada build |
 | `src/lib/native/session.ts` | Token en `@capacitor/preferences` |
+| `src/lib/native/google-sign-in.ts` | El plugin de Google y el gate por plataforma |
+| `src/lib/auth-google.ts` | Los dos caminos de Google detrás de una sola firma |
 | `src/lib/native/app-ready.ts` | Dos señales separadas: confirma el bundle al plugin de OTA apenas React monta; baja el splash recién cuando hay pantalla |
 | `src/components/providers/native-session-provider.tsx` | El gate de sesión: reemplazo de `proxy.ts` en el bundle |
 | `src/components/*-view.tsx` | Vistas puras. Web y móvil traen los datos distinto pero dibujan lo mismo |
@@ -135,6 +140,7 @@ Cloud Run.
 | `scripts/build-mobile.mjs` | Arma `.mobile/out`: copia por allowlist, poda, verifica |
 | `scripts/ios-prepare.sh` | Todo lo anterior + sync + parche, sin dejar el repo pisado |
 | `scripts/ios-patch-router.sh` | El router de assets. **Código nativo: no se arregla por OTA** |
+| `scripts/ios-patch-google.sh` | Esquema de URL y handler del login con Google. **Código nativo: tampoco** |
 | `mobile/*.tsx`, `mobile/components/*.tsx` | Las páginas/componentes que el bundle reemplaza (la lista es `REEMPLAZAR` en `build-mobile.mjs`) |
 | `ios/` | **No versionado**: se regenera con `npx cap add ios` |
 
@@ -320,7 +326,93 @@ Lo que hay que revisar en ese caso, porque Android no lo tiene resuelto hoy:
 
 ---
 
-## 9. Gotchas verificados
+## 9. Login con Google nativo
+
+Google Identity Services —el botón de la web— se niega a correr dentro de un
+WebView embebido: rechaza el flujo con `disallowed_useragent`. Es una política
+de Google para que una app no pueda mostrar una pantalla de login de Google
+falsa, así que no hay forma de sortearla desde JS. Afecta a **las dos**
+plataformas: Android carga la web remota de Cloud Run, pero la carga en un
+WebView.
+
+### El camino
+
+```
+plugin nativo  →  ID token de Google  →  signInWithCredential  →  ID token de
+                                          (SDK de JS)              Firebase
+                                                                      ↓
+                                                             /auth/firebase
+```
+
+Google entra por Firebase y no por `/auth/google`, que es la decisión del issue
+#46: un solo sistema de credenciales en vez de dos. La web sigue por
+`/auth/google` mientras el proveedor de Google no esté habilitado en Firebase
+Authentication; migrarla antes la rompería.
+
+`signInWithCredential` **sí** se puede usar en el bundle, a diferencia de
+`signInWithPopup`: es una llamada HTTP y no necesita el popup/redirect
+resolver, que es justo el que `firebase.ts` omite a propósito porque desde
+`capacitor://localhost` su iframe nunca contesta y deja toda operación de Auth
+encolada para siempre, sin error ni timeout.
+
+### Las piezas
+
+| Archivo | Rol |
+|---|---|
+| `src/lib/native/google-sign-in.ts` | El plugin: `initialize` una vez, `login`, y el gate por plataforma |
+| `src/lib/auth-google.ts` | Los dos caminos (web y teléfono) detrás de una sola firma |
+| `src/components/google-sign-in-button.tsx` | Elige la variante y devuelve una sesión, no un token |
+| `scripts/ios-patch-google.sh` | Esquema de URL en `Info.plist` + handler en `AppDelegate`. **Código nativo: no se arregla por OTA** |
+
+### Esto NO llega por OTA
+
+El OTA entrega un zip del bundle web. El login con Google necesita un pod, un
+esquema de URL en `Info.plist` y un handler en `AppDelegate.swift`: nada de eso
+viaja en ese zip. **Cambiar algo de esta sección exige recompilar y subir un
+build nuevo a TestFlight.**
+
+### Los client IDs son dos y no se intercambian
+
+| | iOS | Android |
+|---|---|---|
+| client ID propio | sí, y su versión invertida es el esquema de URL | **no existe** |
+| client ID web | sí, como `iOSServerClientId` | sí, es el único que necesita |
+| cómo se identifica | por el client ID de iOS | por package name + huella SHA-1 |
+
+Pedirle a Android el client ID de iOS deja el botón escondido para siempre, y
+es una falla silenciosa: la app sigue andando con correo y contraseña, así que
+no hay error que mirar. Lo fija `google-nativo.test.ts`.
+
+Las variables de build son `MOBILE_GOOGLE_IOS_CLIENT_ID` y
+`MOBILE_GOOGLE_CLIENT_ID`, y van como `vars` de GitHub y no como `secrets`: un
+client ID de OAuth es público por diseño —viaja en el `Info.plist` de
+cualquier app que lo use— y como secret quedaría enmascarado en los logs sin
+ningún beneficio. `build-mobile.mjs --strict` exige los dos o ninguno: con uno
+solo el botón se dibuja y no puede funcionar.
+
+### Configuración pendiente (consola de Firebase, `ontimeai-prod`)
+
+Sin esto el código compila, el botón no se dibuja y el parche nativo se saltea
+—el build sale coherente, nada promete lo que no puede cumplir—, pero el login
+con Google en el teléfono no existe:
+
+1. **Authentication → Sign-in method → Google**: habilitar.
+2. **Agregar app iOS** con bundle ID `com.ontimeai.app`. De ahí sale el client
+   ID de iOS → `MOBILE_GOOGLE_IOS_CLIENT_ID`.
+3. **Agregar app Android** con package `com.ontimeai.app` y **dos** huellas
+   SHA-1:
+   - la de la clave de subida (`ONTIMEAI_KEYSTORE_FILE` en los secrets;
+     `keytool -list -v`)
+   - la de **Play App Signing** (Play Console → Configuración → Firma de la
+     aplicación)
+
+   La segunda es la que se olvida. La app usa Play App Signing, así que
+   registrando solo la de subida el login funciona en un APK compilado a mano
+   y **falla para cualquiera que instale desde Play**.
+
+---
+
+## 10. Gotchas verificados
 
 1. **Nunca devuelvas un plugin de Capacitor desde una función `async`.** El
    proxy convierte el acceso a cualquier propiedad en una llamada nativa; la

@@ -30,7 +30,8 @@ import {
   useGoogleSignInDisponible,
   GoogleSignInButton,
 } from "@/components/google-sign-in-button";
-import { apiLoginFirebase, apiLoginGoogle } from "@/lib/api";
+import { apiLoginFirebase } from "@/lib/api";
+import { type SesionDeGoogle } from "@/lib/auth-google";
 import { firebaseAuth, mensajeDeError } from "@/lib/firebase";
 import { safeReturnPath } from "@/lib/auth-types";
 import { IS_BUNDLED } from "@/lib/mobile-env";
@@ -134,37 +135,28 @@ function LoginForm() {
     });
   }
 
-  function handleGoogleCredential(idToken: string) {
+  // El canje del token lo hace el botón, que es el que sabe por qué camino
+  // vino la credencial —Google Identity Services en la web, el plugin nativo en
+  // el teléfono—. Acá solo queda a dónde mandar al usuario.
+  function handleGoogleSession(session: SesionDeGoogle) {
     setError("");
-    startTransition(async () => {
-      try {
-        const session = await apiLoginGoogle(idToken);
-        if (session.isNewUser) {
-          const next = requestedPath
-            ? `?from=${encodeURIComponent(safeReturnPath(requestedPath))}`
-            : "";
-          window.location.replace(`/onboarding${next}`);
-          return;
-        }
-        window.location.replace(
-          requestedPath
-            ? safeReturnPath(requestedPath)
-            : "/",
-        );
-      } catch (cause) {
-        setError(
-          cause instanceof Error
-            ? cause.message
-            : "No se pudo iniciar sesión con Google.",
-        );
-      }
-    });
+    if (session.isNewUser) {
+      const next = requestedPath
+        ? `?from=${encodeURIComponent(safeReturnPath(requestedPath))}`
+        : "";
+      window.location.replace(`/onboarding${next}`);
+      return;
+    }
+    window.location.replace(
+      requestedPath ? safeReturnPath(requestedPath) : "/",
+    );
   }
 
   return (
     <>
       <GoogleSignInButton
-        onCredential={handleGoogleCredential}
+        onSession={handleGoogleSession}
+        onError={setError}
         disabled={isPending}
       />
 
