@@ -42,18 +42,30 @@ const espias = {
 
 const CLAVE = "ontimeai.biometria.eleccion";
 
+const POR_DEFECTO: Required<Escenario> = {
+  plataforma: "ios",
+  plugin: true,
+  disponible: true,
+  biometryType: 2,
+  eleccion: "activada",
+  usuario: true,
+  caraOk: true,
+  canjeOk: true,
+  tokenOk: true,
+};
+
 async function escenario(e: Escenario = {}) {
   const {
-    plataforma = "ios",
-    plugin = true,
-    disponible = true,
-    biometryType = 2,
-    eleccion = "activada",
-    usuario = true,
-    caraOk = true,
-    canjeOk = true,
-    tokenOk = true,
-  } = e;
+    plataforma,
+    plugin,
+    disponible,
+    biometryType,
+    eleccion,
+    usuario,
+    caraOk,
+    canjeOk,
+    tokenOk,
+  } = { ...POR_DEFECTO, ...e };
 
   vi.resetModules();
   if (eleccion) preferencias.set(CLAVE, eleccion);
