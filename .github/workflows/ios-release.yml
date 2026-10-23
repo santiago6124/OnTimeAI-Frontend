@@ -337,8 +337,30 @@ jobs:
         run: |
           mkdir -p ~/.appstoreconnect/private_keys
           echo "$API_KEY" > ~/.appstoreconnect/private_keys/AuthKey_$API_KEY_ID.p8
+
+          # `altool` SALE CON CÓDIGO 0 AUNQUE FALLE.
+          #
+          # Visto el 2026-10-23: el upload murió con
+          #   "Failed to determine the Apple ID from Bundle ID 'com.ontimeai.app'.
+          #    A required agreement is missing or has expired. (403)"
+          # y este paso quedó en verde. El workflow entero dijo success, el .ipa
+          # nunca llegó a TestFlight, y se descubrió media hora después mirando
+          # por qué no aparecía la build en el teléfono.
+          #
+          # Un build verde que no subió es peor que uno rojo: manda a buscar el
+          # problema a cualquier otro lado. Así que se mira la salida.
+          set -o pipefail
+          LOG="$RUNNER_TEMP/altool.log"
           xcrun altool --upload-app -f "$RUNNER_TEMP/export/App.ipa" -t ios \
-            --apiKey "$API_KEY_ID" --apiIssuer "$API_ISSUER_ID"
+            --apiKey "$API_KEY_ID" --apiIssuer "$API_ISSUER_ID" 2>&1 | tee "$LOG"
+
+          if grep -qE '^.*ERROR' "$LOG"; then
+            echo "::error::altool reportó un error aunque salió con código 0. El .ipa NO está en TestFlight."
+            # Las causas que ya se vieron, para no empezar de cero:
+            echo "::notice::Si dice 'required agreement is missing or has expired', hay un contrato pendiente en App Store Connect → Business. Lo tiene que aceptar el titular de la cuenta; ningún cambio de código lo destraba."
+            exit 1
+          fi
+          echo "OK — el .ipa quedó subido y Apple lo está procesando."
 
       - name: Publicar artefactos
         if: always() && steps.firma.outputs.firmado == 'si'
