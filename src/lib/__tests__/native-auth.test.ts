@@ -124,17 +124,6 @@ describe("apiLoginFirebase en el bundle", () => {
     expect(almacen.token).toBeNull();
   });
 
-  it("apiLoginGoogle usa la misma rama contra /auth/google", async () => {
-    backend({
-      "/auth/google": { status: 200, body: { access_token: "jwt-g", user_type: "b2c", is_new_user: false } },
-      "/auth/me": { status: 200, body: { username: "g", role: "user", user_type: "b2c" } },
-    });
-    const { apiLoginGoogle } = await import("@/lib/api");
-
-    const session = await apiLoginGoogle("google-id-token");
-    expect(session.userType).toBe("b2c");
-    expect(llamadas[0].url).toBe(`${API}/auth/google`);
-  });
 });
 
 describe("después del login, en el bundle", () => {

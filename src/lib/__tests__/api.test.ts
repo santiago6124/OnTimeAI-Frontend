@@ -12,7 +12,7 @@
  *    backend espera, con los ids escapados.
  *  - `flightHistory` normaliza puntos viejos del backend que no traen todos
  *    los campos.
- *  - `apiMe`, `apiLogin`, `apiLoginGoogle`, `apiLoginFirebase`,
+ *  - `apiMe`, `apiLogin`, `apiLoginFirebase`,
  *    `apiSetUserType`, `apiDeleteAccount` y `apiLogout` contra el BFF.
  *  - Los helpers puros `riskLabel`, `fmtProba` y `toUTCDate`.
  *
@@ -414,30 +414,7 @@ describe("apiLogin en la web", () => {
   });
 });
 
-describe("apiLoginGoogle y apiLoginFirebase en la web", () => {
-  it("Google: manda el id_token al BFF y devuelve la sesión con isNewUser", async () => {
-    backend({ "/api/auth/google": { status: 200, body: { username: "g", role: "user", userType: "b2c", isNewUser: true } } });
-    const { apiLoginGoogle } = await import("@/lib/api");
-
-    const sesion = await apiLoginGoogle("id-google");
-
-    expect(sesion.isNewUser).toBe(true);
-    expect(llamadas[0].url).toBe("/api/auth/google");
-    expect(cuerpo(llamadas[0])).toEqual({ id_token: "id-google" });
-  });
-
-  it("Google: propaga el detail, y sin cuerpo usa el mensaje propio", async () => {
-    backend({ "/api/auth/google": { status: 401, body: { detail: "ID token inválido" } } });
-    const { apiLoginGoogle } = await import("@/lib/api");
-    await expect(apiLoginGoogle("t")).rejects.toMatchObject({ status: 401, message: "ID token inválido" });
-
-    backend({ "/api/auth/google": { status: 200, texto: "null" } });
-    await expect(apiLoginGoogle("t")).rejects.toMatchObject({
-      status: 200,
-      message: "No se pudo iniciar sesión con Google.",
-    });
-  });
-
+describe("apiLoginFirebase en la web", () => {
   it("Firebase: manda el id_token al BFF y devuelve la sesión", async () => {
     backend({ "/api/auth/firebase": { status: 200, body: { username: "f", role: "user", userType: "b2b", isNewUser: false } } });
     const { apiLoginFirebase } = await import("@/lib/api");

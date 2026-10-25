@@ -1,26 +1,52 @@
 /**
- * Las dos formas de entrar con Google, detrás de una sola firma.
+ * Entrar con Google, por un solo camino.
  *
- * Las páginas de login y de alta no tienen por qué saber en qué plataforma
- * corren: piden una sesión y reciben una sesión. Antes cada una repetía el
- * manejo del token y del error, y la rama nativa habría duplicado eso otra vez.
+ * Lo único que cambia entre la web y el teléfono es **de dónde sale el ID
+ * token de Google**: en el navegador lo da Google Identity Services, y en el
+ * teléfono el plugin nativo, porque GIS no corre dentro de un WebView. De ahí
+ * en adelante las dos ramas hacen exactamente lo mismo.
  *
- * ## Por qué los dos caminos no son el mismo
+ * ```
+ *   GIS (web)  ─┐
+ *               ├─→ signInWithCredential ──→ ID token de Firebase ──→ /auth/firebase
+ *   plugin ────┘        (Firebase)
+ * ```
  *
- * | | de dónde sale el token | contra qué se cambia |
- * |---|---|---|
- * | web | Google Identity Services, en el navegador | `/auth/google` |
- * | teléfono | plugin nativo → `signInWithCredential` de Firebase | `/auth/firebase` |
+ * ## Por qué esto antes eran dos sistemas
  *
- * La web sigue por `/auth/google` porque hoy funciona y migrarla sin que el
- * proveedor de Google esté habilitado en Firebase la rompería. El camino
- * nativo entra por Firebase desde el principio, que es la dirección decidida:
- * un solo sistema de credenciales en vez de dos. Cuando el interruptor de
- * Firebase esté prendido, la web se muda acá y `/auth/google` se jubila.
+ * El botón de la web se construyó en septiembre, antes de que el proyecto
+ * tuviera Firebase, y cambiaba el token contra `/auth/google` —un endpoint que
+ * verifica el token de Google por su cuenta—. Cuando llegó Firebase se migró
+ * el correo y contraseña, pero ese botón quedó donde estaba porque funcionaba.
+ *
+ * El costo no era teórico: los usuarios que entraban por la web **no existían
+ * en Firebase**. Medido sobre producción antes de este cambio, cuatro de los
+ * cinco usuarios con `provider='google'` no tenían cuenta de Firebase, uno de
+ * ellos dado de alta un mes después de que Firebase estuviera en uso. Firebase
+ * no era el padrón completo, y esa gente no podía recuperar su contraseña ni
+ * vincular proveedores.
+ *
+ * No partía cuentas, eso sí: los dos endpoints guardan por email, así que la
+ * misma persona caía siempre en la misma fila de `users.db`. Era inconsistencia
+ * de identidad, no de datos.
+ *
+ * ## Por qué el token de la web sirve
+ *
+ * Firebase tiene su propio client ID para Google, distinto del que usa GIS en
+ * la web. Acepta igual el de la web porque los dos pertenecen al mismo
+ * proyecto de Google Cloud, y eso no es una suposición: el camino nativo ya
+ * venía mandando ese mismo `aud` —va como `iOSServerClientId`— y Firebase
+ * vinculó el proveedor sin quejarse.
+ *
+ * ## Qué pasa con los usuarios viejos
+ *
+ * Nada que haya que migrar a mano. La próxima vez que entren, Firebase les crea
+ * la cuenta y el backend los encuentra por email en la fila que ya tienen.
+ * Convergen solos.
  */
 import { GoogleAuthProvider, signInWithCredential } from "firebase/auth";
 
-import { apiLoginFirebase, apiLoginGoogle } from "@/lib/api";
+import { apiLoginFirebase } from "@/lib/api";
 import { type SessionUser } from "@/lib/auth-types";
 import { firebaseAuth } from "@/lib/firebase";
 import { pedirIdTokenDeGoogle } from "@/lib/native/google-sign-in";
@@ -28,26 +54,30 @@ import { pedirIdTokenDeGoogle } from "@/lib/native/google-sign-in";
 export type SesionDeGoogle = SessionUser & { isNewUser: boolean };
 
 /**
- * Web: el ID token ya lo consiguió el botón de Google Identity Services.
+ * El tramo común: de un ID token de Google a la sesión propia.
+ *
+ * `signInWithCredential` es la única operación de Auth de Firebase que sirve
+ * en el bundle de iOS: es una llamada HTTP y no necesita el popup/redirect
+ * resolver, que `firebase.ts` omite a propósito porque desde
+ * `capacitor://localhost` su iframe nunca contesta y deja todo encolado para
+ * siempre, sin error ni timeout.
  */
-export async function sesionConCredencialDeGoogle(
+async function sesionDesdeIdTokenDeGoogle(
   googleIdToken: string,
 ): Promise<SesionDeGoogle> {
-  return apiLoginGoogle(googleIdToken);
-}
-
-/**
- * Teléfono: abre la hoja nativa de Google y vuelve con la sesión propia.
- *
- * El paso del medio es el que importa: el ID token que da el plugin es de
- * Google, y `/auth/firebase` espera uno de Firebase. `signInWithCredential`
- * convierte uno en el otro, y es la única operación de Auth de Firebase que se
- * puede usar en el bundle de iOS —es una llamada HTTP y no necesita el
- * popup/redirect resolver, que ahí nunca contesta.
- */
-export async function sesionConGoogleNativo(): Promise<SesionDeGoogle> {
-  const googleIdToken = await pedirIdTokenDeGoogle();
   const credencial = GoogleAuthProvider.credential(googleIdToken);
   const { user } = await signInWithCredential(firebaseAuth(), credencial);
   return apiLoginFirebase(await user.getIdToken());
+}
+
+/** Web: el ID token ya lo consiguió el botón de Google Identity Services. */
+export async function sesionConCredencialDeGoogle(
+  googleIdToken: string,
+): Promise<SesionDeGoogle> {
+  return sesionDesdeIdTokenDeGoogle(googleIdToken);
+}
+
+/** Teléfono: abre la hoja nativa de Google y vuelve con la sesión propia. */
+export async function sesionConGoogleNativo(): Promise<SesionDeGoogle> {
+  return sesionDesdeIdTokenDeGoogle(await pedirIdTokenDeGoogle());
 }

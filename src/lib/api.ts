@@ -399,27 +399,6 @@ export async function apiLogin(username: string, password: string) {
   return payload as SessionUser;
 }
 
-export async function apiLoginGoogle(idToken: string) {
-  if (IS_BUNDLED) return nativeExchange("/auth/google", idToken);
-
-  const res = await fetch("/api/auth/google", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ id_token: idToken }),
-    signal: AbortSignal.timeout(10_000),
-  });
-  const payload = (await res.json().catch(() => null)) as
-    | (SessionUser & { isNewUser: boolean; detail?: string })
-    | null;
-  if (!res.ok || !payload) {
-    throw new ApiError(
-      res.status,
-      payload?.detail ?? "No se pudo iniciar sesión con Google.",
-    );
-  }
-  return payload;
-}
-
 /**
  * Cambia un ID token de Firebase por la sesión propia.
  *
@@ -507,7 +486,7 @@ async function nativeLogin(
 }
 
 /**
- * Rama del bundle de `apiLoginGoogle` / `apiLoginFirebase`.
+ * Rama del bundle de `apiLoginFirebase`.
  *
  * Hace lo que el route handler hacía del lado del servidor: cambia el ID token
  * por un JWT propio contra el FastAPI directo, se queda con el token en
@@ -517,7 +496,7 @@ async function nativeLogin(
  */
 // eslint-disable-next-line complexity -- deuda registrada en .complejidad-baseline.json
 async function nativeExchange(
-  path: "/auth/google" | "/auth/firebase",
+  path: "/auth/firebase",
   idToken: string,
 ): Promise<SessionUser & { isNewUser: boolean }> {
   const { saveToken, clearToken } = await import("@/lib/native/session");
