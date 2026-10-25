@@ -348,9 +348,11 @@ plugin nativo  →  ID token de Google  →  signInWithCredential  →  ID token
 ```
 
 Google entra por Firebase y no por `/auth/google`, que es la decisión del issue
-#46: un solo sistema de credenciales en vez de dos. La web sigue por
-`/auth/google` mientras el proveedor de Google no esté habilitado en Firebase
-Authentication; migrarla antes la rompería.
+#46: un solo sistema de credenciales en vez de dos. **La web también, desde el
+2026-10-25**: antes cambiaba el token contra `/auth/google` y sus usuarios no
+existían en Firebase —cuatro de cinco, medido en producción—. Lo único que
+cambia entre plataformas es de dónde sale el ID token de Google; de ahí en
+adelante el camino es el mismo.
 
 `signInWithCredential` **sí** se puede usar en el bundle, a diferencia de
 `signInWithPopup`: es una llamada HTTP y no necesita el popup/redirect
