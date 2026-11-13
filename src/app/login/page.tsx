@@ -38,6 +38,10 @@ import {
 import { apiLoginFirebase } from "@/lib/api";
 import { type SesionDeGoogle } from "@/lib/auth-google";
 import { firebaseAuth, mensajeDeError } from "@/lib/firebase";
+import {
+  esUsuarioDelBackend,
+  ingresarConUsuario,
+} from "@/lib/ingreso-con-usuario";
 import { safeReturnPath } from "@/lib/auth-types";
 import { IS_BUNDLED } from "@/lib/mobile-env";
 
@@ -65,6 +69,11 @@ function LoginForm() {
     setAviso("");
     setSinVerificar(false);
     startTransition(async () => {
+      // Cuentas del backend sin correo (admin, viewer): ver ingreso-con-usuario.ts.
+      if (esUsuarioDelBackend(username)) {
+        return ingresarConUsuario(username, password, requestedPath, setError);
+      }
+
       const auth = firebaseAuth();
       try {
         const credencial = await signInWithEmailAndPassword(
