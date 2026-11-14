@@ -177,7 +177,7 @@ function CP02Card({ data }: { data: CP02Result }) {
           Precisión del modelo
         </div>
         <CardDescription>
-          Evaluación sobre vuelos reales de KATL con resultado confirmado
+          Vuelos de KATL con resultado confirmado de los últimos 14 días
         </CardDescription>
       </CardHeader>
 
@@ -339,7 +339,7 @@ export default function CasosDePruebaPage() {
         <Card className="bg-muted/30">
           <CardContent className="pt-4 grid gap-1 text-xs text-muted-foreground md:grid-cols-3">
             <div><span className="font-medium text-foreground">CP-01</span> — Predicción de vuelo de alto riesgo con retraso real confirmado. Criterio: probabilidad mayor o igual a 35% y retraso real mayor a 15 min.</div>
-            <div><span className="font-medium text-foreground">CP-02</span> — Evaluación AUC-ROC sobre actuals reales de KATL (15–17 mayo 2026). Criterio: AUC mayor o igual a 0.70 y Brier menor o igual a 0.15.</div>
+            <div><span className="font-medium text-foreground">CP-02</span> — Evaluación AUC-ROC y Brier sobre todos los vuelos de KATL con resultado real que conserva la base (retención de 14 días), con la última predicción de cada vuelo. Criterio: AUC mayor o igual a 0.70 y Brier menor o igual a 0.15.</div>
             <div><span className="font-medium text-foreground">CP-03</span> — Tiempo de respuesta del endpoint principal GET /flights medido desde el navegador. Criterio: menos de 2 segundos.</div>
           </CardContent>
         </Card>
