@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { WeatherCard } from "@/components/weather-card";
 import { BotonGuardar } from "@/components/viajero/boton-guardar";
 import { cn } from "@/lib/utils";
-import { fmtTime, toUTCDate, type Flight } from "@/lib/api";
+import { fmtTime, type Flight } from "@/lib/api";
+import { llegadaEstimada, salidaEstimada } from "@/lib/horarios-viajero";
 import { motivosParaViajero, veredicto } from "@/lib/motivos-viajero";
 
 /**
@@ -31,11 +32,8 @@ export function DetalleViajero({
   const { titulo, detalle } = veredicto(prob);
   const motivos = motivosParaViajero(flight.shap);
 
-  const corrida =
-    flight.estimated_out_utc &&
-    flight.scheduled_out_utc &&
-    toUTCDate(flight.estimated_out_utc).getTime() >
-      toUTCDate(flight.scheduled_out_utc).getTime() + 60_000;
+  const salida = salidaEstimada(flight);
+  const llegada = llegadaEstimada(flight);
 
   const tono =
     prob >= 0.5
@@ -92,12 +90,13 @@ export function DetalleViajero({
             <Horario
               etiqueta="Sale de Atlanta"
               programado={flight.scheduled_out_utc}
-              estimado={corrida ? flight.estimated_out_utc : null}
+              estimado={salida}
             />
             <Horario
               etiqueta={`Llega a ${flight.destination}`}
               programado={flight.scheduled_in_utc}
-              estimado={flight.estimated_in_utc}
+              estimado={llegada.hora}
+              nota={llegada.proyectada ? "Estimada con la demora de salida" : undefined}
             />
           </CardContent>
         </Card>
@@ -183,10 +182,12 @@ function Horario({
   etiqueta,
   programado,
   estimado,
+  nota,
 }: {
   etiqueta: string;
   programado: string | null;
   estimado: string | null;
+  nota?: string;
 }) {
   return (
     <div>
@@ -196,7 +197,7 @@ function Horario({
       </p>
       {estimado && programado ? (
         <p className="text-xs text-muted-foreground">
-          Estaba programado {fmtTime(programado)}
+          {nota ? `${nota} · ` : ""}Estaba programado {fmtTime(programado)}
         </p>
       ) : (
         <p className="text-xs text-muted-foreground">Horario programado · UTC</p>
